@@ -4,6 +4,7 @@ import { SyntaxKind, Identifier } from "typescript";
 import * as ts from "typescript";
 import * as glob from "glob";
 import { allActions, rootDir } from "./assets/all-actions";
+import { basename } from "path";
 
 function getParentNodes(node: ts.Node, identifiers: string[]) {
   if (
@@ -92,9 +93,9 @@ function readSourceFile(file: string): ts.SourceFile {
 
 function mapeffectsToActions(rootDir: string) {
   glob("**/assets/*.effects.ts", function (err, files) {
-  // glob(rootDir + "**/**/*.effects.ts", function (err, files) {
+    // glob(rootDir + "**/**/*.effects.ts", function (err, files) {
     let effectActionsMap = files.reduce((result, filename) => {
-      console.log("🚀 ~ processing effect", filename);
+      console.log("🚀 ~ processing", basename(filename));
       return { ...result, ...getEffectActionsMap(readSourceFile(filename)) };
     }, {});
     console.dir(effectActionsMap, { depth: null });
@@ -123,9 +124,9 @@ function getComponentDispatchedActions(sourceFile: ts.SourceFile) {
 
 function mapComponentToActions(rootDir: string) {
   glob("**/assets/*.component.ts", function (err, files) {
-  // glob(rootDir + "**/**/*.component.ts", function (err, files) {
+    // glob(rootDir + "**/**/*.component.ts", function (err, files) {
     let componentActions = files.reduce((result, filename) => {
-      console.log("🚀 ~ processing component", filename);
+      console.log("🚀 ~ processing", basename(filename));
       return {
         ...result,
         ...getComponentDispatchedActions(readSourceFile(filename)),
@@ -138,7 +139,24 @@ function mapComponentToActions(rootDir: string) {
   });
 }
 
-mapeffectsToActions(rootDir);
-mapComponentToActions(rootDir);
+function getAllActions(rootDir: string) {
+  glob("**/assets/*.actions.ts", function (err, files) {
+  // glob(rootDir + "**/**/*.actions.ts", function (err, files) {
+    let allActions = files.reduce((result, filename) => {
+      console.log("🚀 ~ processing", basename(filename));
+      return [
+        ...result,
+        ...getParentNodes(readSourceFile(filename), ["createAction"]).map(
+          node => node.parent.name.escapedText.toString()
+        ),
+      ];
+    }, []);
+    console.dir(allActions, { depth: null });
+  });
+}
+
+// mapeffectsToActions(rootDir);
+// mapComponentToActions(rootDir);
+// getAllActions(rootDir);
 
 // TODO: use in reducers
