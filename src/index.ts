@@ -1,10 +1,9 @@
 // https://ts-ast-viewer.com
 
 import { SyntaxKind, Identifier } from "typescript";
-import { join } from "path";
 import * as ts from "typescript";
 import * as glob from "glob";
-import { allActions } from "./assets/all-actions";
+import { allActions, rootDir } from "./assets/all-actions";
 
 function getParentNodes(node: ts.Node, identifiers: string[]) {
   if (
@@ -73,35 +72,73 @@ function effectDispatchedActions(
 
 function getEffectActionsMap(sourceFile: any) {
   const effectBodies = getParentNodes(sourceFile, ["createEffect"]);
-  return effectBodies.map(({ parent: effect }) => {
+  return effectBodies.reduce((sum, { parent: effect }) => {
     const key = effect.name.escapedText.toString();
     const input = effectTriggeringActions(effect);
     const output = effectDispatchedActions(effect, sourceFile, input);
-    return {
-      [key]: { input, output },
-    };
-  });
+    return { ...sum, [key]: { input, output } };
+  }, {});
 }
 
-function extract(file: string, identifiers: string[]): void {
+function readSourceFile(file: string): ts.SourceFile {
   const options: ts.CompilerOptions = { allowJs: true };
   const compilerHost = ts.createCompilerHost(
     options,
     /* setParentNodes */ true
   );
   let program = ts.createProgram([file], options, compilerHost);
-  const sourceFile = program.getSourceFile(file);
-  const effectActionsMap = getEffectActionsMap(sourceFile);
-  console.dir(effectActionsMap, { depth: null });
+  return program.getSourceFile(file);
 }
 
-glob("**/assets/*.effects.ts", function (err, files) {
-  files.forEach(filename => {
-    const fullFileName = join(__dirname, "../", filename);
-    console.log("🚀 ~ fullFileName", fullFileName);
-    extract(fullFileName, []);
+function mapeffectsToActions(rootDir: string) {
+  glob("**/assets/*.effects.ts", function (err, files) {
+  // glob(rootDir + "**/**/*.effects.ts", function (err, files) {
+    let effectActionsMap = files.reduce((result, filename) => {
+      console.log("🚀 ~ processing effect", filename);
+      return { ...result, ...getEffectActionsMap(readSourceFile(filename)) };
+    }, {});
+    console.dir(effectActionsMap, { depth: null });
   });
-});
+}
 
-// TODO: dispatch from component
+function getComponentDispatchedActions(sourceFile: ts.SourceFile) {
+  let className = "";
+  ts.forEachChild(sourceFile, node => {
+    if (node.kind === SyntaxKind.ClassDeclaration) {
+      className = (node as ts.ClassDeclaration).name.escapedText.toString();
+    }
+  });
+  const nodes = getParentNodes(sourceFile, ["dispatch"]).map(node =>
+    node.parent.getText()
+  );
+  const actions = [
+    ...new Set(
+      allActions.filter(
+        action => nodes.filter(node => node.includes(action)).length
+      )
+    ),
+  ];
+  return { [className]: actions };
+}
+
+function mapComponentToActions(rootDir: string) {
+  glob("**/assets/*.component.ts", function (err, files) {
+  // glob(rootDir + "**/**/*.component.ts", function (err, files) {
+    let componentActions = files.reduce((result, filename) => {
+      console.log("🚀 ~ processing component", filename);
+      return {
+        ...result,
+        ...getComponentDispatchedActions(readSourceFile(filename)),
+      };
+    }, {});
+    componentActions = Object.fromEntries(
+      Object.entries(componentActions).filter(([k, v]) => v !== 0)
+    );
+    console.dir(componentActions, { depth: null });
+  });
+}
+
+mapeffectsToActions(rootDir);
+mapComponentToActions(rootDir);
+
 // TODO: use in reducers
