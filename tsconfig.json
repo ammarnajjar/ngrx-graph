@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "target": "esnext",
+    "moduleResolution": "Node",
+    "module": "CommonJS"
+  }
+}
