@@ -25,38 +25,33 @@ function getParentNodes(node: ts.Node, identifiers: string[]) {
 }
 
 function effectTriggeringActions(effect: any) {
-  return {
-    input: getParentNodes(effect, ["ofType"])
-      .map(node => node.arguments.map(arg => arg.escapedText))
-      .flat(),
-  };
+  return getParentNodes(effect, ["ofType"])
+    .map(node => node.arguments.map(arg => arg.escapedText))
+    .flat();
 }
 
 function triggeringActions(node: any) {
   const effectBodies = getParentNodes(node, ["createEffect"]);
   return effectBodies.map(({ parent: effect }) => {
     const key = effect.name.escapedText.toString();
+    const input = effectTriggeringActions(effect);
+    const output = effectDispatchedActions(effect);
     return {
-      [key]: {
-        ...effectTriggeringActions(effect),
-        ...effectDispatchedActions(effect),
-      },
+      [key]: { input, output },
     };
   });
 }
 
 function effectDispatchedActions(effect: any) {
-  return {
-    output: getParentNodes(effect, [
-      "switchMap",
-      "map",
-      "concatMap",
-      "exhoustMap",
-      "mergeMap",
-    ])
-      .map(node => allActions.filter(action => node.getText().includes(action)))
-      .flat(),
-  };
+  return getParentNodes(effect, [
+    "switchMap",
+    "map",
+    "concatMap",
+    "exhoustMap",
+    "mergeMap",
+  ])
+    .map(node => allActions.filter(action => node.getText().includes(action)))
+    .flat();
 }
 
 function extract(file: string, identifiers: string[]): void {
@@ -73,7 +68,7 @@ function extract(file: string, identifiers: string[]): void {
   });
 }
 
-glob("**/*.effects.ts", function (err, files) {
+glob("**/assets/*.effects.ts", function (err, files) {
   files.forEach(filename => {
     const fullFileName = join(__dirname, "../", filename);
     extract(fullFileName, []);
