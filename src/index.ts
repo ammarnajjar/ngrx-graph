@@ -30,18 +30,6 @@ function effectTriggeringActions(effect: any) {
     .flat();
 }
 
-function triggeringActions(sourceFile: any) {
-  const effectBodies = getParentNodes(sourceFile, ["createEffect"]);
-  return effectBodies.map(({ parent: effect }) => {
-    const key = effect.name.escapedText.toString();
-    const input = effectTriggeringActions(effect);
-    const output = effectDispatchedActions(effect, sourceFile, input);
-    return {
-      [key]: { input, output },
-    };
-  });
-}
-
 function effectDispatchedActions(
   effect: any,
   sourceFile: ts.SourceFile,
@@ -81,6 +69,19 @@ function effectDispatchedActions(
   return [...new Set(actions.filter(action => !input.includes(action)))]
 }
 
+function getEffectActionsMap(sourceFile: any) {
+  const effectBodies = getParentNodes(sourceFile, ["createEffect"]);
+  return effectBodies.map(({ parent: effect }) => {
+    const key = effect.name.escapedText.toString();
+    const input = effectTriggeringActions(effect);
+    const output = effectDispatchedActions(effect, sourceFile, input);
+    return {
+      [key]: { input, output },
+    };
+  });
+}
+
+
 function extract(file: string, identifiers: string[]): void {
   const options: ts.CompilerOptions = { allowJs: true };
   const compilerHost = ts.createCompilerHost(
@@ -89,10 +90,8 @@ function extract(file: string, identifiers: string[]): void {
   );
   let program = ts.createProgram([file], options, compilerHost);
   const sourceFile = program.getSourceFile(file);
-  const actions = triggeringActions(sourceFile);
-  actions.forEach(action => {
-    console.log(action);
-  });
+  const effectActionsMap = getEffectActionsMap(sourceFile);
+  console.dir(effectActionsMap, { depth: null })
 }
 
 glob("**/assets/*.effects.ts", function (err, files) {
