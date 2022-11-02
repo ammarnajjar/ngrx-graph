@@ -30,28 +30,55 @@ function effectTriggeringActions(effect: any) {
     .flat();
 }
 
-function triggeringActions(node: any) {
-  const effectBodies = getParentNodes(node, ["createEffect"]);
+function triggeringActions(sourceFile: any) {
+  const effectBodies = getParentNodes(sourceFile, ["createEffect"]);
   return effectBodies.map(({ parent: effect }) => {
     const key = effect.name.escapedText.toString();
     const input = effectTriggeringActions(effect);
-    const output = effectDispatchedActions(effect);
+    const output = effectDispatchedActions(effect, sourceFile, input);
     return {
       [key]: { input, output },
     };
   });
 }
 
-function effectDispatchedActions(effect: any) {
-  return getParentNodes(effect, [
-    "switchMap",
+function effectDispatchedActions(
+  effect: any,
+  sourceFile: ts.SourceFile,
+  input: string[]
+) {
+  const mapNodes = getParentNodes(effect, [
     "map",
+    "switchMap",
     "concatMap",
     "exhoustMap",
     "mergeMap",
-  ])
-    .map(node => allActions.filter(action => node.getText().includes(action)))
-    .flat();
+  ]);
+  let actions = [];
+  mapNodes.forEach(mapNode => {
+    actions = [
+      ...actions,
+      ...allActions.filter(action => mapNode.getText().includes(action)),
+    ];
+    ts.forEachChild(mapNode.arguments[0], (node: any) => {
+      if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
+        const privateMethodName = node.expression.name.escapedText.toString();
+        const callables = getParentNodes(sourceFile, privateMethodName);
+        callables.forEach(callable => {
+          if (callable.kind === SyntaxKind.PropertyDeclaration) {
+            actions = [
+              ...actions,
+              ...allActions.filter(action =>
+                callable.getText().includes(action)
+              ),
+            ];
+          }
+        });
+      }
+    });
+  });
+
+  return [...new Set(actions.filter(action => !input.includes(action)))]
 }
 
 function extract(file: string, identifiers: string[]): void {
@@ -75,6 +102,5 @@ glob("**/assets/*.effects.ts", function (err, files) {
   });
 });
 
-// TODO: method/function is called in effect to dispatch actions
 // TODO: dispatch from component
 // TODO: use in reducers
