@@ -1,0 +1,75 @@
+{
+  "name": "ngrx-graph",
+  "version": "0.0.1",
+  "description": "Generate NgRx actions graph",
+  "author": "Ammar Najjar",
+  "bin": {
+    "ngrx-graph": "./bin/run"
+  },
+  "homepage": "https://github.com/ammarnajjar/ngrx-graph",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "repository": "ammarnajjar/ngrx-graph",
+  "files": [
+    "/bin",
+    "/dist",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "dependencies": {
+    "@oclif/core": "^1.20.4",
+    "@oclif/plugin-help": "^5.1.18",
+    "fast-glob": "^3.2.12",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@oclif/test": "^2.2.10",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.11.9",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "chai": "^4.3.7",
+    "eslint": "^7.32.0",
+    "eslint-config-oclif": "^4.0.0",
+    "eslint-config-oclif-typescript": "^1.0.3",
+    "husky": "^8.0.2",
+    "mocha": "^10.1.0",
+    "oclif": "^3.2.25",
+    "shx": "^0.3.4",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.4.1",
+    "typescript": "^4.8.4"
+  },
+  "oclif": {
+    "bin": "ngrx-graph",
+    "dirname": "ngrx-graph",
+    "commands": "./dist/commands",
+    "default": "graph",
+    "plugins": [
+      "@oclif/plugin-help"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "graph": {
+        "description": "Generate NgRx actions graph"
+      }
+    }
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts --config .eslintrc",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md",
+    "prepare": "husky install"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues",
+  "keywords": [
+    "oclif, ngrx, graph, action, effect, angular, component, reducer, store, state, dot"
+  ],
+  "types": "dist/index.d.ts"
+}

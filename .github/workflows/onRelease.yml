@@ -1,0 +1,29 @@
+name: publish
+
+on:
+  release:
+    types: [created]
+  # support manual release in case something goes wrong and needs to be repeated or tested
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: tag that needs to publish
+        type: string
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - run: npm run version
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
