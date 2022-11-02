@@ -1,0 +1,4 @@
+.gitlab/
+.sonarlink/
+.logs/
+apps/client/src/assets/documentation/RELEASENOTES.json
