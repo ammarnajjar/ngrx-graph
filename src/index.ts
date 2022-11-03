@@ -127,7 +127,7 @@ function mapeffectsToActions(rootDir: string): { [k: string]: InputOutputMap } {
       console.log("🚀 ~ processing", basename(filename));
       return { ...result, ...getEffectActionsMap(readSourceFile(filename)) };
     }, {});
-  console.dir(effectActionsMap, { depth: null });
+  // console.dir(effectActionsMap, { depth: null });
   return effectActionsMap;
 }
 
@@ -164,7 +164,7 @@ function mapComponentToActions(rootDir: string) {
   componentActionsMap = Object.fromEntries(
     Object.entries(componentActionsMap).filter(([, v]) => v !== 0)
   );
-  console.dir(componentActionsMap, { depth: null });
+  // console.dir(componentActionsMap, { depth: null });
   return componentActionsMap;
 }
 
