@@ -168,10 +168,12 @@ function mapComponentToActions(rootDir: string) {
   return componentActionsMap;
 }
 
+const fromComponents = mapComponentToActions(rootDir);
 const fromEffects = mapeffectsToActions(rootDir);
 const filterdByAction = [
   ...chainActionsByInput(fromEffects, wantedAction),
   ...chainActionsByOutput(fromEffects, wantedAction),
+  ...fromComponents,
 ];
 console.dir(filterdByAction, { depth: null });
 
@@ -210,8 +212,6 @@ function chainActionsByOutput(
     []
   );
 }
-
-// const fromComponents = mapComponentToActions(rootDir);
 
 const dotFile = join(__dirname, "assets/out.dot");
 if (fs.existsSync(dotFile)) {
