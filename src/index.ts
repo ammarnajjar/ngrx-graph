@@ -5,7 +5,7 @@ import * as glob from "glob";
 import * as ts from "typescript";
 
 import { SyntaxKind, Identifier } from "typescript";
-import { allActions, rootDir, wantedAction } from "./assets/env";
+import { allActions, rootDir } from "./assets/env";
 import { basename, join } from "path";
 import { exec } from "child_process";
 import { uniq } from "lodash";
@@ -168,13 +168,6 @@ function mapComponentToActions(rootDir: string) {
   return componentActionsMap;
 }
 
-const fromEffects = mapeffectsToActions(rootDir);
-const filterdByAction = [
-  ...chainActionsByInput(fromEffects, wantedAction),
-  ...chainActionsByOutput(fromEffects, wantedAction),
-];
-const fromComponents = mapComponentToActions(rootDir);
-
 function chainActionsByInput(
   fromEffects: { [k: string]: InputOutputMap },
   action: string
@@ -238,6 +231,15 @@ function generateGraph(
   fs.appendFileSync(dotFile, "}\n");
   exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`);
 }
+
+const wantedAction = process.argv[2];
+
+const fromEffects = mapeffectsToActions(rootDir);
+const filterdByAction = [
+  ...chainActionsByInput(fromEffects, wantedAction),
+  ...chainActionsByOutput(fromEffects, wantedAction),
+];
+const fromComponents = mapComponentToActions(rootDir);
 
 const dotFile = join(__dirname, "assets/out.dot");
 generateGraph(dotFile, fromComponents, filterdByAction);
