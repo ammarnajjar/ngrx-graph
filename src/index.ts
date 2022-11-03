@@ -3,8 +3,10 @@
 import { SyntaxKind, Identifier } from "typescript";
 import * as ts from "typescript";
 import * as glob from "glob";
-import { allActions, rootDir } from "./assets/all-actions";
+import { rootDir } from "./assets/all-actions";
 import { basename } from "path";
+
+const allActions = getAllActions(rootDir);
 
 function getParentNodes(node: ts.Node, identifiers: string[]) {
   if (
@@ -23,6 +25,25 @@ function getParentNodes(node: ts.Node, identifiers: string[]) {
   });
   return nodes;
 }
+
+function getAllActions(rootDir: string): string[] {
+  // glob("**/assets/*.actions.ts", function (err, files) {
+  let allActions = [];
+  glob(rootDir + "**/**/*.actions.ts", function (err, files) {
+    allActions = files.reduce((result, filename) => {
+      console.log("🚀 ~ processing", basename(filename));
+      const actionPerFile = getParentNodes(readSourceFile(filename), [
+        "createAction",
+      ]).map(node => node.parent.name.escapedText.toString());
+      return [...result, ...actionPerFile];
+    }, []);
+    allActions.forEach(action => {
+      console.log(action);
+    });
+  });
+  return allActions;
+}
+
 
 function effectTriggeringActions(effect: any) {
   return getParentNodes(effect, ["ofType"])
@@ -139,24 +160,7 @@ function mapComponentToActions(rootDir: string) {
   });
 }
 
-function getAllActions(rootDir: string) {
-  glob("**/assets/*.actions.ts", function (err, files) {
-  // glob(rootDir + "**/**/*.actions.ts", function (err, files) {
-    let allActions = files.reduce((result, filename) => {
-      console.log("🚀 ~ processing", basename(filename));
-      return [
-        ...result,
-        ...getParentNodes(readSourceFile(filename), ["createAction"]).map(
-          node => node.parent.name.escapedText.toString()
-        ),
-      ];
-    }, []);
-    console.dir(allActions, { depth: null });
-  });
-}
-
 // mapeffectsToActions(rootDir);
-// mapComponentToActions(rootDir);
-// getAllActions(rootDir);
+mapComponentToActions(rootDir);
 
 // TODO: use in reducers
