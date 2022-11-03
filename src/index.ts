@@ -168,14 +168,12 @@ function mapComponentToActions(rootDir: string) {
   return componentActionsMap;
 }
 
-const fromComponents = mapComponentToActions(rootDir);
 const fromEffects = mapeffectsToActions(rootDir);
 const filterdByAction = [
   ...chainActionsByInput(fromEffects, wantedAction),
   ...chainActionsByOutput(fromEffects, wantedAction),
-  ...fromComponents,
 ];
-console.dir(filterdByAction, { depth: null });
+const fromComponents = mapComponentToActions(rootDir);
 
 function chainActionsByInput(
   fromEffects: { [k: string]: InputOutputMap },
@@ -213,16 +211,35 @@ function chainActionsByOutput(
   );
 }
 
-const dotFile = join(__dirname, "assets/out.dot");
-if (fs.existsSync(dotFile)) {
-  fs.unlinkSync(dotFile);
+function generateGraph(
+  dotFile: string,
+  fromComponents: any,
+  filterdByAction: InputOutputMap[]
+) {
+  if (fs.existsSync(dotFile)) {
+    fs.unlinkSync(dotFile);
+  }
+  fs.writeFileSync(dotFile, "digraph {\n");
+  Object.entries(fromComponents).map(([k, v]: [string, string[]]) => {
+    const lines = v.map(o => {
+      if (
+        filterdByAction.filter(a => a.input.includes(o) || a.output.includes(o))
+          .length
+      ) {
+        return `${k} -> ${o}\n`;
+      }
+    });
+    fs.appendFileSync(dotFile, lines.join(""));
+  });
+  filterdByAction.map((v: InputOutputMap) => {
+    const lines = v.output.map(o => `${v.input} -> ${o}\n`);
+    fs.appendFileSync(dotFile, lines.join(""));
+  });
+  fs.appendFileSync(dotFile, "}\n");
+  exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`);
 }
-fs.writeFileSync(dotFile, "digraph {\n");
-filterdByAction.map((v: InputOutputMap) => {
-  const lines = v.output.map(o => `${v.input} -> ${o}\n`);
-  fs.appendFileSync(dotFile, lines.join(""));
-});
-fs.appendFileSync(dotFile, "}\n");
-exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`);
+
+const dotFile = join(__dirname, "assets/out.dot");
+generateGraph(dotFile, fromComponents, filterdByAction);
 
 // TODO: use in reducers
