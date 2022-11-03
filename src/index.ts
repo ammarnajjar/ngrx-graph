@@ -168,7 +168,7 @@ function mapComponentToActions(rootDir: string) {
 
 const fromEffects = mapeffectsToActions(rootDir);
 const filterdByAction = [
-  ...chainActionsByInput(fromEffects, wantedAction),
+  // ...chainActionsByInput(fromEffects, wantedAction),
   ...chainActionsByOutput(fromEffects, wantedAction),
 ];
 console.dir(filterdByAction, { depth: null });
