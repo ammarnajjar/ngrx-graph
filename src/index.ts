@@ -5,10 +5,10 @@ import * as glob from "glob";
 import * as ts from "typescript";
 
 import { SyntaxKind, Identifier } from "typescript";
+import { allActions, rootDir, wantedAction } from "./assets/env";
 import { basename, join } from "path";
 import { exec } from "child_process";
-import { allActions, rootDir, wantedAction } from "./assets/env";
-import { resourceLimits } from "worker_threads";
+import { uniq } from "lodash";
 
 interface InputOutputMap {
   input: string[];
@@ -75,7 +75,9 @@ function effectDispatchedActions(
     .forEach(mapNode => {
       actions = [
         ...actions,
-        ...allActions.filter(action => mapNode.getText().match(new RegExp(`[^\w]${action}\\(`))),
+        ...allActions.filter(action =>
+          mapNode.getText().match(new RegExp(`[^\w]${action}\\(`))
+        ),
       ];
       ts.forEachChild(mapNode.arguments[0], (node: any) => {
         if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
@@ -168,7 +170,7 @@ function mapComponentToActions(rootDir: string) {
 
 const fromEffects = mapeffectsToActions(rootDir);
 const filterdByAction = [
-  // ...chainActionsByInput(fromEffects, wantedAction),
+  ...chainActionsByInput(fromEffects, wantedAction),
   ...chainActionsByOutput(fromEffects, wantedAction),
 ];
 console.dir(filterdByAction, { depth: null });
@@ -179,11 +181,11 @@ function chainActionsByInput(
 ): InputOutputMap[] {
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.input.includes(action) && !result.includes(v)) {
+      if (v.input.includes(action)) {
         const chainedPerEffect = v.output
           .map(obj => chainActionsByInput(fromEffects, obj))
           .flat();
-        return [...result, v, ...chainedPerEffect];
+        return uniq([...result, v, ...chainedPerEffect]);
       }
       return result;
     },
@@ -197,11 +199,11 @@ function chainActionsByOutput(
 ): InputOutputMap[] {
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.output.includes(action) && !result.includes(v)) {
+      if (v.output.includes(action)) {
         const chainedPerEffect = v.input
           .map(obj => chainActionsByOutput(fromEffects, obj))
           .flat();
-        return [...result, v, ...chainedPerEffect];
+        return uniq([...result, v, ...chainedPerEffect]);
       }
       return result;
     },
