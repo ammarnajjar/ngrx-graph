@@ -4,7 +4,7 @@ import { SyntaxKind, Identifier } from "typescript";
 import * as ts from "typescript";
 import * as fs from "fs";
 import * as glob from "glob";
-import { rootDir } from "./assets/all-actions";
+import { rootDir } from "./assets/env";
 import { basename, join } from "path";
 
 const allActions = getAllActions(rootDir);

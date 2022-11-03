@@ -1,1 +1,1 @@
-# ngrx-diagram
+# ngrx-graph
