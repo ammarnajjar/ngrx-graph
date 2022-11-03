@@ -7,9 +7,15 @@ import * as ts from "typescript";
 import { SyntaxKind, Identifier } from "typescript";
 import { basename, join } from "path";
 import { exec } from "child_process";
-import { rootDir } from "./assets/env";
+import { allActions, rootDir } from "./assets/env";
+import { resourceLimits } from "worker_threads";
 
-const allActions = getAllActions(rootDir);
+interface InputOutputMap {
+  input: string[];
+  output: string[];
+}
+
+// const allActions = getAllActions(rootDir);
 
 function getParentNodes(node: ts.Node, identifiers: string[]) {
   if (
@@ -112,7 +118,7 @@ function readSourceFile(file: string): ts.SourceFile {
   return program.getSourceFile(file);
 }
 
-function mapeffectsToActions(rootDir: string) {
+function mapeffectsToActions(rootDir: string): { [k: string]: InputOutputMap } {
   const effectActionsMap = glob
     .sync(rootDir + "**/**/*.effects.ts")
     .reduce((result, filename) => {
@@ -160,19 +166,62 @@ function mapComponentToActions(rootDir: string) {
   return componentActionsMap;
 }
 
+const action = "orderLoaded";
 const fromEffects = mapeffectsToActions(rootDir);
-const fromComponents = mapComponentToActions(rootDir);
+const filterdByAction = [
+  // ...chainActionsByInput(fromEffects, action),
+  ...chainActionsByOutput(fromEffects, action),
+];
+console.dir(filterdByAction, { depth: null });
+
+function chainActionsByInput(
+  fromEffects: { [k: string]: InputOutputMap },
+  action: string
+): InputOutputMap[] {
+  return Object.values(fromEffects).reduce(
+    (result: InputOutputMap[], v: InputOutputMap) => {
+      if (v.input.includes(action)) {
+        const chainedPerEffect = v.output
+          .map(obj => chainActionsByInput(fromEffects, obj))
+          .flat();
+        return [...result, v, ...chainedPerEffect];
+      }
+      return result;
+    },
+    []
+  );
+}
+
+function chainActionsByOutput(
+  fromEffects: { [k: string]: InputOutputMap },
+  action: string
+): InputOutputMap[] {
+  return Object.values(fromEffects).reduce(
+    (result: InputOutputMap[], v: InputOutputMap) => {
+      if (v.output.includes(action)) {
+        const chainedPerEffect = v.input
+          .map(obj => chainActionsByOutput(fromEffects, obj))
+          .flat();
+        return [...result, v, ...chainedPerEffect];
+      }
+      return result;
+    },
+    []
+  );
+}
+
+// const fromComponents = mapComponentToActions(rootDir);
 
 const dotFile = join(__dirname, "assets/out.dot");
 if (fs.existsSync(dotFile)) {
   fs.unlinkSync(dotFile);
 }
 fs.writeFileSync(dotFile, "digraph {\n");
-Object.values(fromEffects).map((v: { input: string; output: string[] }) => {
+filterdByAction.map((v: InputOutputMap) => {
   const lines = v.output.map(o => `${v.input} -> ${o}\n`);
   fs.appendFileSync(dotFile, lines.join(""));
 });
 fs.appendFileSync(dotFile, "}\n");
-
 exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`);
+
 // TODO: use in reducers
