@@ -27,23 +27,20 @@ function getParentNodes(node: ts.Node, identifiers: string[]) {
 }
 
 function getAllActions(rootDir: string): string[] {
-  // glob("**/assets/*.actions.ts", function (err, files) {
-  let allActions = [];
-  glob(rootDir + "**/**/*.actions.ts", function (err, files) {
-    allActions = files.reduce((result, filename) => {
+  let allActions = glob
+    .sync(rootDir + "**/**/*.actions.ts")
+    .reduce((result, filename) => {
       console.log("🚀 ~ processing", basename(filename));
       const actionPerFile = getParentNodes(readSourceFile(filename), [
         "createAction",
       ]).map(node => node.parent.name.escapedText.toString());
       return [...result, ...actionPerFile];
     }, []);
-    allActions.forEach(action => {
-      console.log(action);
-    });
-  });
+  // allActions.forEach(action => {
+  //   console.log(action);
+  // });
   return allActions;
 }
-
 
 function effectTriggeringActions(effect: any) {
   return getParentNodes(effect, ["ofType"])
@@ -160,7 +157,7 @@ function mapComponentToActions(rootDir: string) {
   });
 }
 
-// mapeffectsToActions(rootDir);
+mapeffectsToActions(rootDir);
 mapComponentToActions(rootDir);
 
 // TODO: use in reducers
