@@ -110,14 +110,14 @@ function readSourceFile(file: string): ts.SourceFile {
 }
 
 function mapeffectsToActions(rootDir: string) {
-  glob("**/assets/*.effects.ts", function (err, files) {
-    // glob(rootDir + "**/**/*.effects.ts", function (err, files) {
-    let effectActionsMap = files.reduce((result, filename) => {
+  const effectActionsMap = glob
+    .sync(rootDir + "**/**/*.effects.ts")
+    .reduce((result, filename) => {
       console.log("🚀 ~ processing", basename(filename));
       return { ...result, ...getEffectActionsMap(readSourceFile(filename)) };
     }, {});
-    console.dir(effectActionsMap, { depth: null });
-  });
+  console.dir(effectActionsMap, { depth: null });
+  return effectActionsMap;
 }
 
 function getComponentDispatchedActions(sourceFile: ts.SourceFile) {
@@ -141,23 +141,23 @@ function getComponentDispatchedActions(sourceFile: ts.SourceFile) {
 }
 
 function mapComponentToActions(rootDir: string) {
-  glob("**/assets/*.component.ts", function (err, files) {
-    // glob(rootDir + "**/**/*.component.ts", function (err, files) {
-    let componentActions = files.reduce((result, filename) => {
+  let componentActionsMap = glob
+    .sync(rootDir + "**/**/*.component.ts")
+    .reduce((result, filename) => {
       console.log("🚀 ~ processing", basename(filename));
       return {
         ...result,
         ...getComponentDispatchedActions(readSourceFile(filename)),
       };
     }, {});
-    componentActions = Object.fromEntries(
-      Object.entries(componentActions).filter(([k, v]) => v !== 0)
-    );
-    console.dir(componentActions, { depth: null });
-  });
+  componentActionsMap = Object.fromEntries(
+    Object.entries(componentActionsMap).filter(([, v]) => v !== 0)
+  );
+  console.dir(componentActionsMap, { depth: null });
+  return componentActionsMap
 }
 
-mapeffectsToActions(rootDir);
-mapComponentToActions(rootDir);
+const fromEffects = mapeffectsToActions(rootDir);
+const fromComponents = mapComponentToActions(rootDir);
 
 // TODO: use in reducers
