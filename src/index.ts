@@ -2,9 +2,10 @@
 
 import { SyntaxKind, Identifier } from "typescript";
 import * as ts from "typescript";
+import * as fs from "fs";
 import * as glob from "glob";
 import { rootDir } from "./assets/all-actions";
-import { basename } from "path";
+import { basename, join } from "path";
 
 const allActions = getAllActions(rootDir);
 
@@ -154,10 +155,19 @@ function mapComponentToActions(rootDir: string) {
     Object.entries(componentActionsMap).filter(([, v]) => v !== 0)
   );
   console.dir(componentActionsMap, { depth: null });
-  return componentActionsMap
+  return componentActionsMap;
 }
 
 const fromEffects = mapeffectsToActions(rootDir);
 const fromComponents = mapComponentToActions(rootDir);
+
+const dotFile = join(__dirname, "assets/out.dot");
+if (fs.existsSync(dotFile)) {
+  fs.unlinkSync(dotFile);
+}
+Object.values(fromEffects).map((v: { input: string; output: string[] }) => {
+  const lines = v.output.map(o => `${v.input} -> ${o}\n`);
+  fs.appendFileSync(dotFile, lines.join(''));
+});
 
 // TODO: use in reducers
