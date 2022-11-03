@@ -105,3 +105,4 @@ dist
 
 # data files
 assets
+.DS_Store

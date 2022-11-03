@@ -165,9 +165,11 @@ const dotFile = join(__dirname, "assets/out.dot");
 if (fs.existsSync(dotFile)) {
   fs.unlinkSync(dotFile);
 }
+fs.writeFileSync(dotFile, 'digraph {\n')
 Object.values(fromEffects).map((v: { input: string; output: string[] }) => {
   const lines = v.output.map(o => `${v.input} -> ${o}\n`);
   fs.appendFileSync(dotFile, lines.join(''));
 });
+fs.appendFileSync(dotFile, '}\n')
 
 // TODO: use in reducers
