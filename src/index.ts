@@ -172,4 +172,7 @@ Object.values(fromEffects).map((v: { input: string; output: string[] }) => {
 });
 fs.appendFileSync(dotFile, '}\n')
 
+const { exec } = require("child_process");
+
+exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`)
 // TODO: use in reducers
