@@ -1,11 +1,13 @@
 // https://ts-ast-viewer.com
 
-import { SyntaxKind, Identifier } from "typescript";
-import * as ts from "typescript";
 import * as fs from "fs";
 import * as glob from "glob";
-import { rootDir } from "./assets/env";
+import * as ts from "typescript";
+
+import { SyntaxKind, Identifier } from "typescript";
 import { basename, join } from "path";
+import { exec } from "child_process";
+import { rootDir } from "./assets/env";
 
 const allActions = getAllActions(rootDir);
 
@@ -165,14 +167,12 @@ const dotFile = join(__dirname, "assets/out.dot");
 if (fs.existsSync(dotFile)) {
   fs.unlinkSync(dotFile);
 }
-fs.writeFileSync(dotFile, 'digraph {\n')
+fs.writeFileSync(dotFile, "digraph {\n");
 Object.values(fromEffects).map((v: { input: string; output: string[] }) => {
   const lines = v.output.map(o => `${v.input} -> ${o}\n`);
-  fs.appendFileSync(dotFile, lines.join(''));
+  fs.appendFileSync(dotFile, lines.join(""));
 });
-fs.appendFileSync(dotFile, '}\n')
+fs.appendFileSync(dotFile, "}\n");
 
-const { exec } = require("child_process");
-
-exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`)
+exec(`dot -Tsvg ${dotFile} -o src/assets/out.svg`);
 // TODO: use in reducers
