@@ -7,7 +7,7 @@ import * as ts from "typescript";
 import { SyntaxKind, Identifier } from "typescript";
 import { basename, join } from "path";
 import { exec } from "child_process";
-import { allActions, rootDir } from "./assets/env";
+import { allActions, rootDir, wantedAction } from "./assets/env";
 import { resourceLimits } from "worker_threads";
 
 interface InputOutputMap {
@@ -75,7 +75,7 @@ function effectDispatchedActions(
     .forEach(mapNode => {
       actions = [
         ...actions,
-        ...allActions.filter(action => mapNode.getText().includes(action)),
+        ...allActions.filter(action => mapNode.getText().match(new RegExp(`[^\w]${action}\\(`))),
       ];
       ts.forEachChild(mapNode.arguments[0], (node: any) => {
         if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
@@ -86,7 +86,7 @@ function effectDispatchedActions(
               actions = [
                 ...actions,
                 ...allActions.filter(action =>
-                  callable.getText().includes(action)
+                  callable.getText().match(new RegExp(`[^\w]${action}\\(`))
                 ),
               ];
             }
@@ -166,11 +166,10 @@ function mapComponentToActions(rootDir: string) {
   return componentActionsMap;
 }
 
-const action = "orderLoaded";
 const fromEffects = mapeffectsToActions(rootDir);
 const filterdByAction = [
-  // ...chainActionsByInput(fromEffects, action),
-  ...chainActionsByOutput(fromEffects, action),
+  ...chainActionsByInput(fromEffects, wantedAction),
+  ...chainActionsByOutput(fromEffects, wantedAction),
 ];
 console.dir(filterdByAction, { depth: null });
 
@@ -180,7 +179,7 @@ function chainActionsByInput(
 ): InputOutputMap[] {
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.input.includes(action)) {
+      if (v.input.includes(action) && !result.includes(v)) {
         const chainedPerEffect = v.output
           .map(obj => chainActionsByInput(fromEffects, obj))
           .flat();
@@ -198,8 +197,7 @@ function chainActionsByOutput(
 ): InputOutputMap[] {
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.output.includes(action)) {
-        console.log('🚀 ~ v', v)
+      if (v.output.includes(action) && !result.includes(v)) {
         const chainedPerEffect = v.input
           .map(obj => chainActionsByOutput(fromEffects, obj))
           .flat();
