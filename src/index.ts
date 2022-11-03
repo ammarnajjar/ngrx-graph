@@ -199,6 +199,7 @@ function chainActionsByOutput(
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
       if (v.output.includes(action)) {
+        console.log('🚀 ~ v', v)
         const chainedPerEffect = v.input
           .map(obj => chainActionsByOutput(fromEffects, obj))
           .flat();
