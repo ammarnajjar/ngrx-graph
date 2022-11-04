@@ -24,8 +24,6 @@ export class Generator {
   private allActions: string[] = [];
 
   constructor(srcDir: string, outputFile: string) {
-    console.log("🚀 ~ outputFile", outputFile);
-    console.log("🚀 ~ srcDir", srcDir);
     this.srcDir = srcDir;
     this.outputFile = outputFile;
     this.allActions = this.getAllActions();

@@ -23,8 +23,6 @@ export default class Graph extends Command {
     const { args, flags } = await this.parse(Graph);
     const { srcDir, outputFile } = flags;
     const { action } = args;
-    console.log("🚀 ~ flags", flags);
-    console.log("🚀 ~ args", args);
 
     CliUx.ux.action.start("Collecting all actions");
     const gen = new Generator(
@@ -32,21 +30,26 @@ export default class Graph extends Command {
       outputFile ?? "/tmp/out"
     );
     CliUx.ux.action.stop();
+
     CliUx.ux.action.start("Collecting actions from components");
     const fromComponents = gen.mapComponentToActions();
     CliUx.ux.action.stop();
+
     CliUx.ux.action.start("Collecting actions from effects");
     const fromEffects = gen.mapeffectsToActions();
     CliUx.ux.action.stop();
+
     CliUx.ux.action.start("Collecting actions from reducers");
-    const fromReducers = gen.mapReducersToActions()
+    const fromReducers = gen.mapReducersToActions();
     CliUx.ux.action.stop();
+
     CliUx.ux.action.start(`Building a chain of actions for ${action} `);
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
       ...chainActionsByOutput(fromEffects, action),
     ];
     CliUx.ux.action.stop();
+
     CliUx.ux.action.start("Generating the graph");
     gen.generateGraph(fromComponents, filterdByAction, fromReducers);
     CliUx.ux.action.stop();
