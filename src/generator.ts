@@ -14,7 +14,7 @@ interface InputOutputMap {
   output: string[];
 }
 
-interface ComponentActionsMap {
+interface ActionsMap {
   [k: string]: string[];
 }
 
@@ -24,11 +24,11 @@ export class Generator {
   private allActions: string[] = [];
 
   constructor(srcDir: string, outputFile: string) {
-    console.log('🚀 ~ outputFile', outputFile)
-    console.log('🚀 ~ srcDir', srcDir)
+    console.log("🚀 ~ outputFile", outputFile);
+    console.log("🚀 ~ srcDir", srcDir);
     this.srcDir = srcDir;
     this.outputFile = outputFile;
-    this.allActions = this.getAllActions()
+    this.allActions = this.getAllActions();
   }
 
   getParentNodes(node: ts.Node, identifiers: string[]) {
@@ -41,7 +41,7 @@ export class Generator {
     }
 
     let nodes: ts.Node[] = [];
-    node.forEachChild((child) => {
+    node.forEachChild(child => {
       const idenNode = this.getParentNodes(child, identifiers);
       if (idenNode.length > 0) {
         nodes = [...nodes, ...idenNode];
@@ -51,14 +51,14 @@ export class Generator {
   }
 
   getAllActions(): string[] {
-    console.log('🚀 ~ getAllActions')
+    console.log("🚀 ~ getAllActions");
     const allActions = glob
       .sync(join(this.srcDir, "**/*.actions.ts"))
       .reduce((result: string[], filename: string) => {
-        console.log('processing', filename)
+        console.log("processing", filename);
         const actionPerFile = this.getParentNodes(readSourceFile(filename), [
           "createAction",
-        ]).map((node) =>
+        ]).map(node =>
           (
             (node.parent as VariableDeclaration).name as Identifier
           ).escapedText.toString()
@@ -71,9 +71,41 @@ export class Generator {
     return allActions;
   }
 
+  reducerActions(reducer: ts.Node) {
+    return this.getParentNodes(reducer, ["on"]).flatMap(node =>
+      (
+        (node as ts.CallExpression).arguments[0] as Identifier
+      ).escapedText.toString()
+    );
+  }
+
+  reducerActionsMap(sourceFile: ts.Node): ActionsMap {
+    // one reducer per file
+    const reducer = this.getParentNodes(sourceFile, ["createReducer"])[0];
+    const reducerName = (
+      (reducer.parent as VariableDeclaration).name as Identifier
+    ).escapedText.toString();
+    return { [reducerName]: this.reducerActions(reducer) };
+  }
+
+  mapReducersToActions(): ActionsMap {
+    console.log("🚀 ~ mapReducersToActions");
+    let reducerActionsMap = glob
+      .sync(join(this.srcDir, "**/*.reducer.ts"))
+      .reduce((result, filename) => {
+        console.log("processing", filename);
+        return {
+          ...result,
+          ...this.reducerActionsMap(readSourceFile(filename)),
+        };
+      }, {});
+    console.dir(reducerActionsMap, { depth: null });
+    return reducerActionsMap;
+  }
+
   effectTriggeringActions(effect: any) {
-    return this.getParentNodes(effect, ["ofType"]).flatMap((node) =>
-      (node as ts.CallExpression).arguments.map((arg) =>
+    return this.getParentNodes(effect, ["ofType"]).flatMap(node =>
+      (node as ts.CallExpression).arguments.map(arg =>
         (arg as Identifier).escapedText.toString()
       )
     );
@@ -93,7 +125,7 @@ export class Generator {
     ]);
     let actions: string[] = [];
     for (const mapNode of mapNodes.filter(
-      (node) => node.kind === SyntaxKind.CallExpression
+      node => node.kind === SyntaxKind.CallExpression
     )) {
       actions = [
         ...actions,
@@ -126,7 +158,7 @@ export class Generator {
       );
     }
 
-    return [...new Set(actions.filter((action) => !input.includes(action)))];
+    return [...new Set(actions.filter(action => !input.includes(action)))];
   }
 
   getEffectActionsMap(sourceFile: any) {
@@ -142,11 +174,11 @@ export class Generator {
   }
 
   mapeffectsToActions(): { [k: string]: InputOutputMap } {
-    console.log('🚀 ~ mapeffectsToActions')
+    console.log("🚀 ~ mapeffectsToActions");
     const effectActionsMap = glob
       .sync(join(this.srcDir, "**/*.effects.ts"))
       .reduce((result, filename) => {
-        console.log('processing', filename)
+        console.log("processing", filename);
         return {
           ...result,
           ...this.getEffectActionsMap(readSourceFile(filename)),
@@ -158,33 +190,32 @@ export class Generator {
 
   getComponentDispatchedActions(sourceFile: ts.SourceFile) {
     let className = "";
-    ts.forEachChild(sourceFile, (node) => {
+    ts.forEachChild(sourceFile, node => {
       if (node.kind === SyntaxKind.ClassDeclaration) {
         className = (
           (node as ts.ClassDeclaration).name as Identifier
         ).escapedText.toString();
       }
     });
-    const nodes = this.getParentNodes(sourceFile, ["dispatch"]).map((node) =>
+    const nodes = this.getParentNodes(sourceFile, ["dispatch"]).map(node =>
       node.parent.getText()
     );
     const actions = [
       ...new Set(
         this.allActions.filter(
-          (action: string) =>
-            nodes.filter((node) => node.includes(action)).length
+          (action: string) => nodes.filter(node => node.includes(action)).length
         )
       ),
     ];
     return { [className]: actions };
   }
 
-  mapComponentToActions(): ComponentActionsMap {
-    console.log('🚀 ~ mapComponentToActions')
+  mapComponentToActions(): ActionsMap {
+    console.log("🚀 ~ mapComponentToActions");
     let componentActionsMap = glob
       .sync(join(this.srcDir, "**/*.component.ts"))
       .reduce((result, filename) => {
-        console.log('processing', filename)
+        console.log("processing", filename);
         return {
           ...result,
           ...this.getComponentDispatchedActions(readSourceFile(filename)),
@@ -197,30 +228,35 @@ export class Generator {
     return componentActionsMap;
   }
 
-  generateGraph(
-    fromComponents: ComponentActionsMap,
-    filterdByAction: InputOutputMap[]
-  ) {
-  console.log('🚀 ~ generateGraph')
+  generateGraph(fromComponents: ActionsMap, filterdByAction: InputOutputMap[], fromReducers: ActionsMap) {
+    console.log("🚀 ~ generateGraph");
     const dotFile = `${this.outputFile}.dot`;
     if (fs.existsSync(dotFile)) {
       fs.unlinkSync(dotFile);
     }
     fs.writeFileSync(dotFile, "digraph {\n");
     Object.entries(fromComponents).map(([k, v]) => {
-      const lines = v.map((o) => {
+      const lines = v.map(o => {
         if (
-          filterdByAction.some(
-            (a) => a.input.includes(o) || a.output.includes(o)
-          )
+          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
         ) {
           return `${k} -> ${o}\n`;
         }
       });
       fs.appendFileSync(dotFile, lines.join(""));
     });
+    Object.entries(fromReducers).map(([k, v]) => {
+      const lines = v.map(o => {
+        if (
+          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
+        ) {
+          return `${o} -> ${k}\n`;
+        }
+      });
+      fs.appendFileSync(dotFile, lines.join(""));
+    });
     filterdByAction.map((v: InputOutputMap) => {
-      const lines = v.output.map((o) => `${v.input} -> ${o}\n`);
+      const lines = v.output.map(o => `${v.input} -> ${o}\n`);
       fs.appendFileSync(dotFile, lines.join(""));
     });
     fs.appendFileSync(dotFile, "}\n");
@@ -245,7 +281,7 @@ export function chainActionsByInput(
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
       if (v.input.includes(action)) {
-        const chainedPerEffect = v.output.flatMap((obj) =>
+        const chainedPerEffect = v.output.flatMap(obj =>
           chainActionsByInput(fromEffects, obj)
         );
         return uniq([...result, v, ...chainedPerEffect]);
@@ -264,7 +300,7 @@ export function chainActionsByOutput(
   return Object.values(fromEffects).reduce(
     (result: InputOutputMap[], v: InputOutputMap) => {
       if (v.output.includes(action)) {
-        const chainedPerEffect = v.input.flatMap((obj) =>
+        const chainedPerEffect = v.input.flatMap(obj =>
           chainActionsByOutput(fromEffects, obj)
         );
         return uniq([...result, v, ...chainedPerEffect]);

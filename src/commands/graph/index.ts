@@ -38,6 +38,9 @@ export default class Graph extends Command {
     CliUx.ux.action.start("Collecting actions from effects");
     const fromEffects = gen.mapeffectsToActions();
     CliUx.ux.action.stop();
+    CliUx.ux.action.start("Collecting actions from reducers");
+    const fromReducers = gen.mapReducersToActions()
+    CliUx.ux.action.stop();
     CliUx.ux.action.start(`Building a chain of actions for ${action} `);
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
@@ -45,7 +48,7 @@ export default class Graph extends Command {
     ];
     CliUx.ux.action.stop();
     CliUx.ux.action.start("Generating the graph");
-    gen.generateGraph(fromComponents, filterdByAction);
+    gen.generateGraph(fromComponents, filterdByAction, fromReducers);
     CliUx.ux.action.stop();
   }
 }
