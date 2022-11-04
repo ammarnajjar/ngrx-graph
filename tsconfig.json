@@ -1,8 +1,14 @@
 {
   "compilerOptions": {
+    "declaration": true,
+    "importHelpers": true,
+    "module": "commonjs",
+    "outDir": "dist",
     "rootDir": "src",
-    "target": "esnext",
-    "moduleResolution": "Node",
-    "module": "CommonJS"
-  }
+    "strict": true,
+    "target": "es2019"
+  },
+  "include": [
+    "src/**/*"
+  ]
 }
