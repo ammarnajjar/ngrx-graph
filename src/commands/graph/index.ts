@@ -1,4 +1,4 @@
-import { Command, Flags, CliUx} from "@oclif/core";
+import { Command, Flags, CliUx } from "@oclif/core";
 import {
   chainActionsByInput,
   chainActionsByOutput,
@@ -11,9 +11,9 @@ export default class Graph extends Command {
   static examples = ["<%= config.bin %> <%= command.id %>"];
 
   static flags = {
-    srcDir: Flags.string({char: 'd'}),
-    outputFile: Flags.string({char: 'o'}),
-  }
+    srcDir: Flags.string({ char: "d" }),
+    outputFile: Flags.string({ char: "o" }),
+  };
 
   static args = [
     { name: "action", description: "Action of interest", required: true },
@@ -21,28 +21,31 @@ export default class Graph extends Command {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(Graph);
-    let { srcDir, outputFile, action } = args;
-    console.log('🚀 ~ flags', flags)
-    console.log('🚀 ~ args', args)
+    const { srcDir, outputFile } = flags;
+    const { action } = args;
+    console.log("🚀 ~ flags", flags);
+    console.log("🚀 ~ args", args);
 
-    CliUx.ux.action.start('Collecting all actions')
-    const gen = new Generator(srcDir || process.cwd(), outputFile || '/tmp/out');
-    CliUx.ux.action.stop()
-    CliUx.ux.action.start('Collecting actions from components')
+    CliUx.ux.action.start("Collecting all actions");
+    const gen = new Generator(
+      srcDir ?? process.cwd(),
+      outputFile ?? "/tmp/out"
+    );
+    CliUx.ux.action.stop();
+    CliUx.ux.action.start("Collecting actions from components");
     const fromComponents = gen.mapComponentToActions();
-    CliUx.ux.action.stop()
-    CliUx.ux.action.start('Collecting actions from effects')
+    CliUx.ux.action.stop();
+    CliUx.ux.action.start("Collecting actions from effects");
     const fromEffects = gen.mapeffectsToActions();
-    CliUx.ux.action.stop()
-    CliUx.ux.action.start(`Building a chain of actions for ${action} `)
+    CliUx.ux.action.stop();
+    CliUx.ux.action.start(`Building a chain of actions for ${action} `);
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
       ...chainActionsByOutput(fromEffects, action),
     ];
-    CliUx.ux.action.stop()
-    CliUx.ux.action.start('Generating the graph')
+    CliUx.ux.action.stop();
+    CliUx.ux.action.start("Generating the graph");
     gen.generateGraph(fromComponents, filterdByAction);
-    CliUx.ux.action.stop()
-
+    CliUx.ux.action.stop();
   }
 }

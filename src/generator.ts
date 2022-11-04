@@ -7,6 +7,7 @@ import * as ts from "typescript";
 import { SyntaxKind, Identifier, VariableDeclaration } from "typescript";
 import { exec } from "node:child_process";
 import { uniq } from "lodash";
+import { join } from "node:path";
 
 interface InputOutputMap {
   input: string[];
@@ -20,11 +21,14 @@ interface ComponentActionsMap {
 export class Generator {
   private srcDir: string = "";
   private outputFile: string = "";
-  private allActions: string[] = this.getAllActions();
+  private allActions: string[] = [];
 
   constructor(srcDir: string, outputFile: string) {
+    console.log('🚀 ~ outputFile', outputFile)
+    console.log('🚀 ~ srcDir', srcDir)
     this.srcDir = srcDir;
     this.outputFile = outputFile;
+    this.allActions = this.getAllActions()
   }
 
   getParentNodes(node: ts.Node, identifiers: string[]) {
@@ -49,8 +53,9 @@ export class Generator {
   getAllActions(): string[] {
     console.log('🚀 ~ getAllActions')
     const allActions = glob
-      .sync(this.srcDir + "**/**/*.actions.ts")
+      .sync(join(this.srcDir, "**/*.actions.ts"))
       .reduce((result: string[], filename: string) => {
+        console.log('processing', filename)
         const actionPerFile = this.getParentNodes(readSourceFile(filename), [
           "createAction",
         ]).map((node) =>
@@ -60,9 +65,9 @@ export class Generator {
         );
         return [...result, ...actionPerFile];
       }, []);
-    // allActions.forEach(action => {
-    //   console.log(action);
-    // });
+    allActions.forEach(action => {
+      console.log(action);
+    });
     return allActions;
   }
 
@@ -139,14 +144,15 @@ export class Generator {
   mapeffectsToActions(): { [k: string]: InputOutputMap } {
     console.log('🚀 ~ mapeffectsToActions')
     const effectActionsMap = glob
-      .sync(this.srcDir + "**/**/*.effects.ts")
+      .sync(join(this.srcDir, "**/*.effects.ts"))
       .reduce((result, filename) => {
+        console.log('processing', filename)
         return {
           ...result,
           ...this.getEffectActionsMap(readSourceFile(filename)),
         };
       }, {});
-    // console.dir(effectActionsMap, { depth: null });
+    console.dir(effectActionsMap, { depth: null });
     return effectActionsMap;
   }
 
@@ -176,8 +182,9 @@ export class Generator {
   mapComponentToActions(): ComponentActionsMap {
     console.log('🚀 ~ mapComponentToActions')
     let componentActionsMap = glob
-      .sync(this.srcDir + "**/**/*.component.ts")
+      .sync(join(this.srcDir, "**/*.component.ts"))
       .reduce((result, filename) => {
+        console.log('processing', filename)
         return {
           ...result,
           ...this.getComponentDispatchedActions(readSourceFile(filename)),
@@ -186,7 +193,7 @@ export class Generator {
     componentActionsMap = Object.fromEntries(
       Object.entries(componentActionsMap).filter(([, v]) => v !== 0)
     );
-    // console.dir(componentActionsMap, { depth: null });
+    console.dir(componentActionsMap, { depth: null });
     return componentActionsMap;
   }
 
