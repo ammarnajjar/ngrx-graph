@@ -2,12 +2,22 @@
 
 import * as fs from "node:fs";
 import * as glob from "glob";
-import * as ts from "typescript";
 
-import { SyntaxKind, Identifier, VariableDeclaration } from "typescript";
+import {
+  CallExpression,
+  CompilerOptions,
+  Identifier,
+  Node,
+  SourceFile,
+  SyntaxKind,
+  VariableDeclaration,
+  createCompilerHost,
+  createProgram,
+  forEachChild,
+} from "typescript";
 import { exec } from "node:child_process";
-import { uniq } from "lodash";
 import { join } from "node:path";
+import { uniq } from "lodash";
 
 interface InputOutputMap {
   input: string[];
@@ -29,7 +39,7 @@ export class Generator {
     this.allActions = this.getAllActions();
   }
 
-  getParentNodes(node: ts.Node, identifiers: string[]) {
+  getParentNodes(node: Node, identifiers: string[]) {
     if (
       node.kind === SyntaxKind.Identifier &&
       identifiers.includes((node as Identifier).escapedText.toString()) &&
@@ -38,7 +48,7 @@ export class Generator {
       return [node.parent];
     }
 
-    let nodes: ts.Node[] = [];
+    let nodes: Node[] = [];
     node.forEachChild(child => {
       const idenNode = this.getParentNodes(child, identifiers);
       if (idenNode.length > 0) {
@@ -69,15 +79,15 @@ export class Generator {
     return allActions;
   }
 
-  reducerActions(reducer: ts.Node) {
+  reducerActions(reducer: Node) {
     return this.getParentNodes(reducer, ["on"]).flatMap(node =>
       (
-        (node as ts.CallExpression).arguments[0] as Identifier
+        (node as CallExpression).arguments[0] as Identifier
       ).escapedText.toString()
     );
   }
 
-  reducerActionsMap(sourceFile: ts.Node): ActionsMap {
+  reducerActionsMap(sourceFile: Node): ActionsMap {
     // one reducer per file
     const reducer = this.getParentNodes(sourceFile, ["createReducer"])[0];
     const reducerName = (
@@ -103,7 +113,7 @@ export class Generator {
 
   effectTriggeringActions(effect: any) {
     return this.getParentNodes(effect, ["ofType"]).flatMap(node =>
-      (node as ts.CallExpression).arguments.map(arg =>
+      (node as CallExpression).arguments.map(arg =>
         (arg as Identifier).escapedText.toString()
       )
     );
@@ -111,7 +121,7 @@ export class Generator {
 
   effectDispatchedActions(
     effect: any,
-    sourceFile: ts.SourceFile,
+    sourceFile: SourceFile,
     input: string[]
   ) {
     const mapNodes = this.getParentNodes(effect, [
@@ -131,29 +141,22 @@ export class Generator {
           mapNode.getText().match(new RegExp(`[^\w]${action}\\(`))
         ),
       ];
-      ts.forEachChild(
-        (mapNode as ts.CallExpression).arguments[0],
-        (node: any) => {
-          if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
-            const privateMethodName =
-              node.expression.name.escapedText.toString();
-            const callables = this.getParentNodes(
-              sourceFile,
-              privateMethodName
-            );
-            for (const callable of callables) {
-              if (callable.kind === SyntaxKind.PropertyDeclaration) {
-                actions = [
-                  ...actions,
-                  ...this.allActions.filter((action: string) =>
-                    callable.getText().match(new RegExp(`[^\w]${action}\\(`))
-                  ),
-                ];
-              }
+      forEachChild((mapNode as CallExpression).arguments[0], (node: any) => {
+        if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
+          const privateMethodName = node.expression.name.escapedText.toString();
+          const callables = this.getParentNodes(sourceFile, privateMethodName);
+          for (const callable of callables) {
+            if (callable.kind === SyntaxKind.PropertyDeclaration) {
+              actions = [
+                ...actions,
+                ...this.allActions.filter((action: string) =>
+                  callable.getText().match(new RegExp(`[^\w]${action}\\(`))
+                ),
+              ];
             }
           }
         }
-      );
+      });
     }
 
     return [...new Set(actions.filter(action => !input.includes(action)))];
@@ -186,12 +189,12 @@ export class Generator {
     return effectActionsMap;
   }
 
-  getComponentDispatchedActions(sourceFile: ts.SourceFile) {
+  getComponentDispatchedActions(sourceFile: SourceFile) {
     let className = "";
-    ts.forEachChild(sourceFile, node => {
+    forEachChild(sourceFile, node => {
       if (node.kind === SyntaxKind.ClassDeclaration) {
         className = (
-          (node as ts.ClassDeclaration).name as Identifier
+          (node as ClassDeclaration).name as Identifier
         ).escapedText.toString();
       }
     });
@@ -226,7 +229,11 @@ export class Generator {
     return componentActionsMap;
   }
 
-  generateGraph(fromComponents: ActionsMap, filterdByAction: InputOutputMap[], fromReducers: ActionsMap) {
+  generateGraph(
+    fromComponents: ActionsMap,
+    filterdByAction: InputOutputMap[],
+    fromReducers: ActionsMap
+  ) {
     console.log("🚀 ~ generateGraph");
     const dotFile = `${this.outputFile}.dot`;
     if (fs.existsSync(dotFile)) {
@@ -262,14 +269,11 @@ export class Generator {
   }
 }
 
-function readSourceFile(file: string): ts.SourceFile {
-  const options: ts.CompilerOptions = { allowJs: true };
-  const compilerHost = ts.createCompilerHost(
-    options,
-    /* setParentNodes */ true
-  );
-  const program = ts.createProgram([file], options, compilerHost);
-  return program.getSourceFile(file) as ts.SourceFile;
+function readSourceFile(file: string): SourceFile {
+  const options: CompilerOptions = { allowJs: true };
+  const compilerHost = createCompilerHost(options, /* setParentNodes */ true);
+  const program = createProgram([file], options, compilerHost);
+  return program.getSourceFile(file) as SourceFile;
 }
 
 export function chainActionsByInput(
@@ -309,5 +313,3 @@ export function chainActionsByOutput(
     []
   );
 }
-
-// TODO: use in reducers
