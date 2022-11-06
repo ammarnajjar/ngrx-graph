@@ -18,7 +18,6 @@ import {
 } from "typescript";
 import { join } from "node:path";
 import { isEmpty, uniq } from "lodash";
-import { json } from "stream/consumers";
 
 interface InputOutputMap {
   input: string[];
