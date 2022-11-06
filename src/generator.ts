@@ -35,10 +35,10 @@ export class Generator {
   private structureFile: string = "";
   private structureSaved = false;
   private force = false;
-  private fromEffects: { [k: string]: InputOutputMap } = {};
-  private fromComponents: ActionsMap = {};
-  private fromReucers: ActionsMap = {};
-  allActions: string[] = [];
+  private fromEffects: { [k: string]: InputOutputMap } | undefined;
+  private fromComponents: ActionsMap | undefined;
+  private fromReucers: ActionsMap | undefined;
+  allActions: string[];
 
   constructor(
     srcDir: string,
@@ -51,15 +51,10 @@ export class Generator {
     this.force = force;
     this.structureFile = join(this.outputDir, structureFile);
     const content = this.readStructure();
-    if (content !== undefined) {
-      this.allActions = content.allActions;
-      this.fromComponents = content.fromComponents;
-      this.fromEffects = content.fromEffects;
-      this.fromReucers = content.fromReducers;
-    }
-    this.allActions = isEmpty(this.allActions)
-      ? this.getAllActions()
-      : this.allActions;
+    this.allActions = content?.allActions ?? this.getAllActions();
+    this.fromComponents = content?.fromComponents;
+    this.fromEffects = content?.fromEffects;
+    this.fromReucers = content?.fromReducers;
   }
 
   getParentNodes(node: Node, identifiers: string[]) {
@@ -121,7 +116,7 @@ export class Generator {
 
   mapReducersToActions(): ActionsMap {
     console.log("🚀 ~ mapReducersToActions");
-    if (!this.force && this.structureSaved) {
+    if (!this.force && this.fromReucers !== undefined) {
       console.log("Reading for a previously saved structure");
       return this.fromReucers;
     }
@@ -203,7 +198,7 @@ export class Generator {
 
   mapeffectsToActions(): { [k: string]: InputOutputMap } {
     console.log("🚀 ~ mapeffectsToActions");
-    if (!this.force && this.structureSaved) {
+    if (!this.force && this.fromEffects !== undefined) {
       console.log("Reading for a previously saved structure");
       return this.fromEffects;
     }
@@ -244,7 +239,7 @@ export class Generator {
 
   mapComponentToActions(): ActionsMap {
     console.log("🚀 ~ mapComponentToActions");
-    if (!this.force && this.structureSaved) {
+    if (!this.force && this.fromComponents !== undefined) {
       console.log("Reading for a previously saved structure");
       return this.fromComponents;
     }
@@ -258,7 +253,7 @@ export class Generator {
         };
       }, {});
     componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => v !== 0)
+      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v))
     );
     console.dir(componentActionsMap, { depth: null });
     return componentActionsMap;
@@ -285,8 +280,13 @@ export class Generator {
     fromEffects: { [key: string]: InputOutputMap },
     fromReducers: ActionsMap
   ) {
-    if (!this.force && this.structureSaved) {
-      console.log("Structure already saved");
+    if (
+      !(
+        this.force ||
+        [this.fromComponents, this.fromEffects, this.fromReucers].includes(undefined)
+      )
+    ) {
+      console.log("Structure is already saved");
       return;
     }
     if (fs.existsSync(this.structureFile)) {
@@ -311,7 +311,7 @@ export class Generator {
     const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
       if (!this.force) {
-        console.log("Structure already saved");
+        console.log(`Graph for ${action} is already saved`);
         return;
       }
       fs.unlinkSync(dotFile);
