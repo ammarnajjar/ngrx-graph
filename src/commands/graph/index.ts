@@ -42,6 +42,10 @@ export default class Graph extends Command {
     const fromReducers = gen.mapReducersToActions();
     CliUx.ux.action.stop();
 
+    CliUx.ux.action.start("Saving for later use");
+    gen.saveStructure(fromComponents, fromEffects, fromReducers)
+    CliUx.ux.action.stop();
+
     if (action) {
       CliUx.ux.action.start(` ⚡️ ${action} `);
       gen.generateActionGraph(

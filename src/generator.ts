@@ -18,6 +18,7 @@ import {
 } from "typescript";
 import { join } from "node:path";
 import { uniq } from "lodash";
+import { json } from "stream/consumers";
 
 interface InputOutputMap {
   input: string[];
@@ -31,12 +32,14 @@ interface ActionsMap {
 export class Generator {
   private srcDir: string = "";
   private outputDir: string = "";
+  private structureFile: string = "";
   allActions: string[] = [];
 
   constructor(srcDir: string, outputDir: string) {
     this.srcDir = srcDir;
     this.outputDir = outputDir;
     this.allActions = this.getAllActions();
+    this.structureFile = join(this.outputDir, "ngrx-structure.json");
   }
 
   getParentNodes(node: Node, identifiers: string[]) {
@@ -227,6 +230,22 @@ export class Generator {
     );
     console.dir(componentActionsMap, { depth: null });
     return componentActionsMap;
+  }
+
+  saveStructure(
+    fromComponents: ActionsMap,
+    fromEffects: { [key: string]: InputOutputMap },
+    fromReducers: ActionsMap
+  ) {
+    if (fs.existsSync(this.structureFile)) {
+      fs.unlinkSync(this.structureFile);
+    }
+    const content = JSON.stringify({
+      ...{ fromComponents },
+      ...{ fromEffects },
+      ...{ fromReducers },
+    });
+    fs.writeFileSync(this.structureFile, content);
   }
 
   generateActionGraph(
