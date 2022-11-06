@@ -1,7 +1,7 @@
 // https://ts-ast-viewer.com
 
-import * as fs from "node:fs";
-import * as glob from "glob";
+import * as fs from 'node:fs';
+import * as glob from 'glob';
 
 import {
   CallExpression,
@@ -15,26 +15,30 @@ import {
   createProgram,
   forEachChild,
   ClassDeclaration,
-} from "typescript";
-import { join } from "node:path";
-import { isEmpty, uniq } from "lodash";
+  PropertyAccessExpression,
+} from 'typescript';
+import { join } from 'node:path';
+import { isEmpty, uniq } from 'lodash';
 
 interface InputOutputMap {
   input: string[];
   output: string[];
 }
 
+interface EffectsStructure {
+  [k: string]: InputOutputMap;
+}
 interface ActionsMap {
   [k: string]: string[];
 }
 
 export class Generator {
-  private srcDir: string = "";
-  private outputDir: string = "";
-  private structureFile: string = "";
+  private srcDir = '';
+  private outputDir = '';
+  private structureFile = '';
   private structureSaved = false;
   private force = false;
-  private fromEffects: { [k: string]: InputOutputMap } | undefined;
+  private fromEffects: EffectsStructure | undefined;
   private fromComponents: ActionsMap | undefined;
   private fromReucers: ActionsMap | undefined;
   allActions: string[];
@@ -43,7 +47,7 @@ export class Generator {
     srcDir: string,
     outputDir: string,
     structureFile: string,
-    force: boolean
+    force: boolean,
   ) {
     this.srcDir = srcDir;
     this.outputDir = outputDir;
@@ -56,7 +60,7 @@ export class Generator {
     this.fromReucers = content?.fromReducers;
   }
 
-  getParentNodes(node: Node, identifiers: string[]) {
+  getParentNodes(node: Node, identifiers: string[]): Node[] {
     if (
       node.kind === SyntaxKind.Identifier &&
       identifiers.includes((node as Identifier).escapedText.toString()) &&
@@ -76,37 +80,38 @@ export class Generator {
   }
 
   getAllActions(): string[] {
-    console.log("🚀 ~ getAllActions");
+    console.log('🚀 ~ getAllActions');
     const allActions = glob
-      .sync(join(this.srcDir, "**/*.actions.ts"))
-      .reduce((result: string[], filename: string) => {
-        console.log("processing", filename);
-        const actionPerFile = this.getParentNodes(readSourceFile(filename), [
-          "createAction",
-        ]).map(node =>
-          (
+    .sync(join(this.srcDir, '**/*.actions.ts'))
+    .reduce((result: string[], filename: string) => {
+      console.log('processing', filename);
+      const actionPerFile = this.getParentNodes(readSourceFile(filename), [
+        'createAction',
+      ]).map(node =>
+        (
             (node.parent as VariableDeclaration).name as Identifier
-          ).escapedText.toString()
-        );
-        return [...result, ...actionPerFile];
-      }, []);
-    allActions.forEach(action => {
+        ).escapedText.toString(),
+      );
+      return [...result, ...actionPerFile];
+    }, []);
+    for (const action of allActions) {
       console.log(action);
-    });
+    }
+
     return allActions;
   }
 
-  reducerActions(reducer: Node) {
-    return this.getParentNodes(reducer, ["on"]).flatMap(node =>
+  reducerActions(reducer: Node): string[] {
+    return this.getParentNodes(reducer, ['on']).flatMap(node =>
       (
         (node as CallExpression).arguments[0] as Identifier
-      ).escapedText.toString()
+      ).escapedText.toString(),
     );
   }
 
   reducerActionsMap(sourceFile: Node): ActionsMap {
     // one reducer per file
-    const reducer = this.getParentNodes(sourceFile, ["createReducer"])[0];
+    const reducer = this.getParentNodes(sourceFile, ['createReducer'])[0];
     const reducerName = (
       (reducer.parent as VariableDeclaration).name as Identifier
     ).escapedText.toString();
@@ -114,64 +119,74 @@ export class Generator {
   }
 
   mapReducersToActions(): ActionsMap {
-    console.log("🚀 ~ mapReducersToActions");
+    console.log('🚀 ~ mapReducersToActions');
     if (!this.force && this.fromReucers !== undefined) {
-      console.log("Reading for a previously saved structure");
+      console.log('Reading for a previously saved structure');
       return this.fromReucers;
     }
-    let reducerActionsMap = glob
-      .sync(join(this.srcDir, "**/*.reducer.ts"))
-      .reduce((result, filename) => {
-        console.log("processing", filename);
-        return {
-          ...result,
-          ...this.reducerActionsMap(readSourceFile(filename)),
-        };
-      }, {});
+
+    const reducerActionsMap = glob
+    .sync(join(this.srcDir, '**/*.reducer.ts'))
+    .reduce((result, filename) => {
+      console.log('processing', filename);
+      return {
+        ...result,
+        ...this.reducerActionsMap(readSourceFile(filename)),
+      };
+    }, {});
     console.dir(reducerActionsMap, { depth: null });
     return reducerActionsMap;
   }
 
-  effectTriggeringActions(effect: any) {
-    return this.getParentNodes(effect, ["ofType"]).flatMap(node =>
+  effectTriggeringActions(effect: Node): string[] {
+    return this.getParentNodes(effect, ['ofType']).flatMap(node =>
       (node as CallExpression).arguments.map(arg =>
-        (arg as Identifier).escapedText.toString()
-      )
+        (arg as Identifier).escapedText.toString(),
+      ),
     );
   }
 
   effectDispatchedActions(
-    effect: any,
+    effect: Node,
     sourceFile: SourceFile,
-    input: string[]
-  ) {
+    input: string[],
+  ): string[] {
     const mapNodes = this.getParentNodes(effect, [
-      "map",
-      "switchMap",
-      "concatMap",
-      "exhoustMap",
-      "mergeMap",
+      'map',
+      'switchMap',
+      'concatMap',
+      'exhoustMap',
+      'mergeMap',
     ]);
     let actions: string[] = [];
     for (const mapNode of mapNodes.filter(
-      node => node.kind === SyntaxKind.CallExpression
+      node => node.kind === SyntaxKind.CallExpression,
     )) {
       actions = [
         ...actions,
         ...this.allActions.filter((action: string) =>
-          mapNode.getText().match(new RegExp(`[^\w]${action}\\(`))
+          // eslint-disable-next-line no-useless-escape
+          mapNode.getText().match(new RegExp(`[^\w]${action}\\(`)),
         ),
       ];
-      forEachChild((mapNode as CallExpression).arguments[0], (node: any) => {
-        if (node.kind === SyntaxKind.CallExpression && node.expression.name) {
-          const privateMethodName = node.expression.name.escapedText.toString();
-          const callables = this.getParentNodes(sourceFile, privateMethodName);
+      forEachChild((mapNode as CallExpression).arguments[0], (node: Node) => {
+        if (
+          node.kind === SyntaxKind.CallExpression &&
+          ((node as CallExpression).expression as PropertyAccessExpression).name
+        ) {
+          const privateMethodName = (
+            (node as CallExpression).expression as PropertyAccessExpression
+          ).name.escapedText.toString();
+          const callables = this.getParentNodes(sourceFile, [
+            privateMethodName,
+          ]);
           for (const callable of callables) {
             if (callable.kind === SyntaxKind.PropertyDeclaration) {
               actions = [
                 ...actions,
                 ...this.allActions.filter((action: string) =>
-                  callable.getText().match(new RegExp(`[^\w]${action}\\(`))
+                  // eslint-disable-next-line no-useless-escape
+                  callable.getText().match(new RegExp(`[^\w]${action}\\(`)),
                 ),
               ];
             }
@@ -183,8 +198,8 @@ export class Generator {
     return [...new Set(actions.filter(action => !input.includes(action)))];
   }
 
-  getEffectActionsMap(sourceFile: any) {
-    const effectBodies = this.getParentNodes(sourceFile, ["createEffect"]);
+  getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {
+    const effectBodies = this.getParentNodes(sourceFile, ['createEffect']);
     return effectBodies.reduce((sum, { parent: effect }) => {
       const key = (
         (effect as VariableDeclaration).name as Identifier
@@ -195,27 +210,28 @@ export class Generator {
     }, {});
   }
 
-  mapeffectsToActions(): { [k: string]: InputOutputMap } {
-    console.log("🚀 ~ mapeffectsToActions");
+  mapeffectsToActions(): EffectsStructure {
+    console.log('🚀 ~ mapeffectsToActions');
     if (!this.force && this.fromEffects !== undefined) {
-      console.log("Reading for a previously saved structure");
+      console.log('Reading for a previously saved structure');
       return this.fromEffects;
     }
+
     const effectActionsMap = glob
-      .sync(join(this.srcDir, "**/*.effects.ts"))
-      .reduce((result, filename) => {
-        console.log("processing", filename);
-        return {
-          ...result,
-          ...this.getEffectActionsMap(readSourceFile(filename)),
-        };
-      }, {});
+    .sync(join(this.srcDir, '**/*.effects.ts'))
+    .reduce((result, filename) => {
+      console.log('processing', filename);
+      return {
+        ...result,
+        ...this.getEffectActionsMap(readSourceFile(filename)),
+      };
+    }, {});
     console.dir(effectActionsMap, { depth: null });
     return effectActionsMap;
   }
 
-  getComponentDispatchedActions(sourceFile: SourceFile) {
-    let className = "";
+  getComponentDispatchedActions(sourceFile: SourceFile): ActionsMap {
+    let className = '';
     forEachChild(sourceFile, node => {
       if (node.kind === SyntaxKind.ClassDeclaration) {
         className = (
@@ -223,36 +239,38 @@ export class Generator {
         ).escapedText.toString();
       }
     });
-    const nodes = this.getParentNodes(sourceFile, ["dispatch"]).map(node =>
-      node.parent.getText()
+    const nodes = this.getParentNodes(sourceFile, ['dispatch']).map(node =>
+      node.parent.getText(),
     );
     const actions = [
       ...new Set(
         this.allActions.filter(
-          (action: string) => nodes.filter(node => node.includes(action)).length
-        )
+          (action: string) =>
+            nodes.filter(node => node.includes(action)).length,
+        ),
       ),
     ];
     return { [className]: actions };
   }
 
   mapComponentToActions(): ActionsMap {
-    console.log("🚀 ~ mapComponentToActions");
+    console.log('🚀 ~ mapComponentToActions');
     if (!this.force && this.fromComponents !== undefined) {
-      console.log("Reading for a previously saved structure");
+      console.log('Reading for a previously saved structure');
       return this.fromComponents;
     }
+
     let componentActionsMap = glob
-      .sync(join(this.srcDir, "**/*.component.ts"))
-      .reduce((result, filename) => {
-        console.log("processing", filename);
-        return {
-          ...result,
-          ...this.getComponentDispatchedActions(readSourceFile(filename)),
-        };
-      }, {});
+    .sync(join(this.srcDir, '**/*.component.ts'))
+    .reduce((result, filename) => {
+      console.log('processing', filename);
+      return {
+        ...result,
+        ...this.getComponentDispatchedActions(readSourceFile(filename)),
+      };
+    }, {});
     componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v))
+      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
     );
     console.dir(componentActionsMap, { depth: null });
     return componentActionsMap;
@@ -262,40 +280,43 @@ export class Generator {
     | {
         allActions: string[];
         fromComponents: ActionsMap;
-        fromEffects: { [k: string]: InputOutputMap };
+        fromEffects: EffectsStructure;
         fromReducers: ActionsMap;
       }
     | undefined {
     this.structureSaved = fs.existsSync(this.structureFile);
     if (!this.structureSaved) {
-      console.log("Running for the first time");
+      console.log('Running for the first time');
       return;
     }
-    return JSON.parse(fs.readFileSync(this.structureFile, "utf-8"));
+
+    return JSON.parse(fs.readFileSync(this.structureFile, 'utf-8'));
   }
 
   saveStructure(
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap
-  ) {
+    fromReducers: ActionsMap,
+  ): void {
     if (
       !(
         this.force ||
-        [this.fromComponents, this.fromEffects, this.fromReucers].includes(undefined)
+        [this.fromComponents, this.fromEffects, this.fromReucers].length < 2
       )
     ) {
-      console.log("Structure is already saved");
+      console.log('Structure is already saved');
       return;
     }
+
     if (fs.existsSync(this.structureFile)) {
       fs.unlinkSync(this.structureFile);
     }
+
     const content = JSON.stringify({
-      ...{ allActions: this.allActions },
-      ...{ fromComponents },
-      ...{ fromEffects },
-      ...{ fromReducers },
+      allActions: this.allActions,
+      fromComponents,
+      fromEffects,
+      fromReducers,
     });
     fs.writeFileSync(this.structureFile, content);
   }
@@ -304,8 +325,8 @@ export class Generator {
     action: string,
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap
-  ) {
+    fromReducers: ActionsMap,
+  ): void {
     console.log(`🚀 ~ generateActionGraph for ${action}`);
     const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
@@ -313,66 +334,79 @@ export class Generator {
         console.log(`Graph for ${action} is already saved`);
         return;
       }
+
       fs.unlinkSync(dotFile);
     }
+
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
       ...chainActionsByOutput(fromEffects, action),
     ];
-    let content = "digraph {\n";
-    Object.entries(fromComponents).map(([k, v]) => {
+    let content = 'digraph {\n';
+    for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(o => {
         if (
           filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
         ) {
           return `${k} -> ${o}\n`;
         }
+
+        return '';
       });
-      content += lines.join("");
-    });
-    Object.entries(fromReducers).map(([k, v]) => {
+      content += lines.join('');
+    }
+
+    for (const [k, v] of Object.entries(fromReducers)) {
       const lines = v.map(o => {
         if (
           filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
         ) {
           return `${o} -> ${k}\n`;
         }
+
+        return '';
       });
-      content += lines.join("");
-    });
-    filterdByAction.map((v: InputOutputMap) => {
+      content += lines.join('');
+    }
+
+    for (const v of filterdByAction) {
       const lines = v.output.map(o => `${v.input} -> ${o}\n`);
-      content += lines.join("");
-    });
-    content += "}\n";
-    console.log("🚀 ~ content", content);
+      content += lines.join('');
+    }
+
+    content += '}\n';
+    console.log('🚀 ~ content', content);
     fs.writeFileSync(dotFile, content);
   }
 
   generateAllGraph(
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap
-  ) {
-    console.log("🚀 ~ generateAllGraph");
-    const dotFile = join(this.outputDir, "all.dot");
+    fromReducers: ActionsMap,
+  ): void {
+    console.log('🚀 ~ generateAllGraph');
+    const dotFile = join(this.outputDir, 'all.dot');
     if (fs.existsSync(dotFile)) {
       fs.unlinkSync(dotFile);
     }
-    let content = "digraph {\n";
-    Object.entries(fromComponents).map(([k, v]) => {
+
+    let content = 'digraph {\n';
+    for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(o => `${k} -> ${o}\n`);
-      content += lines.join("");
-    });
-    Object.entries(fromReducers).map(([k, v]) => {
-      const lines = v.map(o => `${o} -> ${k}\n`);
-      content += lines.join("");
-    });
-    Object.values(fromEffects).map((v: InputOutputMap) => {
+      content += lines.join('');
+    }
+
+    for (const v of Object.values(fromEffects)) {
       const lines = v.output.map(o => `${v.input} -> ${o}\n`);
-      content += lines.join("");
-    });
-    content += "}\n";
+      content += lines.join('');
+    }
+
+    for (const [k, v] of Object.entries(fromReducers)) {
+      const lines = v.map(o => `${o} -> ${k}\n`);
+      content += lines.join('');
+    }
+
+    content += '}\n';
     fs.writeFileSync(dotFile, content);
   }
 }
@@ -385,50 +419,51 @@ function readSourceFile(file: string): SourceFile {
 }
 
 export function chainActionsByInput(
-  fromEffects: { [k: string]: InputOutputMap },
-  action: string
+  fromEffects: EffectsStructure,
+  action: string,
 ): InputOutputMap[] {
-  console.log("🚀 ~ chainActionsByInput", chainActionsByInput);
+  console.log('🚀 ~ chainActionsByInput', chainActionsByInput);
   try {
     return Object.values(fromEffects).reduce(
       (result: InputOutputMap[], v: InputOutputMap) => {
         if (v.input.includes(action)) {
-          console.log("🚀 ~ v", v);
+          console.log('🚀 ~ v', v);
           const chainedPerEffect = v.output.flatMap(obj =>
-            chainActionsByInput(fromEffects, obj)
+            chainActionsByInput(fromEffects, obj),
           );
           return uniq([...result, v, ...chainedPerEffect]);
         }
+
         return result;
       },
-      []
+      [],
     );
-  } catch (RangeError) {
+  } catch {
     console.log(`ERROR: ${action} might have circular dispatch graph`);
     return [];
   }
 }
 
 export function chainActionsByOutput(
-  fromEffects: { [k: string]: InputOutputMap },
-  action: string
+  fromEffects: EffectsStructure,
+  action: string,
 ): InputOutputMap[] {
-  console.log("🚀 ~ chainActionsByOutput", chainActionsByOutput);
+  console.log('🚀 ~ chainActionsByOutput', chainActionsByOutput);
   try {
     return Object.values(fromEffects).reduce(
       (result: InputOutputMap[], v: InputOutputMap) => {
         if (v.output.includes(action)) {
           const chainedPerEffect = v.input.flatMap(obj =>
-            chainActionsByOutput(fromEffects, obj)
+            chainActionsByOutput(fromEffects, obj),
           );
           return uniq([...result, v, ...chainedPerEffect]);
         }
+
         return result;
       },
-      []
+      [],
     );
-  } catch (RangeError) {
-    // circular action calls e.g: userAuthenticated
+  } catch {
     console.log(`ERROR: ${action} might have circular dispatch graph`);
     return [];
   }
