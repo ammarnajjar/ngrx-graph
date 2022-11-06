@@ -240,7 +240,7 @@ export class Generator {
     if (fs.existsSync(dotFile)) {
       fs.unlinkSync(dotFile);
     }
-    fs.writeFileSync(dotFile, "digraph {\n");
+    let content = "digraph {\n";
     Object.entries(fromComponents).map(([k, v]) => {
       const lines = v.map(o => {
         if (
@@ -249,7 +249,7 @@ export class Generator {
           return `${k} -> ${o}\n`;
         }
       });
-      fs.appendFileSync(dotFile, lines.join(""));
+      content += lines.join("");
     });
     Object.entries(fromReducers).map(([k, v]) => {
       const lines = v.map(o => {
@@ -259,13 +259,14 @@ export class Generator {
           return `${o} -> ${k}\n`;
         }
       });
-      fs.appendFileSync(dotFile, lines.join(""));
+      content += lines.join("");
     });
     filterdByAction.map((v: InputOutputMap) => {
       const lines = v.output.map(o => `${v.input} -> ${o}\n`);
-      fs.appendFileSync(dotFile, lines.join(""));
+      content += lines.join("");
     });
-    fs.appendFileSync(dotFile, "}\n");
+    content += "}\n";
+    fs.writeFileSync(dotFile, content);
     exec(`dot -Tsvg ${dotFile} -o ${this.outputFile}.svg`);
   }
 }
