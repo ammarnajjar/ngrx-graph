@@ -45,7 +45,7 @@ export default class Graph extends Command {
     CliUx.ux.action.stop();
 
     CliUx.ux.action.start("Saving structure for later");
-    gen.saveStructure(fromComponents, fromEffects, fromReducers, force)
+    gen.saveStructure(fromComponents, fromEffects, fromReducers)
     CliUx.ux.action.stop();
 
     if (action) {

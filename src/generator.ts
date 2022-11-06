@@ -17,7 +17,7 @@ import {
   ClassDeclaration,
 } from "typescript";
 import { join } from "node:path";
-import { uniq } from "lodash";
+import { isEmpty, uniq } from "lodash";
 import { json } from "stream/consumers";
 
 interface InputOutputMap {
@@ -35,23 +35,31 @@ export class Generator {
   private structureFile: string = "";
   private structureSaved = false;
   private force = false;
-  private fromEffects: { [k: string]: InputOutputMap } = {}
-  private fromComponents: ActionsMap = {}
-  private fromReucers: ActionsMap = {}
+  private fromEffects: { [k: string]: InputOutputMap } = {};
+  private fromComponents: ActionsMap = {};
+  private fromReucers: ActionsMap = {};
   allActions: string[] = [];
 
-  constructor(srcDir: string, outputDir: string, structureFile: string, force: boolean) {
+  constructor(
+    srcDir: string,
+    outputDir: string,
+    structureFile: string,
+    force: boolean
+  ) {
     this.srcDir = srcDir;
     this.outputDir = outputDir;
     this.force = force;
-    this.allActions = this.getAllActions();
     this.structureFile = join(this.outputDir, structureFile);
     const content = this.readStructure();
     if (content !== undefined) {
+      this.allActions = content.allActions;
       this.fromComponents = content.fromComponents;
       this.fromEffects = content.fromEffects;
       this.fromReucers = content.fromReducers;
     }
+    this.allActions = isEmpty(this.allActions)
+      ? this.getAllActions()
+      : this.allActions;
   }
 
   getParentNodes(node: Node, identifiers: string[]) {
@@ -114,7 +122,7 @@ export class Generator {
   mapReducersToActions(): ActionsMap {
     console.log("🚀 ~ mapReducersToActions");
     if (!this.force && this.structureSaved) {
-      console.log('Reading for a previously saved structure')
+      console.log("Reading for a previously saved structure");
       return this.fromReucers;
     }
     let reducerActionsMap = glob
@@ -196,7 +204,7 @@ export class Generator {
   mapeffectsToActions(): { [k: string]: InputOutputMap } {
     console.log("🚀 ~ mapeffectsToActions");
     if (!this.force && this.structureSaved) {
-      console.log('Reading for a previously saved structure')
+      console.log("Reading for a previously saved structure");
       return this.fromEffects;
     }
     const effectActionsMap = glob
@@ -237,7 +245,7 @@ export class Generator {
   mapComponentToActions(): ActionsMap {
     console.log("🚀 ~ mapComponentToActions");
     if (!this.force && this.structureSaved) {
-      console.log('Reading for a previously saved structure')
+      console.log("Reading for a previously saved structure");
       return this.fromComponents;
     }
     let componentActionsMap = glob
@@ -258,6 +266,7 @@ export class Generator {
 
   readStructure():
     | {
+        allActions: string[];
         fromComponents: ActionsMap;
         fromEffects: { [k: string]: InputOutputMap };
         fromReducers: ActionsMap;
@@ -268,24 +277,23 @@ export class Generator {
       console.log("Running for the first time");
       return;
     }
-    const content = JSON.parse(fs.readFileSync(this.structureFile, "utf-8"));
-    return content;
+    return JSON.parse(fs.readFileSync(this.structureFile, "utf-8"));
   }
 
   saveStructure(
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap,
-    force = false
+    fromReducers: ActionsMap
   ) {
-    if (!force && this.structureSaved) {
-      console.log('Structure already saved')
+    if (!this.force && this.structureSaved) {
+      console.log("Structure already saved");
       return;
     }
     if (fs.existsSync(this.structureFile)) {
       fs.unlinkSync(this.structureFile);
     }
     const content = JSON.stringify({
+      ...{ allActions: this.allActions },
       ...{ fromComponents },
       ...{ fromEffects },
       ...{ fromReducers },
@@ -299,9 +307,13 @@ export class Generator {
     fromEffects: { [key: string]: InputOutputMap },
     fromReducers: ActionsMap
   ) {
-    console.log(`🚀 ~ ${action}`);
+    console.log(`🚀 ~ generateActionGraph for ${action}`);
     const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
+      if (!this.force) {
+        console.log("Structure already saved");
+        return;
+      }
       fs.unlinkSync(dotFile);
     }
     const filterdByAction = [
@@ -334,6 +346,7 @@ export class Generator {
       content += lines.join("");
     });
     content += "}\n";
+    console.log("🚀 ~ content", content);
     fs.writeFileSync(dotFile, content);
   }
 
@@ -376,34 +389,48 @@ export function chainActionsByInput(
   fromEffects: { [k: string]: InputOutputMap },
   action: string
 ): InputOutputMap[] {
-  return Object.values(fromEffects).reduce(
-    (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.input.includes(action)) {
-        const chainedPerEffect = v.output.flatMap(obj =>
-          chainActionsByInput(fromEffects, obj)
-        );
-        return uniq([...result, v, ...chainedPerEffect]);
-      }
-      return result;
-    },
-    []
-  );
+  console.log("🚀 ~ chainActionsByInput", chainActionsByInput);
+  try {
+    return Object.values(fromEffects).reduce(
+      (result: InputOutputMap[], v: InputOutputMap) => {
+        if (v.input.includes(action)) {
+          console.log("🚀 ~ v", v);
+          const chainedPerEffect = v.output.flatMap(obj =>
+            chainActionsByInput(fromEffects, obj)
+          );
+          return uniq([...result, v, ...chainedPerEffect]);
+        }
+        return result;
+      },
+      []
+    );
+  } catch (RangeError) {
+    console.log(`ERROR: ${action} might have circular dispatch graph`);
+    return [];
+  }
 }
 
 export function chainActionsByOutput(
   fromEffects: { [k: string]: InputOutputMap },
   action: string
 ): InputOutputMap[] {
-  return Object.values(fromEffects).reduce(
-    (result: InputOutputMap[], v: InputOutputMap) => {
-      if (v.output.includes(action)) {
-        const chainedPerEffect = v.input.flatMap(obj =>
-          chainActionsByOutput(fromEffects, obj)
-        );
-        return uniq([...result, v, ...chainedPerEffect]);
-      }
-      return result;
-    },
-    []
-  );
+  console.log("🚀 ~ chainActionsByOutput", chainActionsByOutput);
+  try {
+    return Object.values(fromEffects).reduce(
+      (result: InputOutputMap[], v: InputOutputMap) => {
+        if (v.output.includes(action)) {
+          const chainedPerEffect = v.input.flatMap(obj =>
+            chainActionsByOutput(fromEffects, obj)
+          );
+          return uniq([...result, v, ...chainedPerEffect]);
+        }
+        return result;
+      },
+      []
+    );
+  } catch (RangeError) {
+    // circular action calls e.g: userAuthenticated
+    console.log(`ERROR: ${action} might have circular dispatch graph`);
+    return [];
+  }
 }
