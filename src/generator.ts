@@ -14,6 +14,7 @@ import {
   createCompilerHost,
   createProgram,
   forEachChild,
+  ClassDeclaration,
 } from "typescript";
 import { exec } from "node:child_process";
 import { join } from "node:path";
