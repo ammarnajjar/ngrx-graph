@@ -32,7 +32,7 @@ interface ActionsMap {
 export class Generator {
   private srcDir: string = "";
   private outputFile: string = "";
-  private allActions: string[] = [];
+  allActions: string[] = [];
 
   constructor(srcDir: string, outputFile: string) {
     this.srcDir = srcDir;
@@ -290,7 +290,6 @@ export function chainActionsByInput(
         );
         return uniq([...result, v, ...chainedPerEffect]);
       }
-
       return result;
     },
     []
@@ -309,7 +308,6 @@ export function chainActionsByOutput(
         );
         return uniq([...result, v, ...chainedPerEffect]);
       }
-
       return result;
     },
     []
