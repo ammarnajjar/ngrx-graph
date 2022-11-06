@@ -232,6 +232,15 @@ export class Generator {
     return componentActionsMap;
   }
 
+  readStructure() {
+    if (!fs.existsSync(this.structureFile)) {
+      console.log('Running for the first time')
+      return
+    }
+    const content = JSON.parse(fs.readFileSync(this.structureFile, 'utf-8'));
+    return content
+  }
+
   saveStructure(
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
