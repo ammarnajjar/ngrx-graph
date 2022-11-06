@@ -33,13 +33,25 @@ export class Generator {
   private srcDir: string = "";
   private outputDir: string = "";
   private structureFile: string = "";
+  private structureSaved = false;
+  private force = false;
+  private fromEffects: { [k: string]: InputOutputMap } = {}
+  private fromComponents: ActionsMap = {}
+  private fromReucers: ActionsMap = {}
   allActions: string[] = [];
 
-  constructor(srcDir: string, outputDir: string) {
+  constructor(srcDir: string, outputDir: string, structureFile: string, force: boolean) {
     this.srcDir = srcDir;
     this.outputDir = outputDir;
+    this.force = force;
     this.allActions = this.getAllActions();
-    this.structureFile = join(this.outputDir, "ngrx-structure.json");
+    this.structureFile = join(this.outputDir, structureFile);
+    const content = this.readStructure();
+    if (content !== undefined) {
+      this.fromComponents = content.fromComponents;
+      this.fromEffects = content.fromEffects;
+      this.fromReucers = content.fromReducers;
+    }
   }
 
   getParentNodes(node: Node, identifiers: string[]) {
@@ -101,6 +113,10 @@ export class Generator {
 
   mapReducersToActions(): ActionsMap {
     console.log("🚀 ~ mapReducersToActions");
+    if (!this.force && this.structureSaved) {
+      console.log('Reading for a previously saved structure')
+      return this.fromReucers;
+    }
     let reducerActionsMap = glob
       .sync(join(this.srcDir, "**/*.reducer.ts"))
       .reduce((result, filename) => {
@@ -179,6 +195,10 @@ export class Generator {
 
   mapeffectsToActions(): { [k: string]: InputOutputMap } {
     console.log("🚀 ~ mapeffectsToActions");
+    if (!this.force && this.structureSaved) {
+      console.log('Reading for a previously saved structure')
+      return this.fromEffects;
+    }
     const effectActionsMap = glob
       .sync(join(this.srcDir, "**/*.effects.ts"))
       .reduce((result, filename) => {
@@ -216,6 +236,10 @@ export class Generator {
 
   mapComponentToActions(): ActionsMap {
     console.log("🚀 ~ mapComponentToActions");
+    if (!this.force && this.structureSaved) {
+      console.log('Reading for a previously saved structure')
+      return this.fromComponents;
+    }
     let componentActionsMap = glob
       .sync(join(this.srcDir, "**/*.component.ts"))
       .reduce((result, filename) => {
@@ -232,20 +256,32 @@ export class Generator {
     return componentActionsMap;
   }
 
-  readStructure() {
-    if (!fs.existsSync(this.structureFile)) {
-      console.log('Running for the first time')
-      return
+  readStructure():
+    | {
+        fromComponents: ActionsMap;
+        fromEffects: { [k: string]: InputOutputMap };
+        fromReducers: ActionsMap;
+      }
+    | undefined {
+    this.structureSaved = fs.existsSync(this.structureFile);
+    if (!this.structureSaved) {
+      console.log("Running for the first time");
+      return;
     }
-    const content = JSON.parse(fs.readFileSync(this.structureFile, 'utf-8'));
-    return content
+    const content = JSON.parse(fs.readFileSync(this.structureFile, "utf-8"));
+    return content;
   }
 
   saveStructure(
     fromComponents: ActionsMap,
     fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap
+    fromReducers: ActionsMap,
+    force = false
   ) {
+    if (!force && this.structureSaved) {
+      console.log('Structure already saved')
+      return;
+    }
     if (fs.existsSync(this.structureFile)) {
       fs.unlinkSync(this.structureFile);
     }

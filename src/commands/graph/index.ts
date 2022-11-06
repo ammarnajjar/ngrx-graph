@@ -12,9 +12,11 @@ export default class Graph extends Command {
   static examples = ["<%= config.bin %> <%= command.id %>"];
 
   static flags = {
+    force: Flags.boolean({ char: "f" }),
     all: Flags.boolean({ char: "a" }),
-    srcDir: Flags.string({ char: "d" }),
-    outputDir: Flags.string({ char: "o" }),
+    srcDir: Flags.string({ char: "d" , default: process.cwd()}),
+    outputDir: Flags.string({ char: "o", default: "/tmp" }),
+    structureFile: Flags.string({ char: "s", default: "ngrx-graph.json" }),
   };
 
   static args = [
@@ -23,11 +25,11 @@ export default class Graph extends Command {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(Graph);
-    const { all, srcDir, outputDir: outputDir } = flags;
+    const { all, srcDir, outputDir, structureFile, force} = flags;
     const { action } = args;
 
     CliUx.ux.action.start("Collecting all actions");
-    const gen = new Generator(srcDir ?? process.cwd(), outputDir ?? "~/tmp/");
+    const gen = new Generator(srcDir , outputDir , structureFile, force);
     CliUx.ux.action.stop();
 
     CliUx.ux.action.start("Collecting actions from components");
@@ -42,8 +44,8 @@ export default class Graph extends Command {
     const fromReducers = gen.mapReducersToActions();
     CliUx.ux.action.stop();
 
-    CliUx.ux.action.start("Saving for later use");
-    gen.saveStructure(fromComponents, fromEffects, fromReducers)
+    CliUx.ux.action.start("Saving structure for later");
+    gen.saveStructure(fromComponents, fromEffects, fromReducers, force)
     CliUx.ux.action.stop();
 
     if (action) {
