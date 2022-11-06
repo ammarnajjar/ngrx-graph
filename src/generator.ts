@@ -16,7 +16,6 @@ import {
   forEachChild,
   ClassDeclaration,
 } from "typescript";
-import { exec } from "node:child_process";
 import { join } from "node:path";
 import { uniq } from "lodash";
 
@@ -31,12 +30,12 @@ interface ActionsMap {
 
 export class Generator {
   private srcDir: string = "";
-  private outputFile: string = "";
+  private outputDir: string = "";
   allActions: string[] = [];
 
-  constructor(srcDir: string, outputFile: string) {
+  constructor(srcDir: string, outputDir: string) {
     this.srcDir = srcDir;
-    this.outputFile = outputFile;
+    this.outputDir = outputDir;
     this.allActions = this.getAllActions();
   }
 
@@ -230,16 +229,21 @@ export class Generator {
     return componentActionsMap;
   }
 
-  generateGraph(
+  generateActionGraph(
+    action: string,
     fromComponents: ActionsMap,
-    filterdByAction: InputOutputMap[],
+    fromEffects: { [key: string]: InputOutputMap },
     fromReducers: ActionsMap
   ) {
-    console.log("🚀 ~ generateGraph");
-    const dotFile = `${this.outputFile}.dot`;
+    console.log(`🚀 ~ ${action}`);
+    const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
       fs.unlinkSync(dotFile);
     }
+    const filterdByAction = [
+      ...chainActionsByInput(fromEffects, action),
+      ...chainActionsByOutput(fromEffects, action),
+    ];
     let content = "digraph {\n";
     Object.entries(fromComponents).map(([k, v]) => {
       const lines = v.map(o => {
@@ -267,7 +271,33 @@ export class Generator {
     });
     content += "}\n";
     fs.writeFileSync(dotFile, content);
-    exec(`dot -Tsvg ${dotFile} -o ${this.outputFile}.svg`);
+  }
+
+  generateAllGraph(
+    fromComponents: ActionsMap,
+    fromEffects: { [key: string]: InputOutputMap },
+    fromReducers: ActionsMap
+  ) {
+    console.log("🚀 ~ generateAllGraph");
+    const dotFile = join(this.outputDir, "all.dot");
+    if (fs.existsSync(dotFile)) {
+      fs.unlinkSync(dotFile);
+    }
+    let content = "digraph {\n";
+    Object.entries(fromComponents).map(([k, v]) => {
+      const lines = v.map(o => `${k} -> ${o}\n`);
+      content += lines.join("");
+    });
+    Object.entries(fromReducers).map(([k, v]) => {
+      const lines = v.map(o => `${o} -> ${k}\n`);
+      content += lines.join("");
+    });
+    Object.values(fromEffects).map((v: InputOutputMap) => {
+      const lines = v.output.map(o => `${v.input} -> ${o}\n`);
+      content += lines.join("");
+    });
+    content += "}\n";
+    fs.writeFileSync(dotFile, content);
   }
 }
 

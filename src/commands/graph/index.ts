@@ -1,4 +1,5 @@
 import { Command, Flags, CliUx } from "@oclif/core";
+import { forEach } from "lodash";
 import {
   chainActionsByInput,
   chainActionsByOutput,
@@ -13,7 +14,7 @@ export default class Graph extends Command {
   static flags = {
     all: Flags.boolean({ char: "a" }),
     srcDir: Flags.string({ char: "d" }),
-    outputFile: Flags.string({ char: "o" }),
+    outputDir: Flags.string({ char: "o" }),
   };
 
   static args = [
@@ -22,14 +23,11 @@ export default class Graph extends Command {
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(Graph);
-    const { all, srcDir, outputFile } = flags;
+    const { all, srcDir, outputDir: outputDir } = flags;
     const { action } = args;
 
     CliUx.ux.action.start("Collecting all actions");
-    const gen = new Generator(
-      srcDir ?? process.cwd(),
-      outputFile ?? "/tmp/out"
-    );
+    const gen = new Generator(srcDir ?? process.cwd(), outputDir ?? "~/tmp/");
     CliUx.ux.action.stop();
 
     CliUx.ux.action.start("Collecting actions from components");
@@ -44,29 +42,31 @@ export default class Graph extends Command {
     const fromReducers = gen.mapReducersToActions();
     CliUx.ux.action.stop();
 
-    let filterdByAction = Object.values(fromEffects);
     if (action) {
-      CliUx.ux.action.start(`Building a chain of actions for ${action} `);
-      filterdByAction = [
-        ...chainActionsByInput(fromEffects, action),
-        ...chainActionsByOutput(fromEffects, action),
-      ];
+      CliUx.ux.action.start(` ⚡️ ${action} `);
+      gen.generateActionGraph(
+        action,
+        fromComponents,
+        fromEffects,
+        fromReducers
+      );
       CliUx.ux.action.stop();
+    } else {
+      gen.allActions.forEach(_action => {
+        CliUx.ux.action.start(` ⚡️ ${_action} `);
+        gen.generateActionGraph(
+          _action,
+          fromComponents,
+          fromEffects,
+          fromReducers
+        );
+        CliUx.ux.action.stop();
+      });
     }
 
     if (all) {
-      gen.allActions.forEach(_action => {
-        filterdByAction = [
-          ...chainActionsByInput(fromEffects, _action),
-          ...chainActionsByOutput(fromEffects, _action),
-        ];
-        CliUx.ux.action.start(`* ${_action}`);
-        gen.generateGraph(fromComponents, filterdByAction, fromReducers);
-        CliUx.ux.action.stop();
-      });
-    } else {
-      CliUx.ux.action.start("Generating the graph");
-      gen.generateGraph(fromComponents, filterdByAction, fromReducers);
+      CliUx.ux.action.start("Generating the complete graph");
+      gen.generateAllGraph(fromComponents, fromEffects, fromReducers);
       CliUx.ux.action.stop();
     }
   }
