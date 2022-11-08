@@ -32,38 +32,29 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.tag }}
-      - uses: actions/setup-node@v3
-      - uses: flood-io/is-published-on-npm@8478347e2650eb228d303975415458183d0a37e4
-        id: is-published
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: echo "published said ${{ steps.is-published.outputs.published }}"
-
-  npm-publish:
-    needs: [check-publish]
-    if: ${{ always() && needs.check-publish.outputs.published == 'false' }}
-    runs-on: ${{ inputs.runsOn }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
           tag: latest
           githubTag: ${{ github.event.release.tag_name || inputs.tag }}
           ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ inputs.nodeVersion }}
+      - uses: flood-io/is-published-on-npm@8478347e2650eb228d303975415458183d0a37e4
+        id: is-published
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npm install
+        if: ${{ steps.is-published.outputs.published == 'false' }}
       - run: npm build
+        if: ${{ steps.is-published.outputs.published == 'false' }}
 
         # publish package
-      - if: ${{ !inputs.prerelease}}
+      - if: ${{ steps.is-published.outputs.published == 'false' && !inputs.prerelease}}
         name: Release
         run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }}
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
         # when prerelease is true: publish prerelease package
-      - if: ${{ inputs.prerelease }}
+      - if: ${{ steps.is-published.outputs.published == 'false' && inputs.prerelease}}
         name: PreRelease
         run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
         env:
