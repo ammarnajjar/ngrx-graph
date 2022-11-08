@@ -8,7 +8,7 @@ $ npm install -g ngrx-graph
 $ xrgn COMMAND
 running command...
 $ xrgn (--version)
-ngrx-graph/0.0.0 darwin-arm64 node-v19.0.0
+ngrx-graph/0.0.1 darwin-arm64 node-v19.0.0
 $ xrgn --help [COMMAND]
 USAGE
   $ xrgn COMMAND
@@ -56,7 +56,7 @@ EXAMPLES
   $ xrgn graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.0/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.1/dist/commands/graph/index.ts)_
 
 ## `xrgn help [COMMAND]`
 
@@ -129,7 +129,7 @@ ALIASES
   $ xrgn plugins add
 
 EXAMPLES
-  $ xrgn plugins:install myplugin
+  $ xrgn plugins:install myplugin 
 
   $ xrgn plugins:install https://github.com/someuser/someplugin
 
@@ -189,7 +189,7 @@ ALIASES
   $ xrgn plugins add
 
 EXAMPLES
-  $ xrgn plugins:install myplugin
+  $ xrgn plugins:install myplugin 
 
   $ xrgn plugins:install https://github.com/someuser/someplugin
 
