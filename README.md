@@ -8,7 +8,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.1 darwin-arm64 node-v19.0.0
+ngrx-graph/0.0.1-alpha.1 darwin-arm64 node-v19.0.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
