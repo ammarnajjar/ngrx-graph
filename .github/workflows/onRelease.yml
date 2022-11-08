@@ -34,8 +34,6 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v3
-        with:
-          cache: npm
       - uses: flood-io/is-published-on-npm@8478347e2650eb228d303975415458183d0a37e4
         id: is-published
         env:
@@ -55,7 +53,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ inputs.nodeVersion }}
-          cache: npm
       - run: npm install
       - run: npm build
 
