@@ -1,5 +1,15 @@
 # ngrx-graph
 
+**Status: WIP**
+
+Generate dot files representing the interaction between ngrx actions, components, effects and reducers.
+
+Dot files can be then used to generate graphs using [Graphviz](https://www.graphviz.org/), e.g:
+
+```bash
+for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
+```
+
   # Usage
 
   <!-- usage -->
