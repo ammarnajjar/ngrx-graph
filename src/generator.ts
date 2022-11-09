@@ -281,12 +281,10 @@ export class Generator {
     fromReducers: ActionsMap,
   ): void {
     if (
-      !(
-        this.force ||
-        [this.fromComponents, this.fromEffects, this.fromReucers].includes(
-          undefined,
-        )
-      )
+      !this.force &&
+      this.fromComponents &&
+      this.fromEffects &&
+      this.fromReucers
     ) {
       console.log('Structure is already saved');
       return;
