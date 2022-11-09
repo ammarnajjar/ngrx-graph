@@ -19,7 +19,35 @@ USAGE
   # Commands
 
   <!-- commands -->
+* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 * [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+
+## `ngrx-graph [ACTION]`
+
+Generate NgRx actions graph
+
+```
+USAGE
+  $ ngrx-graph [ACTION] [-f] [-a] [-d <value>] [-o <value>] [-s <value>]
+
+ARGUMENTS
+  ACTION  Action of interest
+
+FLAGS
+  -a, --all
+  -d, --srcDir=<value>         [default: /Users/anajjar/code/ngrx-graph]
+  -f, --force
+  -o, --outputDir=<value>      [default: /tmp]
+  -s, --structureFile=<value>  [default: ngrx-graph.json]
+
+DESCRIPTION
+  Generate NgRx actions graph
+
+EXAMPLES
+  $ ngrx-graph
+```
+
+_See code: [dist/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.1-alpha.1/dist/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
