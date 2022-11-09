@@ -67,7 +67,7 @@
   },
   "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues",
   "keywords": [
-    "oclif"
+    "oclif, ngrx, graph, action, effect, angular, component, reducer, store, state, dot"
   ],
   "types": "dist/index.d.ts"
 }
