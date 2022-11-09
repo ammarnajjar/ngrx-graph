@@ -2,7 +2,7 @@ name: publish
 
 on:
   release:
-    types: [released]
+    types: [created]
   # support manual release in case something goes wrong and needs to be repeated or tested
   workflow_dispatch:
     inputs:
@@ -17,30 +17,24 @@ on:
         default: false
 
 jobs:
-  check-publish:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v3
-      - uses: flood-io/is-published-on-npm@v1
-        id: is-published
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npm install
-        if: ${{ steps.is-published.outputs.published == 'false' }}
       - run: npm build
-        if: ${{ steps.is-published.outputs.published == 'false' }}
 
         # publish package
-      - if: ${{ !inputs.prerelease && steps.is-published.outputs.published == 'false' }}
+      - if: ${{ !inputs.prerelease }}
         name: Release
         run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }}
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
         # publish prerelease package
-      - if: ${{ inputs.prerelease && steps.is-published.outputs.published == 'false' }}
+      - if: ${{ inputs.prerelease }}
         name: PreRelease
         run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
         env:
