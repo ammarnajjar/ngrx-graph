@@ -1,6 +1,6 @@
 {
   "name": "ngrx-graph",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.5",
   "description": "Generate NgRx actions graph",
   "author": "Ammar Najjar",
   "bin": {
@@ -43,6 +43,7 @@
     "bin": "ngrx-graph",
     "dirname": "ngrx-graph",
     "commands": "./dist/commands",
+    "default": "graph",
     "plugins": [
       "@oclif/plugin-help"
     ],
