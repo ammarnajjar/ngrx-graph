@@ -19,7 +19,10 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v3
-      - run: npm install
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
       - run: npm run build
       - run: npm publish
         env:
