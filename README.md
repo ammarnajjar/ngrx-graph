@@ -38,17 +38,22 @@ Generate NgRx actions graph
 
 ```
 USAGE
-  $ ngrx-graph graph [ACTION] [-f] [-a] [-d <value>] [-o <value>] [-s <value>]
+  $ ngrx-graph graph [ACTION] [-f] [-j] [-a] [-d <value>] [-o <value>] [-s <value>]
 
 ARGUMENTS
-  ACTION  Action of interest
+  ACTION  Action of interest. It will be ignored if --jsonOnly is used
 
 FLAGS
-  -a, --all
-  -d, --srcDir=<value>         [default: /Users/anajjar/code/ngrx-graph]
-  -f, --force
-  -o, --outputDir=<value>      [default: /tmp]
-  -s, --structureFile=<value>  [default: ngrx-graph.json]
+  -a, --all                    Generate the whole graph for all actions and connected component, effects and reducers.
+                               It will be ignored if --jsonOnly is used
+  -d, --srcDir=<value>         [default: /Users/anajjar/code/ngrx-graph] Source directory to grab actions from, usually
+                               the directory with package.json in it
+  -f, --force                  Force regenrating the graph structure
+  -j, --jsonOnly               Generate only the structure json file, can be combined with --structureFile option. It
+                               overrides --all and [ACTION]
+  -o, --outputDir=<value>      [default: /tmp] Destination directory, where to save the generated files
+  -s, --structureFile=<value>  [default: ngrx-graph.json] Then name of the structure json file, Path is taken from
+                               --outputDir option
 
 DESCRIPTION
   Generate NgRx actions graph
