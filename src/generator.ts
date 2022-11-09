@@ -80,11 +80,9 @@ export class Generator {
   }
 
   getAllActions(): string[] {
-    console.log('🚀 ~ getAllActions');
     const allActions = glob
     .sync(join(this.srcDir, '**/*.actions.ts'))
     .reduce((result: string[], filename: string) => {
-      console.log('processing', filename);
       const actionPerFile = this.getParentNodes(readSourceFile(filename), [
         'createAction',
       ]).map(node =>
@@ -94,10 +92,6 @@ export class Generator {
       );
       return [...result, ...actionPerFile];
     }, []);
-    for (const action of allActions) {
-      console.log(action);
-    }
-
     return allActions;
   }
 
@@ -119,22 +113,18 @@ export class Generator {
   }
 
   mapReducersToActions(): ActionsMap {
-    console.log('🚀 ~ mapReducersToActions');
     if (!this.force && this.fromReucers !== undefined) {
-      console.log('Reading for a previously saved structure');
       return this.fromReucers;
     }
 
     const reducerActionsMap = glob
     .sync(join(this.srcDir, '**/*.reducer.ts'))
     .reduce((result, filename) => {
-      console.log('processing', filename);
       return {
         ...result,
         ...this.reducerActionsMap(readSourceFile(filename)),
       };
     }, {});
-    console.dir(reducerActionsMap, { depth: null });
     return reducerActionsMap;
   }
 
@@ -211,7 +201,6 @@ export class Generator {
   }
 
   mapeffectsToActions(): EffectsStructure {
-    console.log('🚀 ~ mapeffectsToActions');
     if (!this.force && this.fromEffects !== undefined) {
       console.log('Reading for a previously saved structure');
       return this.fromEffects;
@@ -220,13 +209,11 @@ export class Generator {
     const effectActionsMap = glob
     .sync(join(this.srcDir, '**/*.effects.ts'))
     .reduce((result, filename) => {
-      console.log('processing', filename);
       return {
         ...result,
         ...this.getEffectActionsMap(readSourceFile(filename)),
       };
     }, {});
-    console.dir(effectActionsMap, { depth: null });
     return effectActionsMap;
   }
 
@@ -254,16 +241,13 @@ export class Generator {
   }
 
   mapComponentToActions(): ActionsMap {
-    console.log('🚀 ~ mapComponentToActions');
     if (!this.force && this.fromComponents !== undefined) {
-      console.log('Reading for a previously saved structure');
       return this.fromComponents;
     }
 
     let componentActionsMap = glob
     .sync(join(this.srcDir, '**/*.component.ts'))
     .reduce((result, filename) => {
-      console.log('processing', filename);
       return {
         ...result,
         ...this.getComponentDispatchedActions(readSourceFile(filename)),
@@ -272,7 +256,6 @@ export class Generator {
     componentActionsMap = Object.fromEntries(
       Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
     );
-    console.dir(componentActionsMap, { depth: null });
     return componentActionsMap;
   }
 
@@ -286,7 +269,6 @@ export class Generator {
     | undefined {
     this.structureSaved = fs.existsSync(this.structureFile);
     if (!this.structureSaved) {
-      console.log('Running for the first time');
       return;
     }
 
@@ -327,11 +309,9 @@ export class Generator {
     fromEffects: { [key: string]: InputOutputMap },
     fromReducers: ActionsMap,
   ): void {
-    console.log(`🚀 ~ generateActionGraph for ${action}`);
     const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
       if (!this.force) {
-        console.log(`Graph for ${action} is already saved`);
         return;
       }
 
@@ -375,7 +355,6 @@ export class Generator {
     }
 
     content += '}\n';
-    console.log('🚀 ~ content', content);
     fs.writeFileSync(dotFile, content);
   }
 
@@ -384,7 +363,6 @@ export class Generator {
     fromEffects: { [key: string]: InputOutputMap },
     fromReducers: ActionsMap,
   ): void {
-    console.log('🚀 ~ generateAllGraph');
     const dotFile = join(this.outputDir, 'all.dot');
     if (fs.existsSync(dotFile)) {
       fs.unlinkSync(dotFile);
@@ -422,12 +400,10 @@ export function chainActionsByInput(
   fromEffects: EffectsStructure,
   action: string,
 ): InputOutputMap[] {
-  console.log('🚀 ~ chainActionsByInput', chainActionsByInput);
   try {
     return Object.values(fromEffects).reduce(
       (result: InputOutputMap[], v: InputOutputMap) => {
         if (v.input.includes(action)) {
-          console.log('🚀 ~ v', v);
           const chainedPerEffect = v.output.flatMap(obj =>
             chainActionsByInput(fromEffects, obj),
           );
@@ -439,7 +415,6 @@ export function chainActionsByInput(
       [],
     );
   } catch {
-    console.log(`ERROR: ${action} might have circular dispatch graph`);
     return [];
   }
 }
@@ -448,7 +423,6 @@ export function chainActionsByOutput(
   fromEffects: EffectsStructure,
   action: string,
 ): InputOutputMap[] {
-  console.log('🚀 ~ chainActionsByOutput', chainActionsByOutput);
   try {
     return Object.values(fromEffects).reduce(
       (result: InputOutputMap[], v: InputOutputMap) => {
@@ -464,7 +438,6 @@ export function chainActionsByOutput(
       [],
     );
   } catch {
-    console.log(`ERROR: ${action} might have circular dispatch graph`);
     return [];
   }
 }
