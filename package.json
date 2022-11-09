@@ -19,7 +19,7 @@
   "dependencies": {
     "@oclif/core": "^1.20.4",
     "@oclif/plugin-help": "^5.1.18",
-    "glob": "^8.0.3",
+    "fast-glob": "^3.2.12",
     "lodash": "^4.17.21",
     "ps": "^1.0.0"
   },
@@ -28,8 +28,9 @@
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
     "chai": "^4.3.7",
-    "eslint": "^8.27.0",
+    "eslint": "^7.32.0",
     "eslint-config-oclif": "^4.0.0",
     "eslint-config-oclif-typescript": "^1.0.3",
     "mocha": "^10.1.0",

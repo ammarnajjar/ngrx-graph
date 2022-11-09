@@ -1,7 +1,7 @@
 // https://ts-ast-viewer.com
 
 import * as fs from 'node:fs';
-import * as glob from 'glob';
+import * as fglob from 'fast-glob';
 
 import {
   CallExpression,
@@ -80,7 +80,7 @@ export class Generator {
   }
 
   getAllActions(): string[] {
-    const allActions = glob
+    const allActions = fglob
     .sync(join(this.srcDir, '**/*.actions.ts'))
     .reduce((result: string[], filename: string) => {
       const actionPerFile = this.getParentNodes(readSourceFile(filename), [
@@ -117,7 +117,7 @@ export class Generator {
       return this.fromReucers;
     }
 
-    const reducerActionsMap = glob
+    const reducerActionsMap = fglob
     .sync(join(this.srcDir, '**/*.reducer.ts'))
     .reduce((result, filename) => {
       return {
@@ -206,7 +206,7 @@ export class Generator {
       return this.fromEffects;
     }
 
-    const effectActionsMap = glob
+    const effectActionsMap = fglob
     .sync(join(this.srcDir, '**/*.effects.ts'))
     .reduce((result, filename) => {
       return {
@@ -245,7 +245,7 @@ export class Generator {
       return this.fromComponents;
     }
 
-    let componentActionsMap = glob
+    let componentActionsMap = fglob
     .sync(join(this.srcDir, '**/*.component.ts'))
     .reduce((result, filename) => {
       return {
