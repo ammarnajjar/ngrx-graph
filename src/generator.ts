@@ -81,17 +81,17 @@ export class Generator {
 
   getAllActions(): string[] {
     const allActions = fglob
-    .sync(join(this.srcDir, '**/*.actions.ts'))
-    .reduce((result: string[], filename: string) => {
-      const actionPerFile = this.getParentNodes(readSourceFile(filename), [
-        'createAction',
-      ]).map(node =>
-        (
+      .sync(join(this.srcDir, '**/*.actions.ts'))
+      .reduce((result: string[], filename: string) => {
+        const actionPerFile = this.getParentNodes(readSourceFile(filename), [
+          'createAction',
+        ]).map(node =>
+          (
             (node.parent as VariableDeclaration).name as Identifier
-        ).escapedText.toString(),
-      );
-      return [...result, ...actionPerFile];
-    }, []);
+          ).escapedText.toString(),
+        );
+        return [...result, ...actionPerFile];
+      }, []);
     return allActions;
   }
 
@@ -118,13 +118,13 @@ export class Generator {
     }
 
     const reducerActionsMap = fglob
-    .sync(join(this.srcDir, '**/*.reducer.ts'))
-    .reduce((result, filename) => {
-      return {
-        ...result,
-        ...this.reducerActionsMap(readSourceFile(filename)),
-      };
-    }, {});
+      .sync(join(this.srcDir, '**/*.reducer.ts'))
+      .reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.reducerActionsMap(readSourceFile(filename)),
+        };
+      }, {});
     return reducerActionsMap;
   }
 
@@ -207,13 +207,13 @@ export class Generator {
     }
 
     const effectActionsMap = fglob
-    .sync(join(this.srcDir, '**/*.effects.ts'))
-    .reduce((result, filename) => {
-      return {
-        ...result,
-        ...this.getEffectActionsMap(readSourceFile(filename)),
-      };
-    }, {});
+      .sync(join(this.srcDir, '**/*.effects.ts'))
+      .reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.getEffectActionsMap(readSourceFile(filename)),
+        };
+      }, {});
     return effectActionsMap;
   }
 
@@ -246,13 +246,13 @@ export class Generator {
     }
 
     let componentActionsMap = fglob
-    .sync(join(this.srcDir, '**/*.component.ts'))
-    .reduce((result, filename) => {
-      return {
-        ...result,
-        ...this.getComponentDispatchedActions(readSourceFile(filename)),
-      };
-    }, {});
+      .sync(join(this.srcDir, '**/*.component.ts'))
+      .reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.getComponentDispatchedActions(readSourceFile(filename)),
+        };
+      }, {});
     componentActionsMap = Object.fromEntries(
       Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
     );
@@ -283,7 +283,9 @@ export class Generator {
     if (
       !(
         this.force ||
-        [this.fromComponents, this.fromEffects, this.fromReucers].length < 2
+        [this.fromComponents, this.fromEffects, this.fromReucers].includes(
+          undefined,
+        )
       )
     ) {
       console.log('Structure is already saved');
