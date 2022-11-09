@@ -10,11 +10,6 @@ on:
         description: tag that needs to publish
         type: string
         required: true
-      prerelease:
-        required: false
-        description: if true, it will use the version <version>-<branch>.0
-        type: boolean
-        default: false
 
 jobs:
   publish:
@@ -26,17 +21,6 @@ jobs:
       - uses: actions/setup-node@v3
       - run: npm install
       - run: npm run build
-
-        # publish package
-      - if: ${{ !inputs.prerelease }}
-        name: Release
-        run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }}
+      - run: npm publish
         env:
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-        # publish prerelease package
-      - if: ${{ inputs.prerelease }}
-        name: PreRelease
-        run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
-        env:
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
