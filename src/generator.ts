@@ -328,7 +328,8 @@ export class Generator {
         if (
           filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
         ) {
-          return `${k} -> ${o}\n`;
+          return `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+          ${k} -> ${o}\n`;
         }
 
         return '';
@@ -341,7 +342,8 @@ export class Generator {
         if (
           filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
         ) {
-          return `${o} -> ${k}\n`;
+          return `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              ${o} -> ${k}\n`;
         }
 
         return '';
@@ -370,7 +372,10 @@ export class Generator {
 
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
-      const lines = v.map(o => `${k} -> ${o}\n`);
+      const lines = v.map(
+        o => `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+      ${k} -> ${o}\n`,
+      );
       content += lines.join('');
     }
 
@@ -380,7 +385,10 @@ export class Generator {
     }
 
     for (const [k, v] of Object.entries(fromReducers)) {
-      const lines = v.map(o => `${o} -> ${k}\n`);
+      const lines = v.map(
+        o => `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              ${o} -> ${k}\n`,
+      );
       content += lines.join('');
     }
 
