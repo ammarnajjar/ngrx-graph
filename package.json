@@ -43,6 +43,7 @@
     "bin": "ngrx-graph",
     "dirname": "ngrx-graph",
     "commands": "./dist/commands",
+    "default": "graph",
     "plugins": [
       "@oclif/plugin-help"
     ],
