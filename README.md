@@ -19,7 +19,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.2 darwin-arm64 node-v19.0.0
+ngrx-graph/0.0.3 darwin-arm64 node-v19.0.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -49,8 +49,8 @@ ARGUMENTS
 FLAGS
   -a, --all                    Generate the whole graph for all actions and connected component, effects and reducers.
                                It will be ignored if --jsonOnly is used
-  -d, --srcDir=<value>         [default: current directory] Source directory to grab actions from, usually
-                               the directory with package.json in it
+  -d, --srcDir=<value>         [default: current directory] Source directory to grab actions from, usually the directory
+                               with package.json in it
   -f, --force                  Force regenrating the graph structure
   -j, --jsonOnly               Generate only the structure json file, can be combined with --structureFile option. It
                                overrides --all and [ACTION]
@@ -65,7 +65,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.2/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.3/dist/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
