@@ -10,35 +10,21 @@ on:
         description: tag that needs to publish
         type: string
         required: true
-      githubTag:
-        description: the github release tag that you want to publish as an npm package
-        required: true
-        type: string
       prerelease:
         required: false
         description: if true, it will use the version <version>-<branch>.0
         type: boolean
         default: false
-      nodeVersion:
-        description: version of node to use.  It's better to specify latest, lts/* or lts/-1 than to hardode numbers
-        type: string
-        default: lts/*
-        required: false
+
 jobs:
   check-publish:
-    outputs:
-      published: ${{ steps.is-published.outputs.published }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
-          tag: latest
-          githubTag: ${{ github.event.release.tag_name || inputs.tag }}
           ref: ${{ inputs.tag }}
       - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ inputs.nodeVersion }}
-      - uses: flood-io/is-published-on-npm@8478347e2650eb228d303975415458183d0a37e4
+      - uses: flood-io/is-published-on-npm@v1
         id: is-published
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -48,14 +34,15 @@ jobs:
         if: ${{ steps.is-published.outputs.published == 'false' }}
 
         # publish package
-      - if: ${{ steps.is-published.outputs.published == 'false' && !inputs.prerelease}}
+      - if: ${{ !inputs.prerelease && steps.is-published.outputs.published == 'false' }}
         name: Release
-        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }}
+        run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }}
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-        # when prerelease is true: publish prerelease package
-      - if: ${{ steps.is-published.outputs.published == 'false' && inputs.prerelease}}
+        # publish prerelease package
+      - if: ${{ inputs.prerelease && steps.is-published.outputs.published == 'false' }}
         name: PreRelease
-        run: sf-release npm:package:release --githubtag ${{ inputs.githubTag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
+        run: sf-release npm:package:release --githubtag ${{ inputs.tag}} --no-install --npmtag ${{ inputs.tag }} --prerelease ${{ github.ref_name}}
         env:
           NPM_TOKEN: ${{secrets.NPM_TOKEN}}
+
