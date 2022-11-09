@@ -23,9 +23,8 @@ export default class Graph extends Command {
     }),
     srcDir: Flags.string({
       char: 'd',
-      default: process.cwd(),
       description:
-        'Source directory to grab actions from, usually the directory with package.json in it',
+        '[default: current directory] Source directory to grab actions from, usually the directory with package.json in it',
     }),
     outputDir: Flags.string({
       char: 'o',
@@ -55,7 +54,12 @@ export default class Graph extends Command {
     const { action } = args;
 
     CliUx.ux.action.start('Collecting all actions');
-    const gen = new Generator(srcDir, outputDir, structureFile, force);
+    const gen = new Generator(
+      srcDir || process.cwd(),
+      outputDir,
+      structureFile,
+      force,
+    );
     CliUx.ux.action.stop();
 
     CliUx.ux.action.start('Collecting actions from components');
