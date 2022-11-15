@@ -1,0 +1,19 @@
+digraph {
+Component1 [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+          Component1 -> action1
+Component2 [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+          Component2 -> MainAction
+Reducer1 [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              action5 -> Reducer1
+Reducer2 [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              action6 -> Reducer2
+Reducer2 [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              action2 -> Reducer2
+Reducer2 [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+              action1 -> Reducer2
+MainAction
+action2 -> action1
+action2 -> MainAction
+action3,action5 -> action4
+action3,action5 -> action2
+}

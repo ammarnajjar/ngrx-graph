@@ -1,14 +1,34 @@
 # ngrx-graph
 
-**Status: WIP**
+## Motivation:
 
-Generate dot files representing the interaction between ngrx actions, components, effects and reducers.
+Working with a very big [NgRx](https://ngrx.io/) store in an angular application will lead to having lots of actions/effects and lots of interactions betwen components/actions/reducers. It gets very tedious very quickly to follow an action from the start to the end, and it is very easy to miss an action dispatched in an effect somewhere along the chain of actions.
 
-Dot files can be then used to generate graphs using [Graphviz](https://www.graphviz.org/), e.g:
+This packages, tries to collect all actions/components/reducers participating in a particular flow and generate dot files for that flow, with the idea that following a graph visually is easier than following effects and actions in code.
+
+It is also possible to see the whole net with all actions/components/reducers, but that is more important is to follow a particular action from the start to the end (the optional argument)
+
+## How it works
+
+This package generates dot files representing the interaction between ngrx actions, components, effects and reducers.
+
+Dot files can be then used to generate graphs using [Graphviz](https://www.graphviz.org/), so this needs to be installed first, e.g:
 
 ```bash
 for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
 ```
+
+## Example
+
+```bash
+npx ngrx-graph MainAction
+```
+
+Generates: [dot file](.//docs/example.dot) (I took a real world example and anonymised the names)
+
+Produced graph will look like:
+
+![example generated graph](./docs/example.svg)
 
 # Usage
 
@@ -19,7 +39,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.3 darwin-arm64 node-v19.0.0
+ngrx-graph/0.0.3 darwin-arm64 node-v19.0.1
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -88,3 +108,9 @@ DESCRIPTION
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.18/src/commands/help.ts)_
 
 <!-- commandsstop -->
+
+# Status:
+
+This project is still young and encourage collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
+
+I work on this on my own free time only.
