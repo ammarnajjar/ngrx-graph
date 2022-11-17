@@ -18,6 +18,9 @@ Dot files can be then used to generate graphs using [Graphviz](https://www.graph
 for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
 ```
 
+The first run will generate a json file (see `--structureFile` flag), which is used for the next runs if the flag `--force` was not set as cache.
+If this file exists, source code will not be parsed for actions, the recorded structure will be taken from that json file. This speeds up the process considerably.
+
 ## Example
 
 ```bash
@@ -39,7 +42,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.3 darwin-arm64 node-v19.0.1
+ngrx-graph/0.0.4 darwin-arm64 node-v19.1.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -85,7 +88,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.3/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.4/dist/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -105,7 +108,7 @@ DESCRIPTION
   Display help for ngrx-graph.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.18/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.19/src/commands/help.ts)_
 
 <!-- commandsstop -->
 
