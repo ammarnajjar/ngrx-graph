@@ -159,33 +159,49 @@ export class Generator {
           mapNode.getText().match(new RegExp(`[^\w]${action}\\(`)),
         ),
       ];
-      forEachChild((mapNode as CallExpression).arguments[0], (node: Node) => {
-        if (
-          node.kind === SyntaxKind.CallExpression &&
-          ((node as CallExpression).expression as PropertyAccessExpression).name
-        ) {
-          const privateMethodName = (
-            (node as CallExpression).expression as PropertyAccessExpression
-          ).name.escapedText.toString();
-          const callables = this.getParentNodes(sourceFile, [
-            privateMethodName,
-          ]);
-          for (const callable of callables) {
-            if (callable.kind === SyntaxKind.PropertyDeclaration) {
-              actions = [
-                ...actions,
-                ...this.allActions.filter((action: string) =>
-                  // eslint-disable-next-line no-useless-escape
-                  callable.getText().match(new RegExp(`[^\w]${action}\\(`)),
-                ),
-              ];
-            }
-          }
-        }
-      });
+    }
+
+    for (const node of getChildNodesRecursivly(effect)) {
+      if (
+        node.kind === SyntaxKind.CallExpression &&
+        ((node as CallExpression).expression as PropertyAccessExpression).name
+      ) {
+        const privateMethodName = (
+          (node as CallExpression).expression as PropertyAccessExpression
+        ).name.escapedText.toString();
+        actions = [
+          ...actions,
+          ...this.getActionsFromPrivateMethod(sourceFile, privateMethodName),
+        ];
+      }
     }
 
     return [...new Set(actions.filter(action => !input.includes(action)))];
+  }
+
+  getActionsFromPrivateMethod(
+    sourceFile: SourceFile,
+    privateMethodName: string,
+  ): string[] {
+    let actions: string[] = [];
+    const callables = this.getParentNodes(sourceFile, [privateMethodName]);
+    for (const callable of callables) {
+      if (callable.kind === SyntaxKind.MethodDeclaration) {
+        actions = [
+          ...actions,
+          ...this.allActions.filter((action: string) => {
+            return (
+              callable
+                .getText()
+                // eslint-disable-next-line no-useless-escape
+                .match(new RegExp(`[^\w]${action}[^\w]`))
+            );
+          }),
+        ];
+      }
+    }
+
+    return actions;
   }
 
   getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {
@@ -448,4 +464,23 @@ export function chainActionsByOutput(
   } catch {
     return [];
   }
+}
+
+export function getChildNodesRecursivly(node: Node): Node[] {
+  if (node.kind === SyntaxKind.Identifier) {
+    return [node];
+  }
+
+  return [
+    node,
+    ...node
+      .getChildren()
+      .reduce(
+        (all: Node[], child: Node) => [
+          ...all,
+          ...getChildNodesRecursivly(child),
+        ],
+        [],
+      ),
+  ];
 }
