@@ -339,6 +339,7 @@ export class Generator {
       ...chainActionsByOutput(fromEffects, action),
     ];
     let content = 'digraph {\n';
+    content += `${action} [color=green, fillcolor=green, fontcolor=white, style=filled]\n`;
     for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(o => {
         if (
