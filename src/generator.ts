@@ -339,7 +339,6 @@ export class Generator {
       ...chainActionsByOutput(fromEffects, action),
     ];
     let content = 'digraph {\n';
-    content += `${action} [color=green, fillcolor=green, fontcolor=white, style=filled]\n`;
     for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(o => {
         if (
@@ -374,6 +373,10 @@ export class Generator {
     }
 
     content += '}\n';
+    content = content.replace(
+      new RegExp(`([^\n]*${action}[^\n]*)`),
+      `${action} [color=green, fillcolor=green, fontcolor=white, style=filled]\n$1`,
+    );
     fs.writeFileSync(dotFile, content);
   }
 

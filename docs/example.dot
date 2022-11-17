@@ -1,8 +1,8 @@
 digraph {
-MainAction [color=green, fillcolor=green, fontcolor=white, style=filled]
 Component1 [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
           Component1 -> action1
 Component2 [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+MainAction [color=green, fillcolor=green, fontcolor=white, style=filled]
           Component2 -> MainAction
 Reducer1 [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
               action5 -> Reducer1
