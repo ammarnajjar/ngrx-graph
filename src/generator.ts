@@ -340,7 +340,6 @@ export class Generator {
     ];
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
-      content += `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]\n`;
       const lines = v.map(componentAction => {
         if (
           filterdByAction.some(effect =>
@@ -348,7 +347,8 @@ export class Generator {
           ) ||
           action === componentAction
         ) {
-          return `${k} -> ${componentAction}\n`;
+          return `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+          ${k} -> ${componentAction}\n`;
         }
 
         return '';
@@ -357,7 +357,6 @@ export class Generator {
     }
 
     for (const [k, v] of Object.entries(fromReducers)) {
-      content += `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]\n`;
       const lines = v.map(reducerAction => {
         if (
           filterdByAction.some(effect =>
@@ -365,7 +364,8 @@ export class Generator {
           ) ||
           action === reducerAction
         ) {
-          return `${reducerAction} -> ${k}\n`;
+          return `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+          ${reducerAction} -> ${k}\n`;
         }
 
         return '';
