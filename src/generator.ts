@@ -327,10 +327,6 @@ export class Generator {
   ): void {
     const dotFile = join(this.outputDir, `${action}.dot`);
     if (fs.existsSync(dotFile)) {
-      if (!this.force) {
-        return;
-      }
-
       fs.unlinkSync(dotFile);
     }
 
