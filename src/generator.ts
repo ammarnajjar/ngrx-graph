@@ -306,9 +306,7 @@ export class Generator {
       return;
     }
 
-    if (fs.existsSync(this.structureFile)) {
-      fs.unlinkSync(this.structureFile);
-    }
+    deleteFile(this.structureFile);
 
     const content = JSON.stringify({
       allActions: this.allActions,
@@ -326,9 +324,7 @@ export class Generator {
     fromReducers: ActionsMap,
   ): void {
     const dotFile = join(this.outputDir, `${action}.dot`);
-    if (fs.existsSync(dotFile)) {
-      fs.unlinkSync(dotFile);
-    }
+    deleteFile(dotFile);
 
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
@@ -388,9 +384,7 @@ export class Generator {
     fromReducers: ActionsMap,
   ): void {
     const dotFile = join(this.outputDir, 'all.dot');
-    if (fs.existsSync(dotFile)) {
-      fs.unlinkSync(dotFile);
-    }
+    deleteFile(dotFile);
 
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
@@ -489,4 +483,10 @@ export function getChildNodesRecursivly(node: Node): Node[] {
         [],
       ),
   ];
+}
+
+function deleteFile(filename: string): void {
+  if (fs.existsSync(filename)) {
+    fs.unlinkSync(filename);
+  }
 }
