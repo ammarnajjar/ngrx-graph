@@ -217,7 +217,7 @@ export class Generator {
   }
 
   mapeffectsToActions(): EffectsStructure {
-    if (!this.force && this.fromEffects !== undefined) {
+    if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
       return this.fromEffects;
     }
