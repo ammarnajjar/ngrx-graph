@@ -257,7 +257,7 @@ export class Generator {
   }
 
   mapComponentToActions(): ActionsMap {
-    if (!this.force && this.fromComponents !== undefined) {
+    if (!this.force && !isEmpty(this.fromComponents)) {
       return this.fromComponents;
     }
 
