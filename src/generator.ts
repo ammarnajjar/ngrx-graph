@@ -113,7 +113,7 @@ export class Generator {
   }
 
   mapReducersToActions(): ActionsMap {
-    if (!this.force && this.fromReucers !== undefined) {
+    if (!this.force && !isEmpty(this.fromReucers)) {
       return this.fromReucers;
     }
 
@@ -217,7 +217,7 @@ export class Generator {
   }
 
   mapeffectsToActions(): EffectsStructure {
-    if (!this.force && this.fromEffects !== undefined) {
+    if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
       return this.fromEffects;
     }
@@ -257,7 +257,7 @@ export class Generator {
   }
 
   mapComponentToActions(): ActionsMap {
-    if (!this.force && this.fromComponents !== undefined) {
+    if (!this.force && !isEmpty(this.fromComponents)) {
       return this.fromComponents;
     }
 
@@ -306,9 +306,7 @@ export class Generator {
       return;
     }
 
-    if (fs.existsSync(this.structureFile)) {
-      fs.unlinkSync(this.structureFile);
-    }
+    deleteFile(this.structureFile);
 
     const content = JSON.stringify({
       allActions: this.allActions,
@@ -326,13 +324,7 @@ export class Generator {
     fromReducers: ActionsMap,
   ): void {
     const dotFile = join(this.outputDir, `${action}.dot`);
-    if (fs.existsSync(dotFile)) {
-      if (!this.force) {
-        return;
-      }
-
-      fs.unlinkSync(dotFile);
-    }
+    deleteFile(dotFile);
 
     const filterdByAction = [
       ...chainActionsByInput(fromEffects, action),
@@ -340,12 +332,15 @@ export class Generator {
     ];
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
-      const lines = v.map(o => {
+      const lines = v.map(componentAction => {
         if (
-          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
+          filterdByAction.some(effect =>
+            effect.input.includes(componentAction),
+          ) ||
+          action === componentAction
         ) {
           return `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
-          ${k} -> ${o}\n`;
+          ${k} -> ${componentAction}\n`;
         }
 
         return '';
@@ -354,12 +349,15 @@ export class Generator {
     }
 
     for (const [k, v] of Object.entries(fromReducers)) {
-      const lines = v.map(o => {
+      const lines = v.map(reducerAction => {
         if (
-          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
+          filterdByAction.some(effect =>
+            effect.output.includes(reducerAction),
+          ) ||
+          action === reducerAction
         ) {
           return `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
-              ${o} -> ${k}\n`;
+          ${reducerAction} -> ${k}\n`;
         }
 
         return '';
@@ -386,9 +384,7 @@ export class Generator {
     fromReducers: ActionsMap,
   ): void {
     const dotFile = join(this.outputDir, 'all.dot');
-    if (fs.existsSync(dotFile)) {
-      fs.unlinkSync(dotFile);
-    }
+    deleteFile(dotFile);
 
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
@@ -487,4 +483,10 @@ export function getChildNodesRecursivly(node: Node): Node[] {
         [],
       ),
   ];
+}
+
+function deleteFile(filename: string): void {
+  if (fs.existsSync(filename)) {
+    fs.unlinkSync(filename);
+  }
 }
