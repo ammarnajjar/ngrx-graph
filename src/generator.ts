@@ -113,7 +113,7 @@ export class Generator {
   }
 
   mapReducersToActions(): ActionsMap {
-    if (!this.force && this.fromReucers !== undefined) {
+    if (!this.force && !isEmpty(this.fromReucers)) {
       return this.fromReucers;
     }
 
@@ -340,12 +340,15 @@ export class Generator {
     ];
     let content = 'digraph {\n';
     for (const [k, v] of Object.entries(fromComponents)) {
-      const lines = v.map(o => {
+      content += `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]\n`;
+      const lines = v.map(componentAction => {
         if (
-          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
+          filterdByAction.some(effect =>
+            effect.input.includes(componentAction),
+          ) ||
+          action === componentAction
         ) {
-          return `${k} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
-          ${k} -> ${o}\n`;
+          return `${k} -> ${componentAction}\n`;
         }
 
         return '';
@@ -354,12 +357,15 @@ export class Generator {
     }
 
     for (const [k, v] of Object.entries(fromReducers)) {
-      const lines = v.map(o => {
+      content += `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]\n`;
+      const lines = v.map(reducerAction => {
         if (
-          filterdByAction.some(a => a.input.includes(o) || a.output.includes(o))
+          filterdByAction.some(effect =>
+            effect.output.includes(reducerAction),
+          ) ||
+          action === reducerAction
         ) {
-          return `${k} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
-              ${o} -> ${k}\n`;
+          return `${reducerAction} -> ${k}\n`;
         }
 
         return '';
