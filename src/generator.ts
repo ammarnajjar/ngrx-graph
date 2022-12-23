@@ -53,7 +53,7 @@ export class Generator {
     this.outputDir = outputDir;
     this.force = force;
     this.structureFile = join(this.outputDir, structureFile);
-    const content = this.readStructure();
+    const content = force ? undefined : this.readStructure();
     this.allActions = content?.allActions ?? this.getAllActions();
     this.fromComponents = content?.fromComponents;
     this.fromEffects = content?.fromEffects;
