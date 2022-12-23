@@ -155,8 +155,7 @@ export class Generator {
       actions = [
         ...actions,
         ...this.allActions.filter((action: string) =>
-          // eslint-disable-next-line no-useless-escape
-          mapNode.getText().match(new RegExp(`[^\w]${action}\\(`)),
+          mapNode.getText().match(new RegExp(`[^\\w]${action}\\(`)),
         ),
       ];
     }
@@ -190,12 +189,9 @@ export class Generator {
         actions = [
           ...actions,
           ...this.allActions.filter((action: string) => {
-            return (
-              callable
-                .getText()
-                // eslint-disable-next-line no-useless-escape
-                .match(new RegExp(`[^\w]${action}[^\w]`))
-            );
+            return callable
+              .getText()
+              .match(new RegExp(`[^\\w]${action}[^\\w]`));
           }),
         ];
       }
@@ -249,7 +245,8 @@ export class Generator {
       ...new Set(
         this.allActions.filter(
           (action: string) =>
-            nodes.filter(node => node.includes(action)).length,
+            nodes.filter(node => node.match(new RegExp(`[^\\w]${action}\\(`)))
+              .length,
         ),
       ),
     ];
