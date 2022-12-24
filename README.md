@@ -21,21 +21,167 @@ for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
 The first run will generate a json file (see `--structureFile` flag), which is used for the next runs if the flag `--force` was not set as cache.
 If this file exists, source code will not be parsed for actions, the recorded structure will be taken from that json file. This speeds up the process considerably.
 
-## Example
+<details>
+  <summary>Graph Keys</summary>
 
-```bash
-npx ngrx-graph MainAction
+|                 |                                              |
+| --------------- | -------------------------------------------- |
+| Component       | ![component](./docs/keys/component.png)      |
+| Action          | ![component](./docs/keys/action.png)         |
+| Action in focus | ![component](./docs/keys/selectedAction.png) |
+| Nested Action   | ![component](./docs/keys/nestedAction.png)   |
+| Reducer         | ![component](./docs/keys/reducer.png)        |
+
+</details>
+<details>
+  <summary>Examples</summary>
+
+### Case 1:
+
+### Input:
+
+```typescript
+// declarations
+export const action1 = createAction('Action1');
+export const action2 = createAction('Action2');
+export const action3 = createAction('Action3');
+
+// component
+@Component()
+export class FirstComponent {
+  onEvent() {
+    this.store.dispatch(action1());
+  }
+}
+
+// effects
+@Injectable()
+export class ExampleEffects {
+  effect1$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(action1),
+      switchMap(() => [action2(), action3()]),
+    ),
+  );
+}
+
+// reducer
+const firstReducer = createReducer(
+  on(action3, () => {
+    // ...
+  }),
+);
 ```
 
-Generates: [dot file](.//docs/example.dot) (I took a real world example and anonymised the names)
+### Output:
 
-Produced graph will look like:
+```bash
+npx ngrx-graph -j -f
+```
 
-![example generated graph](./docs/example.svg)
+- [ngrx-graph.json](./docs/examples/case1/ngrx-graph.json)
 
-# Usage
+```bash
+npx ngrx-graph action1
+```
 
-  <!-- usage -->
+- [dotFile](./docs/examples/case1/action1.dot)
+- graph:  
+  ![graph](./docs/examples/case1/action1.svg)
+
+```bash
+npx ngrx-graph action3
+```
+
+- [dotFile](./docs/examples/case1/action3.dot)
+- graph:  
+  ![graph](./docs/examples/case1/action3.svg)
+
+### Case 2 (nested actions):
+
+### Input:
+
+```typescript
+// declarations
+export const nestedAction = createAction(
+  'NestedAction',
+  props<{ action: Action }>(),
+);
+export const action1 = createAction('Action1');
+export const action2 = createAction('Action2');
+export const action3 = createAction('Action3');
+
+// component
+@Component()
+export class FirstComponent {
+  onEvent() {
+    this.store.dispatch(nestedAction({ action: action1() }));
+  }
+}
+
+// effects
+@Injectable()
+export class ExampleEffects {
+  effect1$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(action1),
+      switchMap(() => [nestedAction1({ action: action2() }), action3()])),
+    ),
+  );
+
+  effect2$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(nestedAction1),
+      map(({ action }) => nestedAction2( { action: action()})),
+    ),
+  );
+
+  effect3$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(nestedAction2),
+      map(({ action }) => action())),
+    ),
+  );
+}
+
+// reducer
+const firstReducer = createReducer(
+  on(action3, () => {
+    // ...
+  }),
+)
+```
+
+### Output:
+
+```bash
+npx ngrx-graph -j -f
+```
+
+- [ngrx-graph.json](./docs/examples/case2/ngrx-graph.json)
+
+```bash
+npx ngrx-graph action1
+```
+
+- [dotFile](./docs/examples/case2/action1.dot)
+- graph:  
+  ![graph](./docs/examples/case2/action1.svg)
+
+```bash
+npx ngrx-graph action3
+```
+
+- [dotFile](./docs/examples/case2/action3.dot)
+- graph:  
+  ![graph](./docs/examples/case2/action3.svg)
+
+</details>
+
+<details>
+  <summary>Usage</summary>
+
+<!-- usage -->
 
 ```sh-session
 $ npm install -g ngrx-graph
@@ -50,10 +196,12 @@ USAGE
 ```
 
 <!-- usagestop -->
+</details>
 
-# Commands
+<details>
+  <summary>Commands</summary>
 
-  <!-- commands -->
+<!-- commands -->
 
 - [`ngrx-graph graph [ACTION]`](#ngrx-graph-graph-action)
 - [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
@@ -111,6 +259,7 @@ DESCRIPTION
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.19/src/commands/help.ts)_
 
 <!-- commandsstop -->
+</details>
 
 # Status:
 

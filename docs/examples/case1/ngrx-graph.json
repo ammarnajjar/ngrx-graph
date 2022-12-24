@@ -1,0 +1,15 @@
+{
+  "allActions": [
+    { "name": "nestedAction1", "nested": true },
+    { "name": "nestedAction2", "nested": true },
+    { "name": "action1", "nested": false },
+    { "name": "action2", "nested": false },
+    { "name": "action3", "nested": false }
+  ],
+  "loadedActions": [],
+  "fromComponents": { "FirstComponent": ["action1"] },
+  "fromEffects": {
+    "effect1$": { "input": ["action1"], "output": ["action2", "action3"] }
+  },
+  "fromReducers": { "firstReducer": ["action3"] }
+}
