@@ -188,7 +188,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.8 darwin-arm64 node-v19.3.0
+ngrx-graph/0.0.9 darwin-arm64 node-v19.3.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -236,7 +236,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.8/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.9/dist/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
