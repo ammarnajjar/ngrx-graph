@@ -2,7 +2,7 @@
 
 ## Motivation:
 
-Working with a very big [NgRx](https://ngrx.io/) store in an angular application will lead to having lots of actions/effects and lots of interactions betwen components/actions/reducers. It gets very tedious very quickly to follow an action from the start to the end, and it is very easy to miss an action dispatched in an effect somewhere along the chain of actions.
+Working with a very big [NgRx](https://ngrx.io/) store in an angular application will lead to having lots of actions/effects and lots of interactions between components/actions/reducers. It gets very tedious very quickly to follow an action from the start to the end, and it is very easy to miss an action dispatched in an effect somewhere along the chain of actions.
 
 This packages, tries to collect all actions/components/reducers participating in a particular flow and generate dot files for that flow, with the idea that following a graph visually is easier than following effects and actions in code.
 
@@ -41,7 +41,7 @@ If this file exists, source code will not be parsed for actions, the recorded st
 ### Input:
 
 ```typescript
-// declarations
+// actions
 export const action1 = createAction('Action1');
 export const action2 = createAction('Action2');
 export const action3 = createAction('Action3');
@@ -102,7 +102,7 @@ npx ngrx-graph action3
 ### Input:
 
 ```typescript
-// declarations
+// actions
 export const nestedAction = createAction(
   'NestedAction',
   props<{ action: Action }>(),
@@ -263,6 +263,6 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.1
 
 # Status:
 
-This project is still young and encourage collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
+This project is still young and it encourages collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
 
 I work on this on my own free time only.
