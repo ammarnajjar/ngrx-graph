@@ -1,6 +1,6 @@
 {
   "name": "ngrx-graph",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Generate NgRx actions graph",
   "author": "Ammar Najjar",
   "bin": {

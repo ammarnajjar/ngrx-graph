@@ -5,6 +5,7 @@
     "semi": "off",
     "object-curly-spacing": "off",
     "unicorn/no-array-reduce": "off",
-    "unicorn/prefer-object-from-entries": "off"
+    "unicorn/prefer-object-from-entries": "off",
+    "operator-linebreak": "off"
   }
 }

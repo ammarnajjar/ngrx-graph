@@ -1,0 +1,12 @@
+digraph {
+FirstComponent [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
+          FirstComponent -> action1
+nestedAction1 [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]
+action1 -> nestedAction1
+action3 [color=green, fillcolor=green, fontcolor=white, style=filled]
+action1 -> action3
+action2 [fillcolor=linen, style=filled]
+nestedAction1 -> action2 [arrowhead=dot]
+firstReducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+          action3 -> firstReducer
+}

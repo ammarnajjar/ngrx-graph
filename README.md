@@ -2,7 +2,7 @@
 
 ## Motivation:
 
-Working with a very big [NgRx](https://ngrx.io/) store in an angular application will lead to having lots of actions/effects and lots of interactions betwen components/actions/reducers. It gets very tedious very quickly to follow an action from the start to the end, and it is very easy to miss an action dispatched in an effect somewhere along the chain of actions.
+Working with a very big [NgRx](https://ngrx.io/) store in an angular application will lead to having lots of actions/effects and lots of interactions between components/actions/reducers. It gets very tedious very quickly to follow an action from the start to the end, and it is very easy to miss an action dispatched in an effect somewhere along the chain of actions.
 
 This packages, tries to collect all actions/components/reducers participating in a particular flow and generate dot files for that flow, with the idea that following a graph visually is easier than following effects and actions in code.
 
@@ -21,28 +21,174 @@ for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
 The first run will generate a json file (see `--structureFile` flag), which is used for the next runs if the flag `--force` was not set as cache.
 If this file exists, source code will not be parsed for actions, the recorded structure will be taken from that json file. This speeds up the process considerably.
 
-## Example
+<details>
+  <summary>Graph Keys</summary>
 
-```bash
-npx ngrx-graph MainAction
+|                 |                                              |
+| --------------- | -------------------------------------------- |
+| Component       | ![component](./docs/keys/component.png)      |
+| Action          | ![component](./docs/keys/action.png)         |
+| Action in focus | ![component](./docs/keys/selectedAction.png) |
+| Nested Action   | ![component](./docs/keys/nestedAction.png)   |
+| Reducer         | ![component](./docs/keys/reducer.png)        |
+
+</details>
+<details>
+  <summary>Examples</summary>
+
+### Case 1:
+
+### Input:
+
+```typescript
+// actions
+export const action1 = createAction('Action1');
+export const action2 = createAction('Action2');
+export const action3 = createAction('Action3');
+
+// component
+@Component()
+export class FirstComponent {
+  onEvent() {
+    this.store.dispatch(action1());
+  }
+}
+
+// effects
+@Injectable()
+export class ExampleEffects {
+  effect1$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(action1),
+      switchMap(() => [action2(), action3()]),
+    ),
+  );
+}
+
+// reducer
+const firstReducer = createReducer(
+  on(action3, () => {
+    // ...
+  }),
+);
 ```
 
-Generates: [dot file](.//docs/example.dot) (I took a real world example and anonymised the names)
+### Output:
 
-Produced graph will look like:
+```bash
+npx ngrx-graph -j -f
+```
 
-![example generated graph](./docs/example.svg)
+- [ngrx-graph.json](./docs/examples/case1/ngrx-graph.json)
 
-# Usage
+```bash
+npx ngrx-graph action1
+```
 
-  <!-- usage -->
+- [dotFile](./docs/examples/case1/action1.dot)
+- graph:  
+  ![graph](./docs/examples/case1/action1.svg)
+
+```bash
+npx ngrx-graph action3
+```
+
+- [dotFile](./docs/examples/case1/action3.dot)
+- graph:  
+  ![graph](./docs/examples/case1/action3.svg)
+
+### Case 2 (nested actions):
+
+### Input:
+
+```typescript
+// actions
+export const nestedAction = createAction(
+  'NestedAction',
+  props<{ action: Action }>(),
+);
+export const action1 = createAction('Action1');
+export const action2 = createAction('Action2');
+export const action3 = createAction('Action3');
+
+// component
+@Component()
+export class FirstComponent {
+  onEvent() {
+    this.store.dispatch(nestedAction({ action: action1() }));
+  }
+}
+
+// effects
+@Injectable()
+export class ExampleEffects {
+  effect1$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(action1),
+      switchMap(() => [nestedAction1({ action: action2() }), action3()])),
+    ),
+  );
+
+  effect2$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(nestedAction1),
+      map(({ action }) => nestedAction2( { action: action()})),
+    ),
+  );
+
+  effect3$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(nestedAction2),
+      map(({ action }) => action())),
+    ),
+  );
+}
+
+// reducer
+const firstReducer = createReducer(
+  on(action3, () => {
+    // ...
+  }),
+)
+```
+
+### Output:
+
+```bash
+npx ngrx-graph -j -f
+```
+
+- [ngrx-graph.json](./docs/examples/case2/ngrx-graph.json)
+
+```bash
+npx ngrx-graph action1
+```
+
+- [dotFile](./docs/examples/case2/action1.dot)
+- graph:  
+  ![graph](./docs/examples/case2/action1.svg)
+
+```bash
+npx ngrx-graph action3
+```
+
+- [dotFile](./docs/examples/case2/action3.dot)
+- graph:  
+  ![graph](./docs/examples/case2/action3.svg)
+
+</details>
+
+<details>
+  <summary>Usage</summary>
+
+<!-- usage -->
 
 ```sh-session
 $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.8 darwin-arm64 node-v19.3.0
+ngrx-graph/0.0.9 darwin-arm64 node-v19.3.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -50,10 +196,12 @@ USAGE
 ```
 
 <!-- usagestop -->
+</details>
 
-# Commands
+<details>
+  <summary>Commands</summary>
 
-  <!-- commands -->
+<!-- commands -->
 
 - [`ngrx-graph graph [ACTION]`](#ngrx-graph-graph-action)
 - [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
@@ -88,7 +236,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.8/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.9/dist/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -111,9 +259,10 @@ DESCRIPTION
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.19/src/commands/help.ts)_
 
 <!-- commandsstop -->
+</details>
 
 # Status:
 
-This project is still young and encourage collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
+This project is still young and it encourages collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
 
 I work on this on my own free time only.

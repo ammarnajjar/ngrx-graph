@@ -89,7 +89,7 @@ export default class Graph extends Command {
         );
         CliUx.ux.action.stop();
       } else {
-        for (const _action of gen.allActions) {
+        for (const _action of gen.allActions.map(action => action.name)) {
           CliUx.ux.action.start(` ⚡️ ${_action} `);
           gen.generateActionGraph(
             _action,
