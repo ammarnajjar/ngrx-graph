@@ -197,10 +197,11 @@ export class Generator {
         const actionName = (
           (node as CallExpression).expression as Identifier
         ).escapedText.toString();
+        const nodeText = node.getText();
         const payloadActions = this.allActions
-          .filter((action: TypedAction) => {
-            return node.getText().match(new RegExp(`[^\\w]${action.name}\\(`));
-          })
+          .filter((action: TypedAction) =>
+            nodeText.match(new RegExp(`[^\\w^.]${action.name}\\(`)),
+          )
           .map(action => action.name);
         if (!isEmpty(payloadActions)) {
           this.loadedActions = [
@@ -213,7 +214,8 @@ export class Generator {
           if (
             nodeInUse
               .getText()
-              .match(new RegExp(`[^\\w]${payloadAction}\\(`, 'g'))?.length === 1
+              .match(new RegExp(`[^\\w^.]${payloadAction}\\(`, 'g'))?.length ===
+            1
           ) {
             result = result.filter(action => !payloadActions.includes(action));
           }
@@ -265,11 +267,12 @@ export class Generator {
     for (const mapNode of mapNodes.filter(
       node => node.kind === SyntaxKind.CallExpression,
     )) {
+      const mapText = mapNode.getText();
       actions = [
         ...actions,
         ...this.allActions
           .filter((action: TypedAction) =>
-            mapNode.getText().match(new RegExp(`[^\\w]${action.name}\\(`)),
+            mapText.match(new RegExp(`[^\\w^.]${action.name}\\(`)),
           )
           .map(action => action.name),
       ];
@@ -293,7 +296,7 @@ export class Generator {
             .filter((action: TypedAction) => {
               return callable
                 .getText()
-                .match(new RegExp(`[^\\w]${action.name}\\(`));
+                .match(new RegExp(`[^\\w^.]${action.name}\\(`));
             })
             .map(action => action.name),
         ];
@@ -350,7 +353,7 @@ export class Generator {
           .filter(
             (action: TypedAction) =>
               nodes.filter(node =>
-                node.match(new RegExp(`[^\\w]${action.name}\\(`)),
+                node.match(new RegExp(`[^\\w^.]${action.name}\\(`)),
               ).length,
           )
           .map(action => action.name),
