@@ -1,8 +1,7 @@
 // https://ts-ast-viewer.com
 
-import * as fs from 'node:fs';
-
 import { isEmpty } from 'lodash';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CallExpression,
@@ -363,12 +362,12 @@ export class Generator {
         fromReducers: ActionsMap;
       }
     | undefined {
-    this.structureSaved = fs.existsSync(this.structureFile);
+    this.structureSaved = existsSync(this.structureFile);
     if (!this.structureSaved) {
       return;
     }
 
-    return JSON.parse(fs.readFileSync(this.structureFile, 'utf-8'));
+    return JSON.parse(readFileSync(this.structureFile, 'utf-8'));
   }
 
   saveStructure(
@@ -395,7 +394,7 @@ export class Generator {
       fromEffects,
       fromReducers,
     });
-    fs.writeFileSync(this.structureFile, content);
+    writeFileSync(this.structureFile, content);
   }
 
   generateActionGraph(
@@ -477,7 +476,7 @@ export class Generator {
       );
     }
 
-    fs.writeFileSync(dotFile, content);
+    writeFileSync(dotFile, content);
   }
 
   generateAllGraph(
@@ -511,6 +510,6 @@ export class Generator {
     }
 
     content += '}\n';
-    fs.writeFileSync(dotFile, content);
+    writeFileSync(dotFile, content);
   }
 }
