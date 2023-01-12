@@ -1,20 +1,17 @@
 import { Identifier, Node, SyntaxKind } from 'typescript';
 
 export function getChildNodesRecursivly(node: Node): Node[] {
-  return node.kind === SyntaxKind.Identifier
-    ? [node]
-    : [
-        node,
-        ...node
-          .getChildren()
-          .reduce(
-            (all: Node[], child: Node) => [
-              ...all,
-              ...getChildNodesRecursivly(child),
-            ],
-            [],
-          ),
-      ];
+  if (node.kind === SyntaxKind.Identifier) {
+    return [node];
+  }
+
+  const childNodes = node
+    .getChildren()
+    .reduce(
+      (all: Node[], child: Node) => [...all, ...getChildNodesRecursivly(child)],
+      [],
+    );
+  return [node, ...childNodes];
 }
 
 export function getParentNodes(node: Node, identifiers: string[]): Node[] {
