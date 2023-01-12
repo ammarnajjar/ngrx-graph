@@ -2,39 +2,39 @@
 
 import * as fs from 'node:fs';
 
+import { isEmpty } from 'lodash';
+import { join } from 'node:path';
 import {
   CallExpression,
+  ClassDeclaration,
   Identifier,
   Node,
+  PropertyAccessExpression,
+  PropertySignature,
   SourceFile,
   SyntaxKind,
+  TypeLiteralNode,
   VariableDeclaration,
   forEachChild,
-  ClassDeclaration,
-  PropertyAccessExpression,
-  TypeLiteralNode,
-  PropertySignature,
 } from 'typescript';
-import { join } from 'node:path';
-import { isEmpty } from 'lodash';
-import { chainActionsByInput, chainActionsByOutput } from './chain-actions';
-import {
-  EffectsStructure,
-  ActionsMap,
-  TypedAction,
-  LoadedAction,
-  InputOutputMap,
-} from './models';
-import { deleteFile } from './delete-file';
-import { getChildNodesRecursivly, getParentNodes } from './nodes';
 import { actionRegex, actionToReplace } from './action-regex';
-import { readSourceFile } from './read-source-file';
+import { chainActionsByInput, chainActionsByOutput } from './chain-actions';
+import { deleteFile } from './delete-file';
 import {
   actionFiles,
   componentsFiles,
   effectsFiles,
   reducerFiles,
 } from './glob-files';
+import {
+  ActionsMap,
+  EffectsStructure,
+  InputOutputMap,
+  LoadedAction,
+  TypedAction,
+} from './models';
+import { getChildNodesRecursivly, getParentNodes } from './nodes';
+import { readSourceFile } from './read-source-file';
 import { componentStyle, reducerStyle, selectedActionStyle } from './styles';
 
 export class Generator {

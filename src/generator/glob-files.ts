@@ -1,8 +1,8 @@
-import * as fglob from 'fast-glob';
+import { sync } from 'fast-glob';
 import { join } from 'node:path';
 
-export const files = (srcDir: string, pattern: string): string[] =>
-  fglob.sync(join(srcDir, pattern));
+const files = (srcDir: string, pattern: string): string[] =>
+  sync(join(srcDir, pattern));
 
 export const componentsFiles = (srcDir: string): string[] =>
   files(srcDir, '**/*.component.ts');

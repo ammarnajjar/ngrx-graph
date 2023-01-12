@@ -1,4 +1,4 @@
-import { Command, Flags, CliUx } from '@oclif/core';
+import { CliUx, Command, Flags } from '@oclif/core';
 import { Generator } from '../../generator/generator';
 
 export default class Graph extends Command {
