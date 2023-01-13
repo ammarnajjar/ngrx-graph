@@ -26,6 +26,15 @@ import {
   reducerFiles,
 } from './glob-files';
 import {
+  componentStyle,
+  graphHeader,
+  graphTail,
+  loadedActionStyle,
+  nestedActionStyle,
+  reducerStyle,
+  selectedActionStyle,
+} from './graph-styles';
+import {
   ActionsMap,
   EffectsStructure,
   InputOutputMap,
@@ -34,7 +43,6 @@ import {
 } from './models';
 import { getChildNodesRecursivly, getParentNodes } from './nodes';
 import { readSourceFile } from './read-source-file';
-import { componentStyle, reducerStyle, selectedActionStyle } from './styles';
 
 export class Generator {
   private srcDir = '';
@@ -411,7 +419,7 @@ export class Generator {
       ...chainActionsByOutput(fromEffects, action),
     ];
 
-    let content = 'digraph {\n';
+    let content = graphHeader;
     for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(componentAction => {
         if (
@@ -443,7 +451,7 @@ export class Generator {
     const lines = filterdLoadedActions.map(a => {
       const style = a.payloadActions.includes(action)
         ? selectedActionStyle
-        : '[fillcolor=linen, style=filled]';
+        : loadedActionStyle;
       return `${a.payloadActions} ${style}\n${a.name} -> ${a.payloadActions} [arrowhead=dot]\n`;
     });
     content += lines.join('');
@@ -464,7 +472,7 @@ export class Generator {
       content += lines.join('');
     }
 
-    content += '}\n';
+    content += graphTail;
     content = content.replace(
       actionToReplace(action),
       `${action} ${selectedActionStyle}\n$1`,
@@ -472,7 +480,7 @@ export class Generator {
     for (const action of this.nestedActions) {
       content = content.replace(
         actionToReplace(action),
-        `${action} [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]\n$1`,
+        `${action} ${nestedActionStyle}\n$1`,
       );
     }
 
@@ -487,7 +495,7 @@ export class Generator {
     const dotFile = join(this.outputDir, 'all.dot');
     deleteFile(dotFile);
 
-    let content = 'digraph {\n';
+    let content = graphHeader;
     for (const [k, v] of Object.entries(fromComponents)) {
       const lines = v.map(o => `${k} ${componentStyle}\n${k} -> ${o}\n`);
       content += lines.join('');
@@ -509,7 +517,7 @@ export class Generator {
       content += lines.join('');
     }
 
-    content += '}\n';
+    content += graphTail;
     writeFileSync(dotFile, content);
   }
 }
