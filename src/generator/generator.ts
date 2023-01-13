@@ -78,60 +78,6 @@ export class Generator {
     this.loadedActions = content?.loadedActions ?? [];
   }
 
-  getAllActions(): TypedAction[] {
-    const allActions = actionFiles(this.srcDir).reduce(
-      (result: TypedAction[], filename: string) => {
-        const actionsPerFile: TypedAction[] = getParentNodes(
-          readSourceFile(filename),
-          ['createAction'],
-        ).map(node => {
-          const name = (
-            (node.parent as VariableDeclaration).name as Identifier
-          ).escapedText.toString();
-          const members = (
-            (
-              (node as CallExpression).arguments[1] as
-                | CallExpression
-                | undefined
-            )?.typeArguments![0] as TypeLiteralNode | undefined
-          )?.members;
-          const nested =
-            (node as CallExpression).arguments.length > 1 &&
-            members
-              ?.map(member =>
-                (
-                  (member as PropertySignature).type as any
-                ).typeName?.escapedText?.toString(),
-              )
-              .includes('Action') === true;
-
-          const action = { name, nested };
-          return action;
-        });
-        return [...result, ...actionsPerFile];
-      },
-      [],
-    );
-    return allActions;
-  }
-
-  reducerActions(reducer: Node): string[] {
-    return getParentNodes(reducer, ['on']).flatMap(node =>
-      (
-        (node as CallExpression).arguments[0] as Identifier
-      ).escapedText.toString(),
-    );
-  }
-
-  reducerActionsMap(sourceFile: Node): ActionsMap {
-    // one reducer per file
-    const reducer = getParentNodes(sourceFile, ['createReducer'])[0];
-    const reducerName = (
-      (reducer.parent as VariableDeclaration).name as Identifier
-    ).escapedText.toString();
-    return { [reducerName]: this.reducerActions(reducer) };
-  }
-
   mapReducersToActions(): ActionsMap {
     if (!this.force && !isEmpty(this.fromReucers)) {
       return this.fromReucers;
@@ -147,154 +93,6 @@ export class Generator {
       {},
     );
     return reducerActionsMap;
-  }
-
-  effectTriggeringActions(effect: Node): string[] {
-    return getParentNodes(effect, ['ofType']).flatMap(node =>
-      (node as CallExpression).arguments.map(arg =>
-        (arg as Identifier).escapedText.toString(),
-      ),
-    );
-  }
-
-  updateLoadedActions(
-    actions: string[],
-    sourceFile: SourceFile,
-    parentNode?: Node,
-  ): string[] {
-    let result = [...actions];
-    const nodeInUse = parentNode ?? sourceFile;
-    for (const node of getChildNodesRecursivly(nodeInUse)) {
-      if (
-        // get triggered nested actions
-        node.kind === SyntaxKind.CallExpression &&
-        ((node as CallExpression).expression as Identifier | undefined) &&
-        ((node as CallExpression).expression as Identifier | undefined)
-          ?.escapedText &&
-        this.nestedActions.includes(
-          (
-            (node as CallExpression).expression as Identifier
-          ).escapedText.toString(),
-        )
-      ) {
-        const actionName = (
-          (node as CallExpression).expression as Identifier
-        ).escapedText.toString();
-        const nodeText = node.getText();
-        const payloadActions = this.allActions
-          .filter((action: TypedAction) =>
-            nodeText.match(actionRegex(action.name)),
-          )
-          .map(action => action.name);
-        if (!isEmpty(payloadActions)) {
-          this.loadedActions = [
-            ...this.loadedActions,
-            { name: actionName, payloadActions },
-          ];
-        }
-
-        for (const payloadAction of payloadActions) {
-          if (
-            nodeInUse.getText().match(actionRegex(payloadAction, 'g'))
-              ?.length === 1
-          ) {
-            result = result.filter(action => !payloadActions.includes(action));
-          }
-        }
-      }
-
-      if (
-        node.kind === SyntaxKind.CallExpression &&
-        ((node as CallExpression).expression as PropertyAccessExpression).name
-      ) {
-        const privateMethodName = (
-          (node as CallExpression).expression as PropertyAccessExpression
-        ).name.escapedText.toString();
-        const privateMethodActionsAsArguments = (
-          (node as CallExpression).arguments as any
-        )
-          .filter(
-            (arg: Node) =>
-              arg.kind === SyntaxKind.Identifier &&
-              this.allActions
-                .map(_action => _action.name)
-                .includes((arg as Identifier).escapedText.toString()),
-          )
-          .map((arg: Identifier) => arg.escapedText.toString());
-        result = [
-          ...result,
-          ...privateMethodActionsAsArguments,
-          ...this.getActionsFromPrivateMethod(sourceFile, privateMethodName),
-        ];
-      }
-    }
-
-    return result;
-  }
-
-  effectDispatchedActions(
-    effect: Node,
-    sourceFile: SourceFile,
-    input: string[],
-  ): string[] {
-    const mapNodes = getParentNodes(effect, [
-      'map',
-      'switchMap',
-      'concatMap',
-      'exhoustMap',
-      'mergeMap',
-    ]);
-    let actions: string[] = [];
-    for (const mapNode of mapNodes.filter(
-      node => node.kind === SyntaxKind.CallExpression,
-    )) {
-      const mapText = mapNode.getText();
-      actions = [
-        ...actions,
-        ...this.allActions
-          .filter((action: TypedAction) =>
-            mapText.match(actionRegex(action.name)),
-          )
-          .map(action => action.name),
-      ];
-    }
-
-    actions = this.updateLoadedActions(actions, sourceFile, effect);
-    return [...new Set(actions.filter(action => !input.includes(action)))];
-  }
-
-  getActionsFromPrivateMethod(
-    sourceFile: SourceFile,
-    privateMethodName: string,
-  ): string[] {
-    let actions: string[] = [];
-    const callables = getParentNodes(sourceFile, [privateMethodName]);
-    for (const callable of callables) {
-      if (callable.kind === SyntaxKind.MethodDeclaration) {
-        actions = [
-          ...actions,
-          ...this.allActions
-            .filter((action: TypedAction) => {
-              return callable.getText().match(actionRegex(action.name));
-            })
-            .map(action => action.name),
-        ];
-      }
-    }
-
-    return actions;
-  }
-
-  getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {
-    const effectBodies = getParentNodes(sourceFile, ['createEffect']);
-    return effectBodies.reduce((sum, { parent: effect }) => {
-      const key = (
-        (effect as VariableDeclaration).name as Identifier
-      ).escapedText.toString();
-      const input = this.effectTriggeringActions(effect);
-      const output = this.effectDispatchedActions(effect, sourceFile, input);
-      return { ...sum, [key]: { input, output } };
-    }, {});
   }
 
   mapeffectsToActions(): EffectsStructure {
@@ -313,32 +111,6 @@ export class Generator {
       {},
     );
     return effectActionsMap;
-  }
-
-  getComponentDispatchedActions(sourceFile: SourceFile): ActionsMap {
-    let className = '';
-    forEachChild(sourceFile, node => {
-      if (node.kind === SyntaxKind.ClassDeclaration) {
-        className = (
-          (node as ClassDeclaration).name as Identifier
-        ).escapedText.toString();
-      }
-    });
-    const nodes = getParentNodes(sourceFile, ['dispatch']).map(node =>
-      node.parent.getText(),
-    );
-    let actions = [
-      ...new Set(
-        this.allActions
-          .filter(
-            (action: TypedAction) =>
-              nodes.filter(node => node.match(actionRegex(action.name))).length,
-          )
-          .map(action => action.name),
-      ),
-    ];
-    actions = this.updateLoadedActions(actions, sourceFile);
-    return { [className]: actions };
   }
 
   mapComponentToActions(): ActionsMap {
@@ -519,5 +291,233 @@ export class Generator {
 
     content += graphTail;
     writeFileSync(dotFile, content);
+  }
+
+  private getAllActions(): TypedAction[] {
+    const allActions = actionFiles(this.srcDir).reduce(
+      (result: TypedAction[], filename: string) => {
+        const actionsPerFile: TypedAction[] = getParentNodes(
+          readSourceFile(filename),
+          ['createAction'],
+        ).map(node => {
+          const name = (
+            (node.parent as VariableDeclaration).name as Identifier
+          ).escapedText.toString();
+          const members = (
+            (
+              (node as CallExpression).arguments[1] as
+                | CallExpression
+                | undefined
+            )?.typeArguments![0] as TypeLiteralNode | undefined
+          )?.members;
+          const nested =
+            (node as CallExpression).arguments.length > 1 &&
+            members
+              ?.map(member =>
+                (
+                  (member as PropertySignature).type as any
+                ).typeName?.escapedText?.toString(),
+              )
+              .includes('Action') === true;
+
+          const action = { name, nested };
+          return action;
+        });
+        return [...result, ...actionsPerFile];
+      },
+      [],
+    );
+    return allActions;
+  }
+
+  private getComponentDispatchedActions(sourceFile: SourceFile): ActionsMap {
+    let className = '';
+    forEachChild(sourceFile, node => {
+      if (node.kind === SyntaxKind.ClassDeclaration) {
+        className = (
+          (node as ClassDeclaration).name as Identifier
+        ).escapedText.toString();
+      }
+    });
+    const nodes = getParentNodes(sourceFile, ['dispatch']).map(node =>
+      node.parent.getText(),
+    );
+    let actions = [
+      ...new Set(
+        this.allActions
+          .filter(
+            (action: TypedAction) =>
+              nodes.filter(node => node.match(actionRegex(action.name))).length,
+          )
+          .map(action => action.name),
+      ),
+    ];
+    actions = this.updateLoadedActions(actions, sourceFile);
+    return { [className]: actions };
+  }
+
+  private getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {
+    const effectBodies = getParentNodes(sourceFile, ['createEffect']);
+    return effectBodies.reduce((sum, { parent: effect }) => {
+      const key = (
+        (effect as VariableDeclaration).name as Identifier
+      ).escapedText.toString();
+      const input = this.effectTriggeringActions(effect);
+      const output = this.effectDispatchedActions(effect, sourceFile, input);
+      return { ...sum, [key]: { input, output } };
+    }, {});
+  }
+
+  private effectDispatchedActions(
+    effect: Node,
+    sourceFile: SourceFile,
+    input: string[],
+  ): string[] {
+    const mapNodes = getParentNodes(effect, [
+      'map',
+      'switchMap',
+      'concatMap',
+      'exhoustMap',
+      'mergeMap',
+    ]);
+    let actions: string[] = [];
+    for (const mapNode of mapNodes.filter(
+      node => node.kind === SyntaxKind.CallExpression,
+    )) {
+      const mapText = mapNode.getText();
+      actions = [
+        ...actions,
+        ...this.allActions
+          .filter((action: TypedAction) =>
+            mapText.match(actionRegex(action.name)),
+          )
+          .map(action => action.name),
+      ];
+    }
+
+    actions = this.updateLoadedActions(actions, sourceFile, effect);
+    return [...new Set(actions.filter(action => !input.includes(action)))];
+  }
+
+  private getActionsFromPrivateMethod(
+    sourceFile: SourceFile,
+    privateMethodName: string,
+  ): string[] {
+    let actions: string[] = [];
+    const callables = getParentNodes(sourceFile, [privateMethodName]);
+    for (const callable of callables) {
+      if (callable.kind === SyntaxKind.MethodDeclaration) {
+        actions = [
+          ...actions,
+          ...this.allActions
+            .filter((action: TypedAction) => {
+              return callable.getText().match(actionRegex(action.name));
+            })
+            .map(action => action.name),
+        ];
+      }
+    }
+
+    return actions;
+  }
+
+  private reducerActions(reducer: Node): string[] {
+    return getParentNodes(reducer, ['on']).flatMap(node =>
+      (
+        (node as CallExpression).arguments[0] as Identifier
+      ).escapedText.toString(),
+    );
+  }
+
+  private reducerActionsMap(sourceFile: Node): ActionsMap {
+    // one reducer per file
+    const reducer = getParentNodes(sourceFile, ['createReducer'])[0];
+    const reducerName = (
+      (reducer.parent as VariableDeclaration).name as Identifier
+    ).escapedText.toString();
+    return { [reducerName]: this.reducerActions(reducer) };
+  }
+
+  private effectTriggeringActions(effect: Node): string[] {
+    return getParentNodes(effect, ['ofType']).flatMap(node =>
+      (node as CallExpression).arguments.map(arg =>
+        (arg as Identifier).escapedText.toString(),
+      ),
+    );
+  }
+
+  private updateLoadedActions(
+    actions: string[],
+    sourceFile: SourceFile,
+    parentNode?: Node,
+  ): string[] {
+    let result = [...actions];
+    const nodeInUse = parentNode ?? sourceFile;
+    for (const node of getChildNodesRecursivly(nodeInUse)) {
+      if (
+        // get triggered nested actions
+        node.kind === SyntaxKind.CallExpression &&
+        ((node as CallExpression).expression as Identifier | undefined) &&
+        ((node as CallExpression).expression as Identifier | undefined)
+          ?.escapedText &&
+        this.nestedActions.includes(
+          (
+            (node as CallExpression).expression as Identifier
+          ).escapedText.toString(),
+        )
+      ) {
+        const actionName = (
+          (node as CallExpression).expression as Identifier
+        ).escapedText.toString();
+        const nodeText = node.getText();
+        const payloadActions = this.allActions
+          .filter((action: TypedAction) =>
+            nodeText.match(actionRegex(action.name)),
+          )
+          .map(action => action.name);
+        if (!isEmpty(payloadActions)) {
+          this.loadedActions = [
+            ...this.loadedActions,
+            { name: actionName, payloadActions },
+          ];
+        }
+
+        for (const payloadAction of payloadActions) {
+          if (
+            nodeInUse.getText().match(actionRegex(payloadAction, 'g'))
+              ?.length === 1
+          ) {
+            result = result.filter(action => !payloadActions.includes(action));
+          }
+        }
+      }
+
+      if (
+        node.kind === SyntaxKind.CallExpression &&
+        ((node as CallExpression).expression as PropertyAccessExpression).name
+      ) {
+        const privateMethodName = (
+          (node as CallExpression).expression as PropertyAccessExpression
+        ).name.escapedText.toString();
+        const privateMethodActionsAsArguments = (
+          (node as CallExpression).arguments as any
+        )
+          .filter(
+            (arg: Node) =>
+              arg.kind === SyntaxKind.Identifier &&
+              this.allActions
+                .map(_action => _action.name)
+                .includes((arg as Identifier).escapedText.toString()),
+          )
+          .map((arg: Identifier) => arg.escapedText.toString());
+        result = [
+          ...result,
+          ...privateMethodActionsAsArguments,
+          ...this.getActionsFromPrivateMethod(sourceFile, privateMethodName),
+        ];
+      }
+    }
+
+    return result;
   }
 }
