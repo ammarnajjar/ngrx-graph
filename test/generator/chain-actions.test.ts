@@ -1,5 +1,8 @@
 import { expect } from 'chai';
-import { chainActionsByInput } from '../../src/generator/chain-actions';
+import {
+  chainActionsByInput,
+  chainActionsByOutput,
+} from '../../src/generator/chain-actions';
 
 const fromEffects = {
   effect1$: {
@@ -54,6 +57,36 @@ describe('chainActionsByInput', () => {
   ]) {
     it(`chains ${action}`, () => {
       const chain = chainActionsByInput(fromEffects, action);
+      expect(chain).to.eql(expected);
+    });
+  }
+});
+
+describe('chainActionsByOutput', () => {
+  for (const { action, expected } of [
+    {
+      action: 'action1',
+      expected: [fromEffects.effect2$],
+    },
+    {
+      action: 'action2',
+      expected: [fromEffects.effect3$, fromEffects.effect4$],
+    },
+    {
+      action: 'action3',
+      expected: [fromEffects.effect4$],
+    },
+    {
+      action: 'action5',
+      expected: [],
+    },
+    {
+      action: 'action9',
+      expected: [fromEffects.effect5$],
+    },
+  ]) {
+    it(`chains ${action}`, () => {
+      const chain = chainActionsByOutput(fromEffects, action);
       expect(chain).to.eql(expected);
     });
   }
