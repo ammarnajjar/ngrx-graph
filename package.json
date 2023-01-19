@@ -60,7 +60,8 @@
     "lint": "eslint . --ext .ts --config .eslintrc",
     "postpack": "shx rm -f oclif.manifest.json",
     "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "mocha --watch  --watch-files . \"test/**/*.test.ts\"",
+    "test:ci": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md",
     "prepare": "husky install"
   },
