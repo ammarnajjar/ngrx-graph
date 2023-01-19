@@ -24,7 +24,7 @@ const fromEffects = {
   },
 };
 
-describe('', () => {
+describe('chainActionsByInput', () => {
   for (const { action, expected } of [
     {
       action: 'action1',
