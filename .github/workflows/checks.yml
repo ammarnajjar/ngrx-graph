@@ -30,5 +30,5 @@ jobs:
       - run: npm install
         if: ${{ steps.cache-nodemodules.outputs.cache-hit != 'true' }}
       - run: npm run build
-      - run: npm test
+      - run: npm run test:ci
       - run: npm run lint
