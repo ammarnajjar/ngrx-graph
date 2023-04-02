@@ -78,59 +78,74 @@ export class Generator {
     this.loadedActions = content?.loadedActions ?? [];
   }
 
-  mapReducersToActions(): ActionsMap {
-    if (!this.force && !isEmpty(this.fromReucers)) {
-      return this.fromReucers;
-    }
+  async mapReducersToActions(): Promise<ActionsMap> {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        console.log('🚀 ~ mapReducersToActions:');
+        if (!this.force && !isEmpty(this.fromReucers)) {
+          resolve(this.fromReucers);
+        }
 
-    const reducerActionsMap = reducerFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.reducerActionsMap(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    return reducerActionsMap;
+        const reducerActionsMap = reducerFiles(this.srcDir).reduce(
+          (result, filename) => {
+            return {
+              ...result,
+              ...this.reducerActionsMap(readSourceFile(filename)),
+            };
+          },
+          {},
+        );
+        resolve(reducerActionsMap);
+      }, 0);
+    });
   }
 
-  mapeffectsToActions(): EffectsStructure {
-    if (!this.force && !isEmpty(this.fromEffects)) {
-      console.log('Reading for a previously saved structure');
-      return this.fromEffects;
-    }
+  async mapeffectsToActions(): Promise<EffectsStructure> {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        console.log('🚀 ~ mapeffectsToActions:');
+        if (!this.force && !isEmpty(this.fromEffects)) {
+          console.log('Reading for a previously saved structure');
+          resolve(this.fromEffects);
+        }
 
-    const effectActionsMap = effectsFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.getEffectActionsMap(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    return effectActionsMap;
+        const effectActionsMap = effectsFiles(this.srcDir).reduce(
+          (result, filename) => {
+            return {
+              ...result,
+              ...this.getEffectActionsMap(readSourceFile(filename)),
+            };
+          },
+          {},
+        );
+        resolve(effectActionsMap);
+      }, 0);
+    });
   }
 
-  mapComponentToActions(): ActionsMap {
-    if (!this.force && !isEmpty(this.fromComponents)) {
-      return this.fromComponents;
-    }
+  async mapComponentToActions(): Promise<ActionsMap> {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        console.log('🚀 ~ mapComponentToActions:');
+        if (!this.force && !isEmpty(this.fromComponents)) {
+          resolve(this.fromComponents);
+        }
 
-    let componentActionsMap = componentsFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.getComponentDispatchedActions(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
-    );
-    return componentActionsMap;
+        let componentActionsMap = componentsFiles(this.srcDir).reduce(
+          (result, filename) => {
+            return {
+              ...result,
+              ...this.getComponentDispatchedActions(readSourceFile(filename)),
+            };
+          },
+          {},
+        );
+        componentActionsMap = Object.fromEntries(
+          Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
+        );
+        resolve(componentActionsMap);
+      }, 0);
+    });
   }
 
   readStructure():
