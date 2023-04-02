@@ -188,7 +188,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.9 darwin-arm64 node-v19.3.0
+ngrx-graph/0.0.10 darwin-arm64 node-v19.8.1
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -204,7 +204,7 @@ USAGE
 <!-- commands -->
 
 - [`ngrx-graph graph [ACTION]`](#ngrx-graph-graph-action)
-- [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+- [`ngrx-graph help [COMMANDS]`](#ngrx-graph-help-commands)
 
 ## `ngrx-graph graph [ACTION]`
 
@@ -236,18 +236,18 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.9/dist/commands/graph/index.ts)_
+_See code: [dist/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.10/dist/commands/graph/index.ts)_
 
-## `ngrx-graph help [COMMAND]`
+## `ngrx-graph help [COMMANDS]`
 
 Display help for ngrx-graph.
 
 ```
 USAGE
-  $ ngrx-graph help [COMMAND] [-n]
+  $ ngrx-graph help [COMMANDS] [-n]
 
 ARGUMENTS
-  COMMAND  Command to show help for.
+  COMMANDS  Command to show help for.
 
 FLAGS
   -n, --nested-commands  Include all nested commands in the output.
@@ -256,7 +256,7 @@ DESCRIPTION
   Display help for ngrx-graph.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.1.19/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.2.9/src/commands/help.ts)_
 
 <!-- commandsstop -->
 </details>
