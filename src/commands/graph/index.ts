@@ -1,4 +1,5 @@
-import { CliUx, Command, Flags } from '@oclif/core';
+import { Args, Command, Flags, ux } from '@oclif/core';
+import { ArgInput } from '@oclif/core/lib/interfaces/parser';
 import { Generator } from '../../generator/generator';
 
 export default class Graph extends Command {
@@ -39,72 +40,72 @@ export default class Graph extends Command {
     }),
   };
 
-  static args = [
-    {
+  static args: ArgInput<{ [arg: string]: any }> = {
+    action: Args.string({
       name: 'action',
+      required: false,
       description:
         'Action of interest. It will be ignored if --jsonOnly is used',
-      required: false,
-    },
-  ];
+    }),
+  };
 
   public async run(): Promise<void> {
     const { args, flags } = await this.parse(Graph);
     const { all, srcDir, outputDir, structureFile, force, jsonOnly } = flags;
     const { action } = args;
 
-    CliUx.ux.action.start('Collecting all actions');
+    ux.action.start('Collecting all actions');
     const gen = new Generator(
       srcDir || process.cwd(),
       outputDir,
       structureFile,
       force,
     );
-    CliUx.ux.action.stop();
+    ux.action.stop();
 
-    CliUx.ux.action.start('Collecting actions from components');
+    ux.action.start('Collecting actions from components');
     const fromComponents = gen.mapComponentToActions();
-    CliUx.ux.action.stop();
+    ux.action.stop();
 
-    CliUx.ux.action.start('Collecting actions from effects');
+    ux.action.start('Collecting actions from effects');
     const fromEffects = gen.mapeffectsToActions();
-    CliUx.ux.action.stop();
+    ux.action.stop();
 
-    CliUx.ux.action.start('Collecting actions from reducers');
+    ux.action.start('Collecting actions from reducers');
     const fromReducers = gen.mapReducersToActions();
-    CliUx.ux.action.stop();
+    ux.action.stop();
 
-    CliUx.ux.action.start('Saving structure for later');
+    ux.action.start('Saving structure for later');
     gen.saveStructure(fromComponents, fromEffects, fromReducers);
-    CliUx.ux.action.stop();
+    ux.action.stop();
 
     if (!jsonOnly) {
       if (action) {
-        CliUx.ux.action.start(` ⚡️ ${action} `);
+        ux.action.start(` ⚡️ ${action} `);
         gen.generateActionGraph(
           action,
           fromComponents,
           fromEffects,
           fromReducers,
         );
-        CliUx.ux.action.stop();
+        ux.action.stop();
       } else {
         for (const _action of gen.allActions.map(action => action.name)) {
-          CliUx.ux.action.start(` ⚡️ ${_action} `);
+          ux.action.start(` ⚡️ ${_action} `);
           gen.generateActionGraph(
             _action,
             fromComponents,
             fromEffects,
             fromReducers,
           );
-          CliUx.ux.action.stop();
+          ux.action.stop();
         }
       }
 
       if (all) {
-        CliUx.ux.action.start('Generating the complete graph');
+        ux.action.start('Generating the complete graph');
         gen.generateAllGraph(fromComponents, fromEffects, fromReducers);
-        CliUx.ux.action.stop();
+        ux.action.stop();
       }
     }
   }
