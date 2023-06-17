@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "@oclif/core": "^2.8.5",
-    "@oclif/plugin-help": "^5.2.9",
+    "@oclif/plugin-help": "^5.2.10",
     "fast-glob": "^3.2.12",
     "lodash": "^4.17.21"
   },
