@@ -17,7 +17,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@oclif/core": "^2.9.4",
+    "@oclif/core": "^2.11.7",
     "@oclif/plugin-help": "^5.2.15",
     "fast-glob": "^3.3.1",
     "lodash": "^4.17.21"
