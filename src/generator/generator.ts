@@ -16,6 +16,7 @@ import {
   VariableDeclaration,
   forEachChild,
 } from 'typescript';
+
 import { actionRegex, actionToReplace } from './action-regex';
 import { chainActionsByInput, chainActionsByOutput } from './chain-actions';
 import { deleteFile } from './delete-file';
@@ -45,17 +46,17 @@ import { getChildNodesRecursivly, getParentNodes } from './nodes';
 import { readSourceFile } from './read-source-file';
 
 export class Generator {
-  private srcDir = '';
+  allActions: TypedAction[];
+  loadedActions: LoadedAction[];
+  nestedActions: string[];
+  private force = false;
+  private fromComponents: ActionsMap | undefined;
+  private fromEffects: EffectsStructure | undefined;
+  private fromReucers: ActionsMap | undefined;
   private outputDir = '';
+  private srcDir = '';
   private structureFile = '';
   private structureSaved = false;
-  private force = false;
-  private fromEffects: EffectsStructure | undefined;
-  private fromComponents: ActionsMap | undefined;
-  private fromReucers: ActionsMap | undefined;
-  allActions: TypedAction[];
-  nestedActions: string[];
-  loadedActions: LoadedAction[];
 
   constructor(
     srcDir: string,
@@ -76,105 +77,6 @@ export class Generator {
     this.fromEffects = content?.fromEffects;
     this.fromReucers = content?.fromReducers;
     this.loadedActions = content?.loadedActions ?? [];
-  }
-
-  mapReducersToActions(): ActionsMap {
-    if (!this.force && !isEmpty(this.fromReucers)) {
-      return this.fromReucers;
-    }
-
-    const reducerActionsMap = reducerFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.reducerActionsMap(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    return reducerActionsMap;
-  }
-
-  mapeffectsToActions(): EffectsStructure {
-    if (!this.force && !isEmpty(this.fromEffects)) {
-      console.log('Reading for a previously saved structure');
-      return this.fromEffects;
-    }
-
-    const effectActionsMap = effectsFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.getEffectActionsMap(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    return effectActionsMap;
-  }
-
-  mapComponentToActions(): ActionsMap {
-    if (!this.force && !isEmpty(this.fromComponents)) {
-      return this.fromComponents;
-    }
-
-    let componentActionsMap = componentsFiles(this.srcDir).reduce(
-      (result, filename) => {
-        return {
-          ...result,
-          ...this.getComponentDispatchedActions(readSourceFile(filename)),
-        };
-      },
-      {},
-    );
-    componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
-    );
-    return componentActionsMap;
-  }
-
-  readStructure():
-    | {
-        allActions: TypedAction[];
-        loadedActions: LoadedAction[];
-        fromComponents: ActionsMap;
-        fromEffects: EffectsStructure;
-        fromReducers: ActionsMap;
-      }
-    | undefined {
-    this.structureSaved = existsSync(this.structureFile);
-    if (!this.structureSaved) {
-      return;
-    }
-
-    return JSON.parse(readFileSync(this.structureFile, 'utf-8'));
-  }
-
-  saveStructure(
-    fromComponents: ActionsMap,
-    fromEffects: { [key: string]: InputOutputMap },
-    fromReducers: ActionsMap,
-  ): void {
-    if (
-      !this.force &&
-      this.fromComponents &&
-      this.fromEffects &&
-      this.fromReucers
-    ) {
-      console.log('Structure is already saved');
-      return;
-    }
-
-    deleteFile(this.structureFile);
-
-    const content = JSON.stringify({
-      allActions: this.allActions,
-      loadedActions: this.loadedActions,
-      fromComponents,
-      fromEffects,
-      fromReducers,
-    });
-    writeFileSync(this.structureFile, content);
   }
 
   generateActionGraph(
@@ -293,6 +195,161 @@ export class Generator {
     writeFileSync(dotFile, content);
   }
 
+  mapComponentToActions(): ActionsMap {
+    if (!this.force && !isEmpty(this.fromComponents)) {
+      return this.fromComponents;
+    }
+
+    let componentActionsMap = componentsFiles(this.srcDir).reduce(
+      (result, filename) => ({
+        ...result,
+        ...this.getComponentDispatchedActions(readSourceFile(filename)),
+      }),
+      {},
+    );
+    componentActionsMap = Object.fromEntries(
+      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
+    );
+    return componentActionsMap;
+  }
+
+  mapeffectsToActions(): EffectsStructure {
+    if (!this.force && !isEmpty(this.fromEffects)) {
+      console.log('Reading for a previously saved structure');
+      return this.fromEffects;
+    }
+
+    const effectActionsMap = effectsFiles(this.srcDir).reduce(
+      (result, filename) => ({
+        ...result,
+        ...this.getEffectActionsMap(readSourceFile(filename)),
+      }),
+      {},
+    );
+    return effectActionsMap;
+  }
+
+  mapReducersToActions(): ActionsMap {
+    if (!this.force && !isEmpty(this.fromReucers)) {
+      return this.fromReucers;
+    }
+
+    const reducerActionsMap = reducerFiles(this.srcDir).reduce(
+      (result, filename) => ({
+        ...result,
+        ...this.reducerActionsMap(readSourceFile(filename)),
+      }),
+      {},
+    );
+    return reducerActionsMap;
+  }
+
+  readStructure():
+    | {
+        allActions: TypedAction[];
+        fromComponents: ActionsMap;
+        fromEffects: EffectsStructure;
+        fromReducers: ActionsMap;
+        loadedActions: LoadedAction[];
+      }
+    | undefined {
+    this.structureSaved = existsSync(this.structureFile);
+    if (!this.structureSaved) {
+      return;
+    }
+
+    // eslint-disable-next-line unicorn/text-encoding-identifier-case
+    return JSON.parse(readFileSync(this.structureFile, 'utf-8'));
+  }
+
+  saveStructure(
+    fromComponents: ActionsMap,
+    fromEffects: { [key: string]: InputOutputMap },
+    fromReducers: ActionsMap,
+  ): void {
+    if (
+      !this.force &&
+      this.fromComponents &&
+      this.fromEffects &&
+      this.fromReucers
+    ) {
+      console.log('Structure is already saved');
+      return;
+    }
+
+    deleteFile(this.structureFile);
+
+    const content = JSON.stringify({
+      allActions: this.allActions,
+      fromComponents,
+      fromEffects,
+      fromReducers,
+      loadedActions: this.loadedActions,
+    });
+    writeFileSync(this.structureFile, content);
+  }
+
+  private effectDispatchedActions(
+    effect: Node,
+    sourceFile: SourceFile,
+    input: string[],
+  ): string[] {
+    const mapNodes = getParentNodes(effect, [
+      'map',
+      'switchMap',
+      'concatMap',
+      'exhoustMap',
+      'mergeMap',
+    ]);
+    let actions: string[] = [];
+    for (const mapNode of mapNodes.filter(
+      node => node.kind === SyntaxKind.CallExpression,
+    )) {
+      const mapText = mapNode.getText();
+      actions = [
+        ...actions,
+        ...this.allActions
+          .filter((action: TypedAction) =>
+            mapText.match(actionRegex(action.name)),
+          )
+          .map(action => action.name),
+      ];
+    }
+
+    actions = this.updateLoadedActions(actions, sourceFile, effect);
+    return [...new Set(actions.filter(action => !input.includes(action)))];
+  }
+
+  private effectTriggeringActions(effect: Node): string[] {
+    return getParentNodes(effect, ['ofType']).flatMap(node =>
+      (node as CallExpression).arguments.map(arg =>
+        (arg as Identifier).escapedText.toString(),
+      ),
+    );
+  }
+
+  private getActionsFromPrivateMethod(
+    sourceFile: SourceFile,
+    privateMethodName: string,
+  ): string[] {
+    let actions: string[] = [];
+    const callables = getParentNodes(sourceFile, [privateMethodName]);
+    for (const callable of callables) {
+      if (callable.kind === SyntaxKind.MethodDeclaration) {
+        actions = [
+          ...actions,
+          ...this.allActions
+            .filter((action: TypedAction) =>
+              callable.getText().match(actionRegex(action.name)),
+            )
+            .map(action => action.name),
+        ];
+      }
+    }
+
+    return actions;
+  }
+
   private getAllActions(): TypedAction[] {
     const allActions = actionFiles(this.srcDir).reduce(
       (result: TypedAction[], filename: string) => {
@@ -314,6 +371,7 @@ export class Generator {
             (node as CallExpression).arguments.length > 1 &&
             members
               ?.map(member =>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (
                   (member as PropertySignature).type as any
                 ).typeName?.escapedText?.toString(),
@@ -368,59 +426,6 @@ export class Generator {
     }, {});
   }
 
-  private effectDispatchedActions(
-    effect: Node,
-    sourceFile: SourceFile,
-    input: string[],
-  ): string[] {
-    const mapNodes = getParentNodes(effect, [
-      'map',
-      'switchMap',
-      'concatMap',
-      'exhoustMap',
-      'mergeMap',
-    ]);
-    let actions: string[] = [];
-    for (const mapNode of mapNodes.filter(
-      node => node.kind === SyntaxKind.CallExpression,
-    )) {
-      const mapText = mapNode.getText();
-      actions = [
-        ...actions,
-        ...this.allActions
-          .filter((action: TypedAction) =>
-            mapText.match(actionRegex(action.name)),
-          )
-          .map(action => action.name),
-      ];
-    }
-
-    actions = this.updateLoadedActions(actions, sourceFile, effect);
-    return [...new Set(actions.filter(action => !input.includes(action)))];
-  }
-
-  private getActionsFromPrivateMethod(
-    sourceFile: SourceFile,
-    privateMethodName: string,
-  ): string[] {
-    let actions: string[] = [];
-    const callables = getParentNodes(sourceFile, [privateMethodName]);
-    for (const callable of callables) {
-      if (callable.kind === SyntaxKind.MethodDeclaration) {
-        actions = [
-          ...actions,
-          ...this.allActions
-            .filter((action: TypedAction) => {
-              return callable.getText().match(actionRegex(action.name));
-            })
-            .map(action => action.name),
-        ];
-      }
-    }
-
-    return actions;
-  }
-
   private reducerActions(reducer: Node): string[] {
     return getParentNodes(reducer, ['on']).flatMap(node =>
       (
@@ -436,14 +441,6 @@ export class Generator {
       (reducer.parent as VariableDeclaration).name as Identifier
     ).escapedText.toString();
     return { [reducerName]: this.reducerActions(reducer) };
-  }
-
-  private effectTriggeringActions(effect: Node): string[] {
-    return getParentNodes(effect, ['ofType']).flatMap(node =>
-      (node as CallExpression).arguments.map(arg =>
-        (arg as Identifier).escapedText.toString(),
-      ),
-    );
   }
 
   private updateLoadedActions(
@@ -499,17 +496,17 @@ export class Generator {
         const privateMethodName = (
           (node as CallExpression).expression as PropertyAccessExpression
         ).name.escapedText.toString();
-        const privateMethodActionsAsArguments = (
-          (node as CallExpression).arguments as any
-        )
-          .filter(
-            (arg: Node) =>
-              arg.kind === SyntaxKind.Identifier &&
-              this.allActions
-                .map(_action => _action.name)
-                .includes((arg as Identifier).escapedText.toString()),
-          )
-          .map((arg: Identifier) => arg.escapedText.toString());
+        const privateMethodActionsAsArguments =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ((node as CallExpression).arguments as any)
+            .filter(
+              (arg: Node) =>
+                arg.kind === SyntaxKind.Identifier &&
+                this.allActions
+                  .map(_action => _action.name)
+                  .includes((arg as Identifier).escapedText.toString()),
+            )
+            .map((arg: Identifier) => arg.escapedText.toString());
         result = [
           ...result,
           ...privateMethodActionsAsArguments,
