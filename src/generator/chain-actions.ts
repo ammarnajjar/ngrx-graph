@@ -1,4 +1,5 @@
 import { uniq } from 'lodash';
+
 import { EffectsStructure, InputOutputMap } from './models';
 
 export function chainActionsByInput(
