@@ -1,5 +1,6 @@
 // https://ts-ast-viewer.com
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { isEmpty } from 'lodash';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -371,7 +372,6 @@ export class Generator {
             (node as CallExpression).arguments.length > 1 &&
             members
               ?.map(member =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (
                   (member as PropertySignature).type as any
                 ).typeName?.escapedText?.toString(),
@@ -496,17 +496,17 @@ export class Generator {
         const privateMethodName = (
           (node as CallExpression).expression as PropertyAccessExpression
         ).name.escapedText.toString();
-        const privateMethodActionsAsArguments =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ((node as CallExpression).arguments as any)
-            .filter(
-              (arg: Node) =>
-                arg.kind === SyntaxKind.Identifier &&
-                this.allActions
-                  .map(_action => _action.name)
-                  .includes((arg as Identifier).escapedText.toString()),
-            )
-            .map((arg: Identifier) => arg.escapedText.toString());
+        const privateMethodActionsAsArguments = (
+          (node as CallExpression).arguments as any
+        )
+          .filter(
+            (arg: Node) =>
+              arg.kind === SyntaxKind.Identifier &&
+              this.allActions
+                .map(_action => _action.name)
+                .includes((arg as Identifier).escapedText.toString()),
+          )
+          .map((arg: Identifier) => arg.escapedText.toString());
         result = [
           ...result,
           ...privateMethodActionsAsArguments,

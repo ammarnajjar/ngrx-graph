@@ -1,11 +1,18 @@
 {
-  "extends": ["oclif", "oclif-typescript"],
+  "extends": [
+    "oclif",
+    "oclif-typescript"
+  ],
   "rules": {
-    "indent": ["error", 2],
+    "indent": [
+      "error",
+      2
+    ],
     "semi": "off",
     "object-curly-spacing": "off",
     "unicorn/no-array-reduce": "off",
     "unicorn/prefer-object-from-entries": "off",
-    "operator-linebreak": "off"
+    "operator-linebreak": "off",
+    "object-curly-newline": "off"
   }
 }
