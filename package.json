@@ -23,7 +23,7 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@oclif/test": "^4.0.4",
+    "@oclif/test": "^4.0.7",
     "@types/chai": "^4.3.16",
     "@types/lodash": "^4.17.6",
     "@types/mocha": "^10.0.7",
