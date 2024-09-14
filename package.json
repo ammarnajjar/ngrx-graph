@@ -35,7 +35,7 @@
     "eslint-config-oclif-typescript": "^3.1.10",
     "husky": "^9.1.5",
     "mocha": "^10.7.3",
-    "oclif": "^4.14.31",
+    "oclif": "^4.14.32",
     "shx": "^0.3.4",
     "ts-node": "^10.9.2",
     "tslib": "^2.7.0",
