@@ -30,7 +30,7 @@
     "@types/node": "^20.16.5",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "chai": "^4.5.0",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.1",
     "eslint-config-oclif": "^5.2.1",
     "eslint-config-oclif-typescript": "^3.1.11",
     "husky": "^9.1.6",
