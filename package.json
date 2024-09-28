@@ -27,7 +27,7 @@
     "@types/chai": "^4.3.17",
     "@types/lodash": "^4.17.7",
     "@types/mocha": "^10.0.8",
-    "@types/node": "^20.16.5",
+    "@types/node": "^20.16.10",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "chai": "^4.5.0",
     "eslint": "^8.57.1",
