@@ -25,7 +25,7 @@
   "devDependencies": {
     "@oclif/test": "^4.0.9",
     "@types/chai": "^4.3.17",
-    "@types/lodash": "^4.17.7",
+    "@types/lodash": "^4.17.9",
     "@types/mocha": "^10.0.8",
     "@types/node": "^20.16.5",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
