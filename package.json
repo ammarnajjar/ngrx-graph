@@ -23,23 +23,26 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "@jest/globals": "^29.7.0",
     "@oclif/test": "^4.0.9",
-    "@types/chai": "^4.3.17",
+    "@types/jest": "^29.5.13",
     "@types/lodash": "^4.17.10",
-    "@types/mocha": "^10.0.8",
-    "@types/node": "^20.16.10",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "chai": "^4.5.0",
-    "eslint": "^8.57.1",
+    "@types/node": "^22.7.5",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "eslint": "^9.12.0",
     "eslint-config-oclif": "^5.2.1",
-    "eslint-config-oclif-typescript": "^3.1.11",
+    "eslint-config-oclif-typescript": "^3.1.12",
+    "globals": "^15.11.0",
     "husky": "^9.1.6",
-    "mocha": "^10.7.3",
-    "oclif": "^4.15.5",
+    "jest": "^29.7.0",
+    "oclif": "^4.15.6",
     "shx": "^0.3.4",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tslib": "^2.7.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.8.1"
   },
   "oclif": {
     "bin": "ngrx-graph",
@@ -58,16 +61,16 @@
   },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
-    "lint": "eslint . --ext .ts --config .eslintrc",
+    "lint": "eslint",
     "postpack": "shx rm -f oclif.manifest.json",
     "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme",
-    "test": "mocha --watch  --watch-files . \"test/**/*.test.ts\"",
-    "test:ci": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "test": "jest --watch --collectCoverage --cache",
+    "test:ci": "jest",
     "version": "oclif readme && git add README.md",
     "prepare": "husky"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=16.0.0"
   },
   "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues",
   "keywords": [

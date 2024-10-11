@@ -259,7 +259,6 @@ export class Generator {
       return;
     }
 
-    // eslint-disable-next-line unicorn/text-encoding-identifier-case
     return JSON.parse(readFileSync(this.structureFile, 'utf-8'));
   }
 
