@@ -6,21 +6,22 @@ export default [
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.ts'],
-    languageOptions: { globals: globals.browser },
     ignores: [
       'eslint.config.mjs',
-      'jest.config.js',
-      'babel.config.js',
-      'node_modules/',
-      'dist/',
-      'assets/',
-    ],
+      '**/dist',
+      '**/assets',
+      '**/node_modules',
+      '**/.eslintcache',
+    ]
+  },
+  {
+    files: ['**/*.ts'],
+    languageOptions: { globals: globals.browser }
   },
   {
     files: ['tests/**/*'],
     env: {
       jest: true,
-    },
+    }
   },
 ];
