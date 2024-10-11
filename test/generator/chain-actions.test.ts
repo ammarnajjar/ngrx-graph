@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-
 import {
   chainActionsByInput,
   chainActionsByOutput,
@@ -58,7 +56,7 @@ describe('chainActionsByInput', () => {
   ]) {
     it(`chains ${action}`, () => {
       const chain = chainActionsByInput(fromEffects, action);
-      expect(chain).to.eql(expected);
+      expect(chain).toEqual(expected);
     });
   }
 });
@@ -88,7 +86,7 @@ describe('chainActionsByOutput', () => {
   ]) {
     it(`chains ${action}`, () => {
       const chain = chainActionsByOutput(fromEffects, action);
-      expect(chain).to.eql(expected);
+      expect(chain).toEqual(expected);
     });
   }
 });
