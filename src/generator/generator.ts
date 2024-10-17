@@ -25,7 +25,7 @@ import {
   actionFiles,
   componentsFiles,
   effectsFiles,
-  reducerFiles,
+  reducerFiles
 } from './glob-files';
 import {
   componentStyle,
@@ -47,9 +47,9 @@ import { getChildNodesRecursivly, getParentNodes } from './nodes';
 import { readSourceFile } from './read-source-file';
 
 export class Generator {
-  allActions: TypedAction[];
-  loadedActions: LoadedAction[];
-  nestedActions: string[];
+  allActions: TypedAction[] = [];
+  loadedActions: LoadedAction[] = [];
+  nestedActions: string[] = [];
   private force = false;
   private fromComponents: ActionsMap | undefined;
   private fromEffects: EffectsStructure | undefined;
@@ -196,52 +196,76 @@ export class Generator {
     writeFileSync(dotFile, content);
   }
 
-  mapComponentToActions(): ActionsMap {
+  async mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
       return this.fromComponents;
     }
 
-    let componentActionsMap = componentsFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.getComponentDispatchedActions(readSourceFile(filename)),
-      }),
-      {},
-    );
-    componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
-    );
+    let componentActionsMap = {}
+    for await (const filename of componentsFiles(this.srcDir)) {
+        componentActionsMap = {
+          ...componentActionsMap,
+          ...this.getComponentDispatchedActions(readSourceFile(filename))}
+    }
+    // const componentActionsMap = componentsFiles(this.srcDir).reduce(
+    //     (result, filename) => ({
+    //       ...result,
+    //       ...this.getComponentDispatchedActions(readSourceFile(filename)),
+    //     }),
+    //     {},
+    //   );
+    // });
     return componentActionsMap;
   }
 
-  mapeffectsToActions(): EffectsStructure {
+  async mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
       return this.fromEffects;
     }
+    let effectActionsMap = {}
+    for await (const filename of effectsFiles(this.srcDir)) {
+        effectActionsMap = {
+          ...effectActionsMap,
+          ...this.getEffectActionsMap(readSourceFile(filename))
+        }
+    }
 
-    const effectActionsMap = effectsFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.getEffectActionsMap(readSourceFile(filename)),
-      }),
-      {},
-    );
+    // const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
+    //   console.log('📌 ~ mapeffectsToActions ~ filenames:', filenames);
+    //   return filenames.reduce(
+    //     (result, filename) => ({
+    //       ...result,
+    //       ...this.getEffectActionsMap(readSourceFile(filename)),
+    //     }),
+    //     {},
+    //   );
+    // });
     return effectActionsMap;
   }
 
-  mapReducersToActions(): ActionsMap {
+  async mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
       return this.fromReucers;
     }
+    let reducerActionsMap = {}
+    for await (const filename of reducerFiles(this.srcDir)) {
+        reducerActionsMap = {
+          ...reducerActionsMap,
+          ...this.reducerActionsMap(readSourceFile(filename))
+        }
+    }
 
-    const reducerActionsMap = reducerFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.reducerActionsMap(readSourceFile(filename)),
-      }),
-      {},
-    );
+    // const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
+    //   console.log('📌 ~ mapReducersToActions ~ filenames:', filenames);
+    //   return filenames.reduce(
+    //     (result, filename) => ({
+    //       ...result,
+    //       ...this.reducerActionsMap(readSourceFile(filename)),
+    //     }),
+    //     {},
+    //   );
+    // });
     return reducerActionsMap;
   }
 
@@ -353,33 +377,33 @@ export class Generator {
   private getAllActions(): TypedAction[] {
     const allActions = actionFiles(this.srcDir).reduce(
       (result: TypedAction[], filename: string) => {
-        const actionsPerFile: TypedAction[] = getParentNodes(
-          readSourceFile(filename),
-          ['createAction'],
-        ).map(node => {
-          const name = (
-            (node.parent as VariableDeclaration).name as Identifier
-          ).escapedText.toString();
-          const members = (
-            (
-              (node as CallExpression).arguments[1] as
-                | CallExpression
+      const actionsPerFile: TypedAction[] = getParentNodes(
+        readSourceFile(filename),
+        ['createAction'],
+      ).map(node => {
+        const name = (
+          (node.parent as VariableDeclaration).name as Identifier
+        ).escapedText.toString();
+        const members = (
+          (
+            (node as CallExpression).arguments[1] as
+              | CallExpression
                 | undefined
-            )?.typeArguments![0] as TypeLiteralNode | undefined
-          )?.members;
-          const nested =
-            (node as CallExpression).arguments.length > 1 &&
-            members
-              ?.map(member =>
-                (
-                  (member as PropertySignature).type as any
-                ).typeName?.escapedText?.toString(),
-              )
-              .includes('Action') === true;
+          )?.typeArguments![0] as TypeLiteralNode | undefined
+        )?.members;
+        const nested =
+          (node as CallExpression).arguments.length > 1 &&
+          members
+            ?.map(member =>
+                  (
+                    (member as PropertySignature).type as any
+                  ).typeName?.escapedText?.toString(),
+                 )
+                 .includes('Action') === true;
 
-          const action = { name, nested };
-          return action;
-        });
+                 const action = { name, nested };
+                 return action;
+      });
         return [...result, ...actionsPerFile];
       },
       [],
@@ -410,7 +434,9 @@ export class Generator {
       ),
     ];
     actions = this.updateLoadedActions(actions, sourceFile);
-    return { [className]: actions };
+    return Object.fromEntries(
+      Object.entries({ [className]: actions }).filter(([, v]) => !isEmpty(v)),
+    );
   }
 
   private getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {

@@ -65,16 +65,12 @@ export default class Graph extends Command {
     );
     ux.action.stop();
 
-    ux.action.start('Collecting actions from components');
-    const fromComponents = gen.mapComponentToActions();
-    ux.action.stop();
-
-    ux.action.start('Collecting actions from effects');
-    const fromEffects = gen.mapeffectsToActions();
-    ux.action.stop();
-
-    ux.action.start('Collecting actions from reducers');
-    const fromReducers = gen.mapReducersToActions();
+    ux.action.start('Collecting actions');
+    const [fromComponents, fromEffects, fromReducers] = await Promise.all([
+      gen.mapComponentToActions(),
+      gen.mapeffectsToActions(),
+      gen.mapReducersToActions(),
+    ]);
     ux.action.stop();
 
     ux.action.start('Saving structure for later');
