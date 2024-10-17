@@ -2,6 +2,8 @@ import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 
 const pexec = promisify(exec);
+
+// uses an external binary (ripgrep)
 const comm = (
   srcDir: string,
   searchPattern: string,
