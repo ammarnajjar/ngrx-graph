@@ -1,41 +1,17 @@
-import { exec, execSync } from 'child_process';
-import { promisify } from 'util';
+import { async, sync } from 'fast-glob';
+import { join } from 'node:path';
 
-const pexec = promisify(exec);
-const comm = (
-  srcDir: string,
-  searchPattern: string,
-  filesPatterns: string,
-): string => `rg -F -l -e "${searchPattern}" -g "${filesPatterns}" "${srcDir}"`;
-
-function grepSync(
-  srcDir: string,
-  searchPattern: string,
-  filesPatterns: string,
-): string[] {
-  const stdout = execSync(comm(srcDir, searchPattern, filesPatterns));
-  const result = stdout.toString().split('\n').slice(0, -1);
-  return result;
-}
-
-async function grep(
-  srcDir: string,
-  searchPattern: string,
-  filesPatterns: string,
-): Promise<string[]> {
-  const { stdout } = await pexec(comm(srcDir, searchPattern, filesPatterns));
-  const result = stdout.toString().split('\n').slice(0, -1);
-  return result;
-}
+const files = (srcDir: string, pattern: string): Promise<string[]> =>
+  async(join(srcDir, pattern));
 
 export const componentsFiles = (srcDir: string): Promise<string[]> =>
-  grep(srcDir, 'dispatch', '**/*.component.ts');
+  files(srcDir, '**/*.component.ts');
 
 export const effectsFiles = (srcDir: string): Promise<string[]> =>
-  grep(srcDir, 'createEffect', '**/*.effects.ts');
+  files(srcDir, '**/*.effects.ts');
 
 export const reducerFiles = (srcDir: string): Promise<string[]> =>
-  grep(srcDir, 'createReducer', '**/*.reducer.ts');
+  files(srcDir, '**/*.reducer.ts');
 
 export const actionFiles = (srcDir: string): string[] =>
-  grepSync(srcDir, 'createAction', '**/*.actions.ts');
+  sync(join(srcDir, '**/*.actions.ts'));
