@@ -200,14 +200,6 @@ export class Generator {
     if (!this.force && !isEmpty(this.fromComponents)) {
       return new Promise(() => this.fromComponents);
     }
-
-    // let componentActionsMap = {};
-    // for await (const filename of componentsFiles(this.srcDir)) {
-    //   componentActionsMap = {
-    //     ...componentActionsMap,
-    //     ...this.getComponentDispatchedActions(readSourceFile(filename)),
-    //   };
-    // }
     const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
       filenames.reduce((result, filename) => {
         return {
@@ -224,13 +216,6 @@ export class Generator {
       console.log('Reading for a previously saved structure');
       return new Promise(() => this.fromEffects);
     }
-    // let effectActionsMap = {};
-    // for await (const filename of effectsFiles(this.srcDir)) {
-    //   effectActionsMap = {
-    //     ...effectActionsMap,
-    //     ...this.getEffectActionsMap(readSourceFile(filename)),
-    //   };
-    // }
     const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
       return filenames.reduce((result, filename) => {
         return {
@@ -246,13 +231,6 @@ export class Generator {
     if (!this.force && !isEmpty(this.fromReucers)) {
       return new Promise(() => this.fromReucers);
     }
-    // let reducerActionsMap = {};
-    // for await (const filename of reducerFiles(this.srcDir)) {
-    //   reducerActionsMap = {
-    //     ...reducerActionsMap,
-    //     ...this.reducerActionsMap(readSourceFile(filename)),
-    //   };
-    // }
     const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
       return filenames.reduce((result, filename) => {
         return {
