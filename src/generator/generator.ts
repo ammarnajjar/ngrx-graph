@@ -210,7 +210,6 @@ export class Generator {
     // }
     const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
       filenames.reduce((result, filename) => {
-        console.log('📌 ~ mapComponentToActions ~ filename:', filename);
         return {
           ...result,
           ...this.getComponentDispatchedActions(readSourceFile(filename)),
@@ -233,9 +232,7 @@ export class Generator {
     //   };
     // }
     const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
-      console.log('📌 ~ mapeffectsToActions ~ filenames:', filenames);
       return filenames.reduce((result, filename) => {
-        console.log('📌 ~ effectActionsMap ~ filename:', filename);
         return {
           ...result,
           ...this.getEffectActionsMap(readSourceFile(filename)),
@@ -257,9 +254,7 @@ export class Generator {
     //   };
     // }
     const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
-      console.log('📌 ~ mapReducersToActions ~ filenames:', filenames);
       return filenames.reduce((result, filename) => {
-        console.log('📌 ~ reducerActionsMap ~ filename:', filename);
         return {
           ...result,
           ...this.reducerActionsMap(readSourceFile(filename)),
