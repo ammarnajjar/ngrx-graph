@@ -198,7 +198,7 @@ export class Generator {
 
   async mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
-      return new Promise(() => this.fromComponents);
+      return new Promise((res) => res(this.fromComponents!));
     }
 
     let componentActionsMap = {};
@@ -214,7 +214,7 @@ export class Generator {
   async mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
-      return new Promise(() => this.fromEffects);
+      return new Promise((res) => res(this.fromEffects!));
     }
     let effectActionsMap = {};
     for await (const filename of effectsFiles(this.srcDir)) {
@@ -228,7 +228,7 @@ export class Generator {
 
   async mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
-      return new Promise(() => this.fromReucers);
+      return new Promise((res) => res(this.fromReucers!));
     }
     let reducerActionsMap = {};
     for await (const filename of reducerFiles(this.srcDir)) {
