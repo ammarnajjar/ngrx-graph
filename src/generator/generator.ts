@@ -198,7 +198,7 @@ export class Generator {
 
   mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
-      return new Promise(() => this.fromComponents);
+      return new Promise((res) => res(this.fromComponents!));
     }
     const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
       filenames.reduce((result, filename) => {
@@ -214,7 +214,7 @@ export class Generator {
   mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
-      return new Promise(() => this.fromEffects);
+      return new Promise((res) => res(this.fromEffects!));
     }
     const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
       return filenames.reduce((result, filename) => {
@@ -229,7 +229,7 @@ export class Generator {
 
   mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
-      return new Promise(() => this.fromReucers);
+      return new Promise((res) => res(this.fromReucers!));
     }
     const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
       return filenames.reduce((result, filename) => {
