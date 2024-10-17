@@ -25,7 +25,7 @@ import {
   actionFiles,
   componentsFiles,
   effectsFiles,
-  reducerFiles
+  reducerFiles,
 } from './glob-files';
 import {
   componentStyle,
@@ -196,76 +196,76 @@ export class Generator {
     writeFileSync(dotFile, content);
   }
 
-  async mapComponentToActions(): Promise<ActionsMap> {
+  mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
-      return this.fromComponents;
+      return new Promise(() => this.fromComponents);
     }
 
-    let componentActionsMap = {}
-    for await (const filename of componentsFiles(this.srcDir)) {
-        componentActionsMap = {
-          ...componentActionsMap,
-          ...this.getComponentDispatchedActions(readSourceFile(filename))}
-    }
-    // const componentActionsMap = componentsFiles(this.srcDir).reduce(
-    //     (result, filename) => ({
-    //       ...result,
-    //       ...this.getComponentDispatchedActions(readSourceFile(filename)),
-    //     }),
-    //     {},
-    //   );
-    // });
+    // let componentActionsMap = {};
+    // for await (const filename of componentsFiles(this.srcDir)) {
+    //   componentActionsMap = {
+    //     ...componentActionsMap,
+    //     ...this.getComponentDispatchedActions(readSourceFile(filename)),
+    //   };
+    // }
+    const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
+      filenames.reduce((result, filename) => {
+        console.log('📌 ~ mapComponentToActions ~ filename:', filename);
+        return {
+          ...result,
+          ...this.getComponentDispatchedActions(readSourceFile(filename)),
+        };
+      }, {}),
+    );
     return componentActionsMap;
   }
 
-  async mapeffectsToActions(): Promise<EffectsStructure> {
+  mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
-      return this.fromEffects;
+      return new Promise(() => this.fromEffects);
     }
-    let effectActionsMap = {}
-    for await (const filename of effectsFiles(this.srcDir)) {
-        effectActionsMap = {
-          ...effectActionsMap,
-          ...this.getEffectActionsMap(readSourceFile(filename))
-        }
-    }
-
-    // const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
-    //   console.log('📌 ~ mapeffectsToActions ~ filenames:', filenames);
-    //   return filenames.reduce(
-    //     (result, filename) => ({
-    //       ...result,
-    //       ...this.getEffectActionsMap(readSourceFile(filename)),
-    //     }),
-    //     {},
-    //   );
-    // });
+    // let effectActionsMap = {};
+    // for await (const filename of effectsFiles(this.srcDir)) {
+    //   effectActionsMap = {
+    //     ...effectActionsMap,
+    //     ...this.getEffectActionsMap(readSourceFile(filename)),
+    //   };
+    // }
+    const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
+      console.log('📌 ~ mapeffectsToActions ~ filenames:', filenames);
+      return filenames.reduce((result, filename) => {
+        console.log('📌 ~ effectActionsMap ~ filename:', filename);
+        return {
+          ...result,
+          ...this.getEffectActionsMap(readSourceFile(filename)),
+        };
+      }, {});
+    });
     return effectActionsMap;
   }
 
-  async mapReducersToActions(): Promise<ActionsMap> {
+  mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
-      return this.fromReucers;
+      return new Promise(() => this.fromReucers);
     }
-    let reducerActionsMap = {}
-    for await (const filename of reducerFiles(this.srcDir)) {
-        reducerActionsMap = {
-          ...reducerActionsMap,
-          ...this.reducerActionsMap(readSourceFile(filename))
-        }
-    }
-
-    // const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
-    //   console.log('📌 ~ mapReducersToActions ~ filenames:', filenames);
-    //   return filenames.reduce(
-    //     (result, filename) => ({
-    //       ...result,
-    //       ...this.reducerActionsMap(readSourceFile(filename)),
-    //     }),
-    //     {},
-    //   );
-    // });
+    // let reducerActionsMap = {};
+    // for await (const filename of reducerFiles(this.srcDir)) {
+    //   reducerActionsMap = {
+    //     ...reducerActionsMap,
+    //     ...this.reducerActionsMap(readSourceFile(filename)),
+    //   };
+    // }
+    const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
+      console.log('📌 ~ mapReducersToActions ~ filenames:', filenames);
+      return filenames.reduce((result, filename) => {
+        console.log('📌 ~ reducerActionsMap ~ filename:', filename);
+        return {
+          ...result,
+          ...this.reducerActionsMap(readSourceFile(filename)),
+        };
+      }, {});
+    });
     return reducerActionsMap;
   }
 
@@ -377,33 +377,33 @@ export class Generator {
   private getAllActions(): TypedAction[] {
     const allActions = actionFiles(this.srcDir).reduce(
       (result: TypedAction[], filename: string) => {
-      const actionsPerFile: TypedAction[] = getParentNodes(
-        readSourceFile(filename),
-        ['createAction'],
-      ).map(node => {
-        const name = (
-          (node.parent as VariableDeclaration).name as Identifier
-        ).escapedText.toString();
-        const members = (
-          (
-            (node as CallExpression).arguments[1] as
-              | CallExpression
+        const actionsPerFile: TypedAction[] = getParentNodes(
+          readSourceFile(filename),
+          ['createAction'],
+        ).map(node => {
+          const name = (
+            (node.parent as VariableDeclaration).name as Identifier
+          ).escapedText.toString();
+          const members = (
+            (
+              (node as CallExpression).arguments[1] as
+                | CallExpression
                 | undefined
-          )?.typeArguments![0] as TypeLiteralNode | undefined
-        )?.members;
-        const nested =
-          (node as CallExpression).arguments.length > 1 &&
-          members
-            ?.map(member =>
-                  (
-                    (member as PropertySignature).type as any
-                  ).typeName?.escapedText?.toString(),
-                 )
-                 .includes('Action') === true;
+            )?.typeArguments![0] as TypeLiteralNode | undefined
+          )?.members;
+          const nested =
+            (node as CallExpression).arguments.length > 1 &&
+            members
+              ?.map(member =>
+                (
+                  (member as PropertySignature).type as any
+                ).typeName?.escapedText?.toString(),
+              )
+              .includes('Action') === true;
 
-                 const action = { name, nested };
-                 return action;
-      });
+          const action = { name, nested };
+          return action;
+        });
         return [...result, ...actionsPerFile];
       },
       [],
