@@ -196,71 +196,47 @@ export class Generator {
     writeFileSync(dotFile, content);
   }
 
-  mapComponentToActions(): Promise<ActionsMap> {
+  async mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
       return new Promise(() => this.fromComponents);
     }
 
-    // let componentActionsMap = {};
-    // for await (const filename of componentsFiles(this.srcDir)) {
-    //   componentActionsMap = {
-    //     ...componentActionsMap,
-    //     ...this.getComponentDispatchedActions(readSourceFile(filename)),
-    //   };
-    // }
-    const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
-      filenames.reduce((result, filename) => {
-        return {
-          ...result,
-          ...this.getComponentDispatchedActions(readSourceFile(filename)),
-        };
-      }, {}),
-    );
+    let componentActionsMap = {};
+    for await (const filename of componentsFiles(this.srcDir)) {
+      componentActionsMap = {
+        ...componentActionsMap,
+        ...this.getComponentDispatchedActions(readSourceFile(filename)),
+      };
+    }
     return componentActionsMap;
   }
 
-  mapeffectsToActions(): Promise<EffectsStructure> {
+  async mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
       return new Promise(() => this.fromEffects);
     }
-    // let effectActionsMap = {};
-    // for await (const filename of effectsFiles(this.srcDir)) {
-    //   effectActionsMap = {
-    //     ...effectActionsMap,
-    //     ...this.getEffectActionsMap(readSourceFile(filename)),
-    //   };
-    // }
-    const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
-      return filenames.reduce((result, filename) => {
-        return {
-          ...result,
-          ...this.getEffectActionsMap(readSourceFile(filename)),
-        };
-      }, {});
-    });
+    let effectActionsMap = {};
+    for await (const filename of effectsFiles(this.srcDir)) {
+      effectActionsMap = {
+        ...effectActionsMap,
+        ...this.getEffectActionsMap(readSourceFile(filename)),
+      };
+    }
     return effectActionsMap;
   }
 
-  mapReducersToActions(): Promise<ActionsMap> {
+  async mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
       return new Promise(() => this.fromReucers);
     }
-    // let reducerActionsMap = {};
-    // for await (const filename of reducerFiles(this.srcDir)) {
-    //   reducerActionsMap = {
-    //     ...reducerActionsMap,
-    //     ...this.reducerActionsMap(readSourceFile(filename)),
-    //   };
-    // }
-    const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
-      return filenames.reduce((result, filename) => {
-        return {
-          ...result,
-          ...this.reducerActionsMap(readSourceFile(filename)),
-        };
-      }, {});
-    });
+    let reducerActionsMap = {};
+    for await (const filename of reducerFiles(this.srcDir)) {
+      reducerActionsMap = {
+        ...reducerActionsMap,
+        ...this.reducerActionsMap(readSourceFile(filename)),
+      };
+    }
     return reducerActionsMap;
   }
 
