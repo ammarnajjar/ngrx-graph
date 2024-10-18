@@ -257,6 +257,15 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.1
 <!-- commandsstop -->
 </details>
 
+<details>
+  <summary>Version Release Guide</summary>
+
+  - change version in [`package.json`](package.json)
+  - run `npm run version`
+  - commit and push/merge to main
+  - draft and release a release on [github](https://github.com/ammarnajjar/ngrx-graph/releases/new)
+</details>
+
 # Status:
 
 This project is still young and it encourages collaborations. If you have an ideas/questions/fixes please do not hesitate to open an issue or provide a pull request.
