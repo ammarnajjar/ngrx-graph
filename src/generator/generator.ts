@@ -47,9 +47,9 @@ import { getChildNodesRecursivly, getParentNodes } from './nodes';
 import { readSourceFile } from './read-source-file';
 
 export class Generator {
-  allActions: TypedAction[];
-  loadedActions: LoadedAction[];
-  nestedActions: string[];
+  allActions: TypedAction[] = [];
+  loadedActions: LoadedAction[] = [];
+  nestedActions: string[] = [];
   private force = false;
   private fromComponents: ActionsMap | undefined;
   private fromEffects: EffectsStructure | undefined;
@@ -196,52 +196,49 @@ export class Generator {
     writeFileSync(dotFile, content);
   }
 
-  mapComponentToActions(): ActionsMap {
+  mapComponentToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromComponents)) {
-      return this.fromComponents;
+      return new Promise((res) => res(this.fromComponents!));
     }
-
-    let componentActionsMap = componentsFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.getComponentDispatchedActions(readSourceFile(filename)),
-      }),
-      {},
-    );
-    componentActionsMap = Object.fromEntries(
-      Object.entries(componentActionsMap).filter(([, v]) => !isEmpty(v)),
+    const componentActionsMap = componentsFiles(this.srcDir).then(filenames =>
+      filenames.reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.getComponentDispatchedActions(readSourceFile(filename)),
+        };
+      }, {}),
     );
     return componentActionsMap;
   }
 
-  mapeffectsToActions(): EffectsStructure {
+  mapeffectsToActions(): Promise<EffectsStructure> {
     if (!this.force && !isEmpty(this.fromEffects)) {
       console.log('Reading for a previously saved structure');
-      return this.fromEffects;
+      return new Promise((res) => res(this.fromEffects!));
     }
-
-    const effectActionsMap = effectsFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.getEffectActionsMap(readSourceFile(filename)),
-      }),
-      {},
-    );
+    const effectActionsMap = effectsFiles(this.srcDir).then(filenames => {
+      return filenames.reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.getEffectActionsMap(readSourceFile(filename)),
+        };
+      }, {});
+    });
     return effectActionsMap;
   }
 
-  mapReducersToActions(): ActionsMap {
+  mapReducersToActions(): Promise<ActionsMap> {
     if (!this.force && !isEmpty(this.fromReucers)) {
-      return this.fromReucers;
+      return new Promise((res) => res(this.fromReucers!));
     }
-
-    const reducerActionsMap = reducerFiles(this.srcDir).reduce(
-      (result, filename) => ({
-        ...result,
-        ...this.reducerActionsMap(readSourceFile(filename)),
-      }),
-      {},
-    );
+    const reducerActionsMap = reducerFiles(this.srcDir).then(filenames => {
+      return filenames.reduce((result, filename) => {
+        return {
+          ...result,
+          ...this.reducerActionsMap(readSourceFile(filename)),
+        };
+      }, {});
+    });
     return reducerActionsMap;
   }
 
@@ -410,7 +407,9 @@ export class Generator {
       ),
     ];
     actions = this.updateLoadedActions(actions, sourceFile);
-    return { [className]: actions };
+    return Object.fromEntries(
+      Object.entries({ [className]: actions }).filter(([, v]) => !isEmpty(v)),
+    );
   }
 
   private getEffectActionsMap(sourceFile: SourceFile): EffectsStructure {

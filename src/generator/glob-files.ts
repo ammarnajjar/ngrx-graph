@@ -1,17 +1,17 @@
-import { sync } from 'fast-glob';
+import { async, sync } from 'fast-glob';
 import { join } from 'node:path';
 
-const files = (srcDir: string, pattern: string): string[] =>
-  sync(join(srcDir, pattern));
+const files = (srcDir: string, pattern: string): Promise<string[]> =>
+  async(join(srcDir, pattern));
 
-export const componentsFiles = (srcDir: string): string[] =>
+export const componentsFiles = (srcDir: string): Promise<string[]> =>
   files(srcDir, '**/*.component.ts');
 
-export const effectsFiles = (srcDir: string): string[] =>
+export const effectsFiles = (srcDir: string): Promise<string[]> =>
   files(srcDir, '**/*.effects.ts');
 
-export const reducerFiles = (srcDir: string): string[] =>
+export const reducerFiles = (srcDir: string): Promise<string[]> =>
   files(srcDir, '**/*.reducer.ts');
 
 export const actionFiles = (srcDir: string): string[] =>
-  files(srcDir, '**/*.actions.ts');
+  sync(join(srcDir, '**/*.actions.ts'));
