@@ -187,7 +187,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.12 darwin-arm64 node-v22.9.0
+ngrx-graph/0.0.13 darwin-arm64 node-v22.10.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -233,7 +233,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [src/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.12/src/commands/graph/index.ts)_
+_See code: [src/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.13/src/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -253,7 +253,7 @@ DESCRIPTION
   Display help for ngrx-graph.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.14/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.15/src/commands/help.ts)_
 <!-- commandsstop -->
 </details>
 
