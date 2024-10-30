@@ -43,7 +43,7 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.10.0",
-    "@types/jest": "^29.5.13",
+    "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.12",
     "globals": "^15.11.0"
   },
