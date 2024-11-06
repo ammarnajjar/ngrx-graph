@@ -21,8 +21,8 @@
   "homepage": "https://github.com/ammarnajjar/ngrx-graph",
   "dependencies": {
     "fast-glob": "^3.3.2",
-    "@oclif/core": "^4.0.30",
-    "@oclif/plugin-help": "^6.2.15",
+    "@oclif/core": "^4.0.31",
+    "@oclif/plugin-help": "^6.2.16",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
@@ -30,22 +30,22 @@
     "eslint-config-oclif": "^5.2.1",
     "husky": "^9.1.6",
     "shx": "^0.3.4",
-    "tslib": "^2.8.0",
+    "tslib": "^2.8.1",
     "typescript": "^5.6.3",
-    "@eslint/js": "^9.13.0",
+    "@eslint/js": "^9.14.0",
     "@jest/globals": "^29.7.0",
-    "@types/node": "^22.8.1",
-    "@typescript-eslint/eslint-plugin": "^8.12.2",
-    "eslint": "^9.13.0",
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.13.0",
+    "eslint": "^9.14.0",
     "eslint-config-oclif-typescript": "^3.1.12",
     "jest": "^29.7.0",
-    "oclif": "^4.15.9",
+    "oclif": "^4.15.20",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.12.2",
+    "typescript-eslint": "^8.13.0",
     "@types/jest": "^29.5.14",
-    "@types/lodash": "^4.17.12",
-    "globals": "^15.11.0"
+    "@types/lodash": "^4.17.13",
+    "globals": "^15.12.0"
   },
   "oclif": {
     "plugins": [
