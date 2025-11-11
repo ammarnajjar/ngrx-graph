@@ -1,15 +1,20 @@
 {
   "allActions": [
-    { "name": "nestedAction", "nested": true },
+    { "name": "nestedAction1", "nested": true },
+    { "name": "nestedAction2", "nested": true },
     { "name": "action1", "nested": false },
     { "name": "action2", "nested": false },
     { "name": "action3", "nested": false }
   ],
-  "loadedActions": [{ "name": "nestedAction", "payloadActions": ["action2"] }],
   "fromComponents": { "FirstComponent": ["action1"] },
   "fromEffects": {
-    "effect1$": { "input": ["action1"], "output": ["nestedAction", "action3"] },
-    "effect2$": { "input": ["nestedAction"], "output": [] }
+    "effect1$": {
+      "input": ["action1"],
+      "output": ["nestedAction1", "action3"]
+    },
+    "effect2$": { "input": ["nestedAction1"], "output": ["nestedAction2"] },
+    "effect3$": { "input": ["nestedAction2"], "output": [] }
   },
-  "fromReducers": { "firstReducer": ["action3"] }
+  "fromReducers": {},
+  "loadedActions": [{ "name": "nestedAction1", "payloadActions": ["action2"] }]
 }

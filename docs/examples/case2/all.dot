@@ -1,7 +1,9 @@
 digraph {
 FirstComponent [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
-action1 [color=green, fillcolor=green, fontcolor=white, style=filled]
 FirstComponent -> action1
-action1 -> action2
+action1 -> nestedAction1
 action1 -> action3
+nestedAction1 -> nestedAction2
+action2 [fillcolor=linen, style=filled]
+nestedAction1 -> action2 [arrowhead=dot]
 }

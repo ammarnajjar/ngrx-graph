@@ -1,3 +1,54 @@
+# ngrx-graph (generated)
+
+A small CLI to analyze an Angular project using NgRx and produce DOT graphs of actions, effects, components, and reducers.
+
+Usage:
+
+Generate structure JSON and DOT for specific action:
+
+```bash
+npx ngrx-graph graph action1 -d ./src -o ./out
+```
+
+Generate all DOTs:
+
+```bash
+npx ngrx-graph graph -a -d ./src -o ./out
+```
+
+Only generate JSON structure:
+
+```bash
+npx ngrx-graph graph -j -d ./src -o ./out
+```
+
+Run tests:
+
+```bash
+npm install
+npm test
+```
+# ngrx-graph (generated)
+
+Simple CLI to analyze an Angular project that uses NgRx and produce DOT graphs and a structure JSON.
+
+Usage examples:
+
+Generate JSON and DOT for an action:
+
+  npx ngrx-graph graph action1 --srcDir ./docs/examples/case1/src --outputDir ./out
+
+Generate JSON only:
+
+  npx ngrx-graph graph --jsonOnly --srcDir ./docs/examples/case1/src --outputDir ./out
+
+Generate all DOTs:
+
+  npx ngrx-graph graph --all --srcDir ./docs/examples/case1/src --outputDir ./out
+
+Run tests:
+
+  npm test
 # ngrx-graph
 
 ## Motivation:

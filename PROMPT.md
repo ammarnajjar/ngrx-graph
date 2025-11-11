@@ -1,231 +1,218 @@
-You can paste the following prompt into GitHub Copilot Chat to generate the core of the ngrx-graph TypeScript CLI.
+You are GitHub Copilot. Generate a TypeScript CLI project that scans an Angular project using NgRx and produces DOT graph files showing relationships between Components, Actions, Effects, and Reducers. Also generate unit tests (Jest) and a small README with commands. Follow the exact specs, output formats, and examples below so generated artifacts match the examples in examples in this repository.
 
----
+Top-level goal
+- Parse TypeScript source in an Angular project to discover:
+  - exported action creators (from `createAction`, possibly with `props`),
+  - components that dispatch actions (calls to `store.dispatch(...)` or `this.store.dispatch(...)`),
+  - effects that listen (via `ofType(...)`) and which actions they output (map/switchMap/mergeMap returning Action(s)),
+  - reducers that `on(action, ...)`.
+- Produce:
+  - a JSON structure file describing actions and relationships (schema shown below),
+  - one DOT file per action chosen (or entire graph if `--all`) showing nodes and relationships,
+  - DOT graphs must visually distinguish:
+    - components (shape and color),
+    - actions (shape and color),
+    - selected action (distinct highlight color),
+    - nested actions (an action held inside props<Action>),
+    - reducers.
+- Support recursion: when user asks for a specific action, the tool should follow where that action flows (components that dispatch it -> effects triggered by it -> actions those effects output -> effects triggered by those -> ... -> reducers that handle some actions).
+- Selected action nodes must be visually distinct (e.g., filled color + bold border).
+- Use AST parsing from typescript and do not use regex parsing
 
-You are to generate a complete, production-quality TypeScript CLI tool named ngrx-graph (MIT licensed) that parses an Angular + NgRx codebase to build a graph of interactions between components, actions, effects and reducers.
+Acceptance criteria / tests
+- When parsing `docs/examples/case1/src/*` the JSON produced must equal the project's ngrx-graph.json (or equivalent structure as described below).
+- When running `npx ngrx-graph graph action1` (or equivalent CLI) the generated DOT for `action1` must match the structure represented in action1.dot (use structure in `case1` as canonical fixture).
+- Include Jest tests that validate:
+  - parsing of actions/components/effects/reducers (happy path using case1),
+  - nested action detection (use case2),
+  - CLI flag behavior: `--jsonOnly`, `--force`, `--all`.
+- Provide package.json scripts: `build`, test, `start` (or `cli`), and `lint` if included.
 
-Requirements (condensed):
-- oclif-based CLI: `ngrx-graph graph [ACTION?]` with flags: --all/-a, --jsonOnly/-j, --force/-f, --outputDir/-o, --srcDir/-d, --structureFile/-s.
-- Parse TypeScript AST (TypeScript Compiler API) to find createAction, createEffect (with ofType), createReducer (with on(...)), and this.store.dispatch(...) in components. Support nested actions via props<{action: Action}>.
-- Produce a JSON structure cache and DOT files. Reuse cache unless --force.
-- Follow the directory architecture in the repository README: src/commands, discovery, graph, serialize, generate, utils, model/types.ts.
-- Provide programmatic API: buildStructure, writeDotForAction, writeFullDot.
-- Include unit tests (Jest + ts-jest) with fixtures: simple-case and nested-actions for parser/effect/reducer/component behavior; tests assert nodes/edges and DOT snapshots.
-- Use TypeScript strict settings and include npm scripts for build/test/lint.
+Contract (tiny)
+- Inputs:
+  - `srcDir` (default current directory) - path to project's source to analyze (TypeScript).
+  - `action` CLI arg (optional) - name of the action to focus on.
+  - flags: `--all`, `--jsonOnly`, `--force`, `--outputDir`, `--structureFile`.
+- Outputs:
+  - `structure.json` (default name ngrx-graph.json in `--outputDir`) - described schema below.
+  - DOT files in `--outputDir` (one per action when not `--all`).
+- Error modes:
+  - invalid `srcDir`: non-zero exit and user-friendly message,
+  - no actions found: return structure.json with empty arrays and a message,
+  - AST parse error: show file and location and continue where possible.
 
-Files to generate (high-level):
-- src/model/types.ts
-- src/commands/graph/index.ts
-- src/discovery/file-scanner.ts
-- src/discovery/parser.ts
-- src/graph/graph-builder.ts
-- src/graph/subgraph.ts
-- src/serialize/cache.ts
-- src/generate/dot-writer.ts
-- src/generate/graphviz-helpers.ts
-- src/utils/log.ts
-- test/* (parser.*.spec.ts, graph.*.spec.ts)
-- test/fixtures/simple-case/* and nested-actions/*
+Data shapes / structure JSON (strict)
+Produce JSON with these keys (example shown below exactly matches this shape):
 
-Acceptance criteria for Copilot output:
-1. Project compiles with `tsc -b` (TypeScript strict), and tests run with `jest` (ts-jest). If external Angular/NGRX typings are not available, test fixtures may declare minimal ambient functions so parser can run.
-2. Parser uses TypeScript AST (no regex) to detect actions/effects/reducers/components and produces GraphStructure.
-3. DOT writer produces a valid digraph with node styles matching README mapping.
-4. Tests validate parser found expected nodes and edges and that extractSubgraph(action) returns reachable nodes/edges.
+{
+  "allActions": [ { "name": string, "nested": boolean }, ... ],
+  "loadedActions": [ /* optional runtime-loaded action names, may be empty */ ],
+  "fromComponents": { "<ComponentName>": ["actionName", ...], ... },
+  "fromEffects": {
+    "<EffectPropertyName>": { "input": ["actionName", ...], "output": ["actionName", ...] },
+    ...
+  },
+  "fromReducers": { "<ReducerName>": ["actionName", ...], ... }
+}
 
-Additional notes for Copilot:
-- Favor maintainable, small modules (<= ~300 lines each).
-- For AST parsing edge-cases, add TODO comments and reasonable best-effort parsing (alias imports, simple nested payload patterns).
-- Implement BFS/DFS for subgraph extraction.
-- Add JSDoc comments for exported types/functions.
+- `allActions`: list of all created action names; `nested: true` means this action is typically used as a nested property (e.g., `props<{ action: Action }>()`) or created to wrap another action.
+- `fromComponents`: map of component class name to action names they dispatch.
+- `fromEffects`: map of effect property name to object listing `input` actions (ofType args) and `output` actions (what the effect returns/emits).
+- `fromReducers`: map of reducer constant/function name to actions it handles via `on(...)`.
 
----
+Examples (canonical fixtures)
+- Use the existing files under src and src as fixtures.
+- The expected ngrx-graph.json is shown in the repo — generate identical shape for the `case1` sources.
+- Ensure nested-case logic reproduces `case2` outputs.
 
-Files currently scaffolded in this workspace (partial implementation):
-- src/model/types.ts - graph types
-- src/config/defaults.ts - default flags
-- src/utils/log.ts - simple logger
-- src/discovery/file-scanner.ts - fast-glob based scanner
-- src/discovery/parser.ts - simple AST parser (createAction/createEffect/createReducer/dispatch)
-- src/graph/graph-builder.ts - normalize graph
-- src/graph/subgraph.ts - BFS subgraph extractor
-- src/serialize/cache.ts - read/write JSON structure
-- src/generate/graphviz-helpers.ts - styling helper
-- src/generate/dot-writer.ts - dot writer
-- src/commands/graph/index.ts - oclif command (scaffold)
-- test/fixtures/{simple-case,nested-actions} - fixtures
-- test/*.spec.ts - some parser tests
+CLI specification
+- Top-level command: `ngrx-graph graph [ACTION]`
+- Flags:
+  - `-a, --all` — generate the whole graph for all actions and connected components/effects/reducers.
+  - `-d, --srcDir <value>` — [default: current directory] Source directory to parse.
+  - `-f, --force` — Force regenerating (ignore cached `--structureFile`).
+  - `-j, --jsonOnly` — Generate only the structure JSON (and exit).
+  - `-o, --outputDir <value>` — [default: /tmp] Where to save JSON and DOT output.
+  - `-s, --structureFile <value>` — [default: ngrx-graph.json] Name of the structure JSON.
+- Behavior:
+  - On first run or when `--force`, parse TS sources, write structure JSON.
+  - If not `--force` and `--structureFile` exists in `--outputDir`, load it and skip parsing.
+  - If `--jsonOnly`, only write JSON and exit.
+  - If ACTION arg provided, generate a DOT for that action and all reachable nodes as described; otherwise generate DOT(s) based on `--all`.
 
-Use the prompt above in Copilot to generate a more complete implementation or to flesh out edge-cases/tests.
-PROMPT START
+Traversal & recursion rules
+- Start nodes:
+  - Components that dispatch actions: edges `Component -> Action` (dispatch).
+- For a selected action A:
+  - Find all effects that `ofType(A)` (or `ofType(actionCreator)` referencing the action) -> each effect yields output action(s) B -> continue recursively for each output action.
+  - If an action is emitted as a nested action inside a props field (e.g., `nestedAction({ action: action1() })`) treat `nestedAction` as `nested: true` and also follow the inner `action1` (so that nested chains get expanded).
+  - Stop recursion when no effects produce further actions, or when an action has been visited already (avoid cycles).
+- For reducers:
+  - Edges `Action -> Reducer` (reducer `on(action, ...)`).
+- For effects outputting arrays (like `switchMap(() => [action2(), action3()])`) or single action return (`map(() => action2())`) detect both.
+- For nested actions created with `props<{ action: Action }>()` or similar, find the inner `action` usage and mark the wrapper action as nested.
 
-You are to generate a complete, production-quality TypeScript CLI tool named ngrx-graph (MIT licensed) that parses an Angular + NgRx codebase to build a graph of interactions between:
-- Components (that dispatch actions through store.dispatch)
-- NgRx actions (createAction(...) and nested actions that carry other actions in a payload)
-- Effects (createEffect pipes listening via ofType, then emitting one or multiple actions)
-- Reducers (createReducer + on(action,...))
+DOT styling (recommendation, must be implemented)
+- Use Graphviz DOT format.
+- Node types:
+  - Component: shape=box, fillcolor="#BFD8FF", style=filled, color="#3B82F6"
+  - Action: shape=ellipse, fillcolor="#FFF7BF", style=filled, color="#D97706"
+  - Nested Action: shape=ellipse, fillcolor="#FDEDE8", style=filled, color="#EF4444", per-node label suffix "(nested)"
+  - Reducer: shape=folder or note, fillcolor="#D7F5E9", style=filled, color="#059669"
+  - Selected Action: use a strong highlight: penwidth=3, fillcolor="#FFD6D6", color="#EF4444", style="filled,bold"
+- Edge labels:
+  - Component -> Action: label="dispatch"
+  - Action -> Effect: label="triggers"
+  - Effect -> Action: label="outputs"
+  - Action -> Reducer: label="handled"
+- Example snippet for a selected action node:
+  A1 [label="action1", shape=ellipse, style="filled,bold", fillcolor="#FFD6D6", color="#B91C1C", penwidth=3];
 
-The tool must:
-1. Provide an oclif-based CLI command: ngrx-graph graph [ACTION?]
-2. Flags (matching README semantics):
-   - --all / -a: generate full graph (all actions + connected components/effects/reducers)
-   - --jsonOnly / -j: only create structure JSON (no DOT files); ignores ACTION and --all
-   - --force / -f: force regeneration (ignore cache)
-   - --outputDir / -o <dir>: directory to write JSON and DOT files (default: /tmp)
-   - --srcDir / -d <dir>: root source dir to scan (default: current working dir)
-   - --structureFile / -s <name>: name of structure JSON file (default: ngrx-graph.json) saved under outputDir
-3. Behavior:
-   - First run: parse source, construct graph, save structure JSON (cache).
-   - Subsequent runs (without --force): reuse JSON structure file (skip parsing) to speed execution.
-   - Focused run with an ACTION argument: generate only the subgraph from that action through all reachable downstream actions/effects/reducers/components.
-   - Nested actions: track when an action carries another action via props<{ action: Action }>(). Follow chains across nesting levels (arbitrary depth).
-   - Effects that dispatch multiple actions (array form) or single actions. Handle operators: map, switchMap, mergeMap, concatMap, exhaustMap; treat any emission of Action or array of Actions as outgoing edges.
-   - Reducers: each on(actionX, ...) introduces an edge from actionX to reducer node.
-   - Components: detect dispatch calls this.store.dispatch(actionCreator()) or this.store.dispatch(nestedAction({ action: ... })). Edge from component to dispatched action.
-   - Styling / DOT output:
-     - Node categories: Component | Action | SelectedAction (focus) | NestedAction | Reducer.
-     - Provide distinct shapes/colors consistent with README key (approximate visually; include comments for mapping).
-   - Error handling: if focused ACTION not found, print clean error and exit with non-zero status code.
-   - Graph algorithm: produce directional edges:
-     - Component -> Action (dispatch)
-     - Action -> Effect (if effect ofType includes the action)
-     - Effect -> Action (actions emitted)
-     - Action -> Reducer (if reducer handles it)
-     - Action(parent) -> Action(nested) when nested via payload or nesting through effect emissions carrying nested actions.
-4. Performance considerations:
-   - Use TypeScript Compiler API to parse AST (no brittle regex).
-   - Cache: store an object representing all discovered entities + edges in structureFile (JSON).
-   - Avoid re-parsing when cache valid unless --force provided.
-   - Support large codebases (thousands of files): use fast-glob for file discovery, parse only *.ts (exclude spec.ts, test files, node_modules).
-5. Architecture (suggested structure):
-   src/
-     commands/graph/index.ts            // oclif command entry
-     cli/output.ts                      // console formatting helpers
-     config/defaults.ts                 // default flag values
-     discovery/file-scanner.ts          // glob finder
-     discovery/parser.ts                // AST parsing of actions, effects, reducers, components dispatch points
-     model/types.ts                     // Graph interfaces
-     graph/graph-builder.ts             // Build Edge/Node sets from parse artifacts
-     graph/subgraph.ts                  // Extract focused subgraph for a given action
-     graph/nesting.ts                   // Resolve nested action chains
-     serialize/cache.ts                 // read/write structure JSON
-     generate/dot-writer.ts             // DOT file creation with styling
-     generate/graphviz-helpers.ts       // node formatting, escaping
-     utils/ast-helpers.ts               // shared AST utilities
-     utils/log.ts                       // structured logging
-     index.ts                           // export main types & programmatic API
-   test/
-     parser.actions.spec.ts
-     parser.effects.spec.ts
-     parser.reducers.spec.ts
-     parser.components.spec.ts
-     parser.nested-actions.spec.ts
-     graph.full.spec.ts
-     graph.focused.spec.ts
-     graph.cache.spec.ts
-     graph.dot.spec.ts
-     cli.flags.spec.ts
-     cli.error-handling.spec.ts
-6. Data model (define in model/types.ts):
-   - enum NodeKind { Action, SelectedAction, NestedAction, Component, Effect, Reducer }
-   - interface GraphNode { id: string; kind: NodeKind; name: string; file: string; line: number; meta?: Record<string, unknown>; }
-   - interface GraphEdge { from: string; to: string; type: 'dispatch' | 'listen' | 'emit' | 'handle' | 'nest'; }
-   - interface GraphStructure { nodes: GraphNode[]; edges: GraphEdge[]; generatedAt: string; version: string; }
-7. Parsing specifics:
-   Actions:
-     - createAction('ActionName' [, props<...>()])
-     - Support imported alias usage e.g., import { createAction as ca }.
-   Nested actions:
-     - props<{ action: Action }>() marks an action that wraps another action; treat payload usage accordingly.
-     - Detect dispatch(nestedAction({ action: someAction() })) => Edge: nestedAction -> someAction AND component -> nestedAction.
-   Effects:
-     - Find class members assigned: createEffect(() => this.actions$.pipe(...))
-     - Inside pipe: ofType(a1, a2, ...) associates effect with those actions (edges: action -> effect).
-     - After ofType, detect operators emitting actions:
-       - map(...) returning actionCreator()
-       - switchMap / mergeMap / concatMap / exhaustMap returning [a1(), a2()] or array literal of actions
-       - Pluck nestedAction payload where payload.action() is invoked.
-   Reducers:
-     - createReducer(initialState?, on(actionX, ...), on(actionY, ...))
-     - Each on: actionX -> reducer edge.
-   Components:
-     - Class annotated with @Component(...) (no need to parse decorator args deeply).
-     - Methods containing this.store.dispatch(actionCreator()).
-     - Provide edge component -> actionCreator.
-   Defensive parsing:
-     - Handle re-exported actions (export { action1 } from './path').
-     - Track imported symbols and alias mapping.
-     - Skip ambiguous dynamic dispatches (e.g., this.store.dispatch(someVar)). Do not attempt runtime inference.
-8. DOT generation:
-   - Graph is directed: digraph G { ... }
-   - Node styling suggestions:
-     - Action: shape=ellipse, fillcolor=lightgoldenrod1
-     - SelectedAction: shape=doublecircle, fillcolor=gold
-     - NestedAction: shape=ellipse, fillcolor=lightskyblue
-     - Component: shape=box, fillcolor=lightgreen
-     - Effect: shape=diamond, fillcolor=lightpink
-     - Reducer: shape=hexagon, fillcolor=lightgray
-   - Edges labeled by type (dispatch, listen, emit, handle, nest) with distinct colors.
-   - Escape identifiers and quotes safely.
-9. Focused graph extraction:
-   - Given an ACTION name:
-     - Mark that node as SelectedAction.
-     - Traverse forward along edges emit|handle|nest|dispatch|listen to include reachable nodes.
-     - Optionally (if simple) include backward context of components/effects that lead to it (but not required unless trivial).
-10. Programmatic API (index.ts):
-   - export functions:
-     - buildStructure(options): Promise<GraphStructure>
-     - writeDotForAction(structure, actionName, outputDir)
-     - writeFullDot(structure, outputDir)
-11. CLI flow (graph command):
-   - Resolve flags
-   - Load or build structure (cache logic)
-   - If --jsonOnly: write structure JSON and exit
-   - If ACTION provided: generate DOT for subgraph of ACTION
-   - If --all: generate DOT for full graph
-   - Default with no ACTION and no flags: same as dot for full graph?
-   - Print paths of generated files
-12. Logging: minimal, with verbose mode optionally (not required if scope too big—skip if not needed).
-13. Edge cases to cover in tests:
-   - Multiple actions listened by same effect (ofType(action1, action2))
-   - Effect returning array of actions
-   - Nested action three levels deep (nestedAction(action: nestedAction2(action: action3())))
-   - Missing focused action => clean error
-   - Cache reuse vs --force
-   - Aliased imports of createAction / createReducer / createEffect
-   - Component dispatches two different actions in different methods
-14. Jest test strategy:
-   - Use in-memory fixture sources (write temporary files under a temp dir) for parser tests.
-   - Snapshot DOT output for simple cases (strip timestamps).
-   - Mock filesystem for cache tests (or use a temp directory).
-   - Ensure 80%+ coverage focusing on logic (no need for exhaustive AST edge cases beyond described).
-15. Coding standards:
-   - Target Node >=16.
-   - Strict TypeScript (tsconfig strict true).
-   - Avoid any external heavy parsing libs beyond TypeScript.
-   - No reliance on Angular packages; treat source code textually via AST nodes.
-16. Provide a README segment update (but don’t overwrite existing README here) in comments inside code referencing usage examples.
-17. Do NOT include contrived placeholder functions—implement real logic.
-18. All exported public types must be documented with JSDoc.
-19. Ensure build: tsc -b passes; tests: jest (with ts-jest) pass.
-20. Provide lightweight utility functions; keep files focused and under ~300 lines each where feasible.
-21. Include npm script suggestions in package.json (if absent):
-   - "build": "tsc -b"
-   - "test": "jest"
-   - "lint": "eslint . --ext .ts"
-22. MIT license header in new source files.
+Parsing strategy and recommended libraries
+- Use TypeScript AST via `ts-morph` (recommended) or the TypeScript Compiler API directly. Rationale: Type information, ES module resolution, and easier traversal. Use a Project with the correct tsconfig.json.
+- Key parser responsibilities:
+  - find calls to `createAction(...)` and record exported const variable name -> action name (use the variable identifier as canonical `name` in `allActions`).
+  - find `props<{ action: Action }>()` usage to detect nested actions (mark `nested: true` if props contains an Action type).
+  - find class declarations with `@Component` decorator and inside methods or lifecycle hooks detect `this.store.dispatch(X())` or `store.dispatch(X())` (imported `Store` usage).
+  - find `createEffect` properties inside classes decorated with `@Injectable` and analyze the inner pipe to get `ofType(...)` input actions and the output actions returned in `map/switchMap/mergeMap/concatMap` callbacks (both arrays and single returns).
+  - find `createReducer` + `on(...)` to map reducers to handled actions.
+- Carefully resolve references to action creators imported from other files (handle import declarations).
+- For cases where action creators are invoked with parentheses `action1()` or `action1({})`, detect that as an action instance.
 
-Now generate:
-- All source files listed
-- Tests with meaningful assertions (not only existence)
-- Updated package.json additions if missing (but preserve existing fields)
-- Any necessary tsconfig adjustments (strict mode)
-- Jest config (ts-jest) if not already present
-- A sample fixture directory under test/fixtures with at least:
-  - simple-case/
-  - nested-actions/
-- Implement graph traversal in subgraph.ts using BFS/DFS over edges.
+Project layout (suggested files to generate)
+- src/
+  - cli.ts — CLI entry (use `commander` or `oclif` or simple Node arg parser).
+  - index.ts — main exported helpers.
+  - parser.ts — AST parsing logic (ts-morph).
+  - graph.ts — DOT generation logic.
+  - jsonCache.ts — read/write `structureFile` handling.
+  - types.ts — Types for the structure JSON, node/edge interfaces.
+  - utils/* — small helpers for AST traversal, import resolution.
+- tests/
+  - fixtures/case1/* (re-use case1 or copy small fixtures)
+  - parser.spec.ts — unit tests for AST parser using fixture files.
+  - graph.spec.ts — unit tests for DOT generation for a specific action using fixture structure JSON.
+  - cli.spec.ts — test CLI flag behavior (spawn or import CLI module).
+- package.json — scripts `build`, test, `start` (bin mapping), dependencies:
+  - dependencies: `ts-morph`, `commander` (or `oclif` if you want), `graphviz` not required as runtime,
+  - devDependencies: `typescript`, `jest`, `ts-jest`, `@types/jest`, `eslint` (optional).
+- README.md — short usage snippet.
 
-Stop after producing code + tests (no need to run commands). Provide a summary of files and their purpose at the end.
+Unit Tests (explicit)
+- Test 1: parse src and assert JSON equals ngrx-graph.json.
+  - Load fixture files via the ts-morph Project root override or use path to src.
+  - Assert `structure.allActions` contains `action1, action2, action3` with `nested:false`.
+  - Assert `fromComponents.FirstComponent` contains `action1`.
+  - Assert `fromEffects.effect1$.input` contains `action1` and `output` contains `action2, action3`.
+  - Assert `fromReducers.firstReducer` contains `action3`.
+- Test 2: parse src and validate nested action detection:
+  - `allActions` includes `nestedAction`, `action1`, `action2`, `action3`.
+  - `nestedAction` should appear with `nested:true`.
+  - Validate recursion detection in a small simulated traversal (action1 triggers nestedAction => inner action1).
+- Test 3: DOT generation for `action1` (case1)
+  - Using the structure JSON from Test 1, generate DOT for `action1` and assert:
+    - the DOT contains a node for `FirstComponent` and `action1`, `action2`, `action3`.
+    - edges exist: `FirstComponent -> action1`, `effect1$ -> action2`, `effect1$ -> action3`, `action3 -> firstReducer`.
+    - The `action1` node contains attributes marking it as selected (the highlight attributes).
+- Test 4 (CLI flags): simulate `--jsonOnly` and ensure only JSON file is created.
+- (Optional) Test 5: cycle detection - create synthetic fixtures where effects cause cycles and assert traversal stops without infinite loop.
 
-PROMPT END
+Edge cases to handle
+- Actions imported under different names (alias imports).
+- Effects that return Observables of actions besides simple arrays: e.g., `switchMap(() => of(action1()))`.
+- Multiple `ofType` arguments in a single effect.
+- Nested action payloads with more than one field; find `Action`-typed fields.
+- Action creators with typed payloads (props) that include other complex types.
+- Reducers defined inline or exported as const.
+
+Implementation notes & hints for Copilot
+- Use `ts-morph` Project to load source files from `--srcDir` and set compiler options reading tsconfig.json if present.
+- When resolving imports, prefer `node` module resolution with `ts-morph`'s `getImportDeclarations()` helpers and `getModuleSpecifierValue()`.
+- Provide a small in-memory graph traversal to compute per-action reachable nodes and produce a unique visited set to prevent cycles.
+- Generate DOT by emitting plain text. Keep the output deterministic (sorted nodes/edges) to make tests reliable.
+- For tests use `ts-jest` so tests can import TypeScript code directly or compile prior to test execution.
+- For CLI argument parsing use `commander`. Implement a programmatic entrypoint so tests can import `graphCommand` functions without spawning a process.
+
+Files to include in the generated repo (minimum)
+- package.json with dependencies, bin mapping for the CLI, and scripts:
+  - "build": "tsc -p tsconfig.json"
+  - "test": "jest"
+  - "start"/"cli": "node ./dist/cli.js"
+- tsconfig.json minimal config for Node + esModuleInterop.
+- `src/parser.ts`, `src/graph.ts`, `src/cli.ts`, `src/types.ts`
+- `tests/parser.spec.ts`, `tests/graph.spec.ts` (using fixtures in examples).
+- README.md with short usage and examples.
+
+Small example DOT fragment to match styling (for Copilot to copy exactly)
+- Use this style template for nodes and edges:
+
+digraph G {
+  rankdir=LR;
+  node [fontname="Helvetica"];
+  "FirstComponent" [label="FirstComponent", shape=box, style=filled, fillcolor="#BFD8FF", color="#3B82F6"];
+  "action1" [label="action1", shape=ellipse, style="filled,bold", fillcolor="#FFD6D6", color="#B91C1C", penwidth=3];
+  "action2" [label="action2", shape=ellipse, style=filled, fillcolor="#FFF7BF", color="#D97706"];
+  "effect1$" [label="effect1$", shape=oval, style=filled, fillcolor="#E8EAF6", color="#6B21A8"];
+  "firstReducer" [label="firstReducer", shape=folder, style=filled, fillcolor="#D7F5E9", color="#059669"];
+  "FirstComponent" -> "action1" [label="dispatch"];
+  "action1" -> "effect1$" [label="triggers"];
+  "effect1$" -> "action2" [label="outputs"];
+  "action3" -> "firstReducer" [label="handled"];
+}
+
+Make tests assert presence of these attributes and required edges (string matching is OK).
+
+Small checklist for generated code by Copilot
+- [ ] ts-morph parsing of `createAction`, `createEffect`, `ofType`, `store.dispatch`, `createReducer` & `on`.
+- [ ] Structure JSON writer/reader with `--force` semantics.
+- [ ] DOT generator with styling and selected-action highlight.
+- [ ] CLI wiring and flags.
+- [ ] Jest tests for fixtures and one dot generation test.
+- [ ] README with example CLI commands and how to run tests.
+
+Finally, create the files using the above layout and code. Guarantee:
+- deterministic output (sort keys when writing JSON and sort nodes/edges when writing DOT),
+- tests are runnable with `npm test` after `npm install`,
+- code is TypeScript-typed and passes `tsc` (basic level).
+
+If anything above is ambiguous, prefer the behavior demonstrated in the repo's `docs/examples/*` fixtures (case1 & case2) — match their JSON shapes and DOT visual semantics.
