@@ -23,13 +23,56 @@ export function parseFiles(filePaths: string[]): ParseResult {
 
   const actionNames = new Map<string, { file: string; line: number }>();
 
+  // symbol maps per file: local identifier -> original name (for aliases)
+  const symbolMapPerFile = new Map<string, Map<string, string>>();
+
+  // helper to resolve a symbol to its canonical name across files (very simple resolution)
+  function resolveSymbol(name: string, file: string) {
+    // check local map
+    const local = symbolMapPerFile.get(file);
+    if (local && local.has(name)) return local.get(name)!;
+    return name;
+  }
+
   for (const fp of filePaths) {
     const content = fs.readFileSync(fp, 'utf8');
     const sf = ts.createSourceFile(fp, content, ts.ScriptTarget.Latest, true);
 
+    // collect import/export aliases first
+    const localSymbolMap = new Map<string, string>();
+    symbolMapPerFile.set(fp, localSymbolMap);
+
+    function scanImportsExports(node: ts.Node) {
+      // import { createAction as ca } from 'x'
+      if (ts.isImportDeclaration(node) && node.importClause && node.importClause.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        for (const el of node.importClause.namedBindings.elements) {
+          const propName = el.propertyName ? el.propertyName.text : el.name.text;
+          const localName = el.name.text;
+          localSymbolMap.set(localName, propName);
+        }
+      }
+
+      // export { action1 } from './actions'
+      if (ts.isExportDeclaration(node) && node.exportClause && ts.isNamedExports(node.exportClause) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+        for (const el of node.exportClause.elements) {
+          const name = el.name.text;
+          const propName = el.propertyName ? el.propertyName.text : name;
+          // mark local symbol as referring to propName
+          localSymbolMap.set(name, propName);
+        }
+      }
+
+      ts.forEachChild(node, scanImportsExports);
+    }
+
+    ts.forEachChild(sf, scanImportsExports);
+
     function visit(node: ts.Node) {
       // createAction call
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'createAction') {
+  // resolve identifier names against symbol map
+  const exprName = ts.isCallExpression(node) && ts.isIdentifier(node.expression) ? resolveSymbol(node.expression.text, fp) : undefined;
+
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && exprName === 'createAction') {
         const arg = node.arguments[0];
         let displayName: string | undefined = undefined;
         if (arg && ts.isStringLiteral(arg)) {
@@ -56,7 +99,7 @@ export function parseFiles(filePaths: string[]): ParseResult {
       }
 
       // createEffect detection: look for createEffect(() => this.actions$.pipe(ofType(...), ...))
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'createEffect') {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && resolveSymbol(node.expression.text, fp) === 'createEffect') {
         const parentMember = node.parent;
         let effectName = 'effect';
         if (ts.isPropertyDeclaration(parentMember) && parentMember.name) {
@@ -67,10 +110,10 @@ export function parseFiles(filePaths: string[]): ParseResult {
 
         // find ofType inside the subtree and detect emitted actions
         function findOfType(n: ts.Node) {
-          if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'ofType') {
+          if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && resolveSymbol(n.expression.text, fp) === 'ofType') {
             for (const a of n.arguments) {
               if (ts.isIdentifier(a)) {
-                const actionName = a.text;
+                const actionName = resolveSymbol(a.text, fp);
                 const actId = makeId(NodeKind.Action, actionName);
                 edges.push({ from: actId, to: id, type: 'listen' });
               }
@@ -80,7 +123,7 @@ export function parseFiles(filePaths: string[]): ParseResult {
           if (ts.isCallExpression(n)) {
             // direct emitted action: actionCreator()
             if (ts.isIdentifier(n.expression)) {
-              const emittedName = n.expression.text;
+              const emittedName = resolveSymbol(n.expression.text, fp);
               const emittedId = makeId(NodeKind.Action, emittedName);
               edges.push({ from: id, to: emittedId, type: 'emit' });
 
@@ -107,7 +150,7 @@ export function parseFiles(filePaths: string[]): ParseResult {
           if (ts.isArrayLiteralExpression(n)) {
             for (const el of n.elements) {
               if (ts.isCallExpression(el) && ts.isIdentifier(el.expression)) {
-                const emittedName = el.expression.text;
+                const emittedName = resolveSymbol(el.expression.text, fp);
                 edges.push({ from: id, to: makeId(NodeKind.Action, emittedName), type: 'emit' });
               }
             }
@@ -119,16 +162,16 @@ export function parseFiles(filePaths: string[]): ParseResult {
       }
 
       // createReducer -> on(action, ...)
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'createReducer') {
+  if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && resolveSymbol(node.expression.text, fp) === 'createReducer') {
         const reducerId = makeId(NodeKind.Reducer, `reducer@${path.basename(fp)}`);
         nodes.push({ id: reducerId, kind: NodeKind.Reducer, name: reducerId, file: fp, line: getLine(node, sf) });
         // find on(...) calls
         function findOn(n: ts.Node) {
-          if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'on') {
+          if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && resolveSymbol(n.expression.text, fp) === 'on') {
             const first = n.arguments[0];
             if (first) {
               if (ts.isIdentifier(first)) {
-                const actionName = first.text;
+                const actionName = resolveSymbol(first.text, fp);
                 const actId = makeId(NodeKind.Action, actionName);
                 edges.push({ from: actId, to: reducerId, type: 'handle' });
               }
@@ -147,7 +190,7 @@ export function parseFiles(filePaths: string[]): ParseResult {
           for (const a of node.arguments) {
             if (ts.isCallExpression(a)) {
               if (ts.isIdentifier(a.expression)) {
-                const actionName = a.expression.text;
+                const actionName = resolveSymbol(a.expression.text, fp);
                 const compId = makeId(NodeKind.Component, path.basename(fp));
                 if (!nodes.find((n) => n.id === compId)) {
                   nodes.push({ id: compId, kind: NodeKind.Component, name: path.basename(fp), file: fp, line: getLine(node, sf) });
