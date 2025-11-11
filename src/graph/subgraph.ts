@@ -1,8 +1,13 @@
 import { GraphEdge, GraphNode, GraphStructure, NodeKind } from '../model/types';
 
 export function extractSubgraph(struct: GraphStructure, actionName: string): GraphStructure {
-  // find the action node by name
-  const start = struct.nodes.find((n) => n.kind === NodeKind.Action && n.name === actionName);
+  // find the action node by name or by display meta
+  const start = struct.nodes.find((n) => {
+    if (n.kind !== NodeKind.Action) return false;
+    if (n.name === actionName) return true;
+    if (n.meta && typeof n.meta.display === 'string' && n.meta.display === actionName) return true;
+    return false;
+  });
   if (!start) throw new Error(`Action '${actionName}' not found`);
 
   const visited = new Set<string>();

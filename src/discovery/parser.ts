@@ -31,12 +31,28 @@ export function parseFiles(filePaths: string[]): ParseResult {
       // createAction call
       if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'createAction') {
         const arg = node.arguments[0];
+        let displayName: string | undefined = undefined;
         if (arg && ts.isStringLiteral(arg)) {
-          const name = arg.text;
-          const id = makeId(NodeKind.Action, name);
-          actionNames.set(name, { file: fp, line: getLine(node, sf) });
-          nodes.push({ id, kind: NodeKind.Action, name, file: fp, line: getLine(node, sf) });
+          displayName = arg.text;
         }
+
+        // try to find variable name: createAction assigned to const action1 = createAction(...)
+        let varName: string | undefined;
+        let parent = node.parent;
+        while (parent) {
+          if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+            varName = parent.name.text;
+            break;
+          }
+          parent = parent.parent;
+        }
+
+        const name = varName || displayName || 'unknown_action';
+        const id = makeId(NodeKind.Action, name);
+        actionNames.set(name, { file: fp, line: getLine(node, sf) });
+        const meta: Record<string, unknown> = {};
+        if (displayName) meta.display = displayName;
+        nodes.push({ id, kind: NodeKind.Action, name, file: fp, line: getLine(node, sf), meta });
       }
 
       // createEffect detection: look for createEffect(() => this.actions$.pipe(ofType(...), ...))
@@ -49,7 +65,7 @@ export function parseFiles(filePaths: string[]): ParseResult {
         const id = makeId(NodeKind.Effect, `${path.basename(fp)}:${effectName}`);
         nodes.push({ id, kind: NodeKind.Effect, name: effectName, file: fp, line: getLine(node, sf) });
 
-        // crude: find ofType inside the subtree
+        // find ofType inside the subtree and detect emitted actions
         function findOfType(n: ts.Node) {
           if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'ofType') {
             for (const a of n.arguments) {
@@ -60,6 +76,43 @@ export function parseFiles(filePaths: string[]): ParseResult {
               }
             }
           }
+          // detect emitted actions inside effect (call expressions and array literals)
+          if (ts.isCallExpression(n)) {
+            // direct emitted action: actionCreator()
+            if (ts.isIdentifier(n.expression)) {
+              const emittedName = n.expression.text;
+              const emittedId = makeId(NodeKind.Action, emittedName);
+              edges.push({ from: id, to: emittedId, type: 'emit' });
+
+              // if the emitted call is nestedAction({ action: actionX() }) -> create nest edge
+              if (n.arguments && n.arguments.length > 0) {
+                const first = n.arguments[0];
+                if (ts.isObjectLiteralExpression(first)) {
+                  for (const prop of first.properties) {
+                    if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'action') {
+                      const init = prop.initializer;
+                      if (ts.isCallExpression(init) && ts.isIdentifier(init.expression)) {
+                        const inner = init.expression.text;
+                        const innerId = makeId(NodeKind.Action, inner);
+                        const outerId = makeId(NodeKind.Action, emittedName);
+                        edges.push({ from: outerId, to: innerId, type: 'nest' });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (ts.isArrayLiteralExpression(n)) {
+            for (const el of n.elements) {
+              if (ts.isCallExpression(el) && ts.isIdentifier(el.expression)) {
+                const emittedName = el.expression.text;
+                edges.push({ from: id, to: makeId(NodeKind.Action, emittedName), type: 'emit' });
+              }
+            }
+          }
+
           ts.forEachChild(n, findOfType);
         }
         ts.forEachChild(node, findOfType);
@@ -101,10 +154,24 @@ export function parseFiles(filePaths: string[]): ParseResult {
                 }
                 const actId = makeId(NodeKind.Action, actionName);
                 edges.push({ from: compId, to: actId, type: 'dispatch' });
+
+                // detect nested payload: nestedAction({ action: someAction() })
+                if (a.arguments && a.arguments.length > 0) {
+                  const first = a.arguments[0];
+                  if (ts.isObjectLiteralExpression(first)) {
+                    for (const propAssign of first.properties) {
+                      if (ts.isPropertyAssignment(propAssign) && ts.isIdentifier(propAssign.name) && propAssign.name.text === 'action') {
+                        const init = propAssign.initializer;
+                        if (ts.isCallExpression(init) && ts.isIdentifier(init.expression)) {
+                          const inner = init.expression.text;
+                          edges.push({ from: makeId(NodeKind.Action, actionName), to: makeId(NodeKind.Action, inner), type: 'nest' });
+                        }
+                      }
+                    }
+                  }
+                }
               }
-              // nested object literal dispatch(nestedAction({ action: someAction() })) handled as call expression
             }
-            // handle nested object literal: dispatch(nestedAction({ action: someAction() })) already covered above
           }
         }
       }

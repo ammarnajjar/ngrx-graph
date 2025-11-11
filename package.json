@@ -69,7 +69,7 @@
     "build": "shx rm -rf dist && tsc -b",
     "postpack": "shx rm -f oclif.manifest.json",
     "version": "oclif readme && git add README.md",
-    "test": "jest --watch --collectCoverage --cache",
+    "test": "jest --collectCoverage --cache",
     "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme"
   },
   "engines": {

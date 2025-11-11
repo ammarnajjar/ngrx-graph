@@ -9,8 +9,8 @@ describe('parser actions', () => {
       path.join(base, 'first.component.ts'),
     ];
     const parsed = parseFiles(files);
-    const actionIds = parsed.nodes.filter((n) => n.id.startsWith('Action:')).map((n) => n.name);
-    expect(actionIds).toEqual(expect.arrayContaining(['Action1', 'Action2', 'Action3']));
+  const actionIds = parsed.nodes.filter((n) => n.id.startsWith('Action:')).map((n) => n.name);
+  expect(actionIds).toEqual(expect.arrayContaining(['action1', 'action2', 'action3']));
     const dispatchEdges = parsed.edges.filter((e) => e.type === 'dispatch');
     expect(dispatchEdges.length).toBeGreaterThan(0);
   });
