@@ -1,114 +1,84 @@
-import { Args, Command, Flags, ux } from '@oclif/core';
-import { ArgInput } from '@oclif/core/lib/interfaces/parser';
+import { Command, Flags } from '@oclif/core';
+import { DEFAULTS } from '../../config/defaults';
+import { findSourceFiles } from '../../discovery/file-scanner';
+import { parseFiles } from '../../discovery/parser';
+import { writeDot } from '../../generate/dot-writer';
+import { buildGraph } from '../../graph/graph-builder';
+import { extractSubgraph } from '../../graph/subgraph';
+import { readStructure, writeStructure } from '../../serialize/cache';
+import { error, info } from '../../utils/log';
 
-import { Generator } from '../../generator/generator';
-
-export default class Graph extends Command {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static args: ArgInput<{ [arg: string]: any }> = {
-    action: Args.string({
-      description:
-        'Action of interest. It will be ignored if --jsonOnly is used',
-      name: 'action',
-      required: false,
-    }),
-  };
-
+export default class GraphCommand extends Command {
   static description = 'Generate NgRx actions graph';
 
-  static examples = ['<%= config.bin %> <%= command.id %>'];
-
   static flags = {
-    all: Flags.boolean({
-      char: 'a',
-      description:
-        'Generate the whole graph for all actions and connected component, effects and reducers. It will be ignored if --jsonOnly is used',
-    }),
-    force: Flags.boolean({
-      char: 'f',
-      description: 'Force regenrating the graph structure',
-    }),
-    jsonOnly: Flags.boolean({
-      char: 'j',
-      description:
-        'Generate only the structure json file, can be combined with --structureFile option. It overrides --all and [ACTION]',
-    }),
-    outputDir: Flags.string({
-      char: 'o',
-      default: '/tmp',
-      description: 'Destination directory, where to save the generated files',
-    }),
-    srcDir: Flags.string({
-      char: 'd',
-      description:
-        '[default: current directory] Source directory to grab actions from, usually the directory with package.json in it',
-    }),
-    structureFile: Flags.string({
-      char: 's',
-      default: 'ngrx-graph.json',
-      description:
-        'Then name of the structure json file, Path is taken from --outputDir option',
-    }),
+    all: Flags.boolean({ char: 'a' }),
+    jsonOnly: Flags.boolean({ char: 'j' }),
+    force: Flags.boolean({ char: 'f' }),
+    outputDir: Flags.string({ char: 'o', default: DEFAULTS.outputDir }),
+    srcDir: Flags.string({ char: 'd', default: DEFAULTS.srcDir }),
+    structureFile: Flags.string({ char: 's', default: DEFAULTS.structureFile }),
   };
 
+  // loosened typing for oclif args to satisfy TypeScript in this scaffold
+  // do not declare static args to avoid type mismatch with oclif Command static side in this scaffold
+
   public async run(): Promise<void> {
-    const { args, flags } = await this.parse(Graph);
-    const { all, force, jsonOnly, outputDir, srcDir, structureFile } = flags;
-    const { action } = args;
+  // parse with oclif using the defined command class; provide explicit flag typing to avoid any
+  type GraphFlags = {
+    all?: boolean;
+    jsonOnly?: boolean;
+    force?: boolean;
+    outputDir?: string;
+    srcDir?: string;
+    structureFile?: string;
+  };
+  const { flags: rawFlags } = await this.parse(GraphCommand);
+  const flags = rawFlags as GraphFlags;
+  // extract action from argv (positional arg) if provided
+  const action = this.argv && this.argv.length > 0 ? String(this.argv[0]) : undefined;
+  const out = String((flags.outputDir as string) || DEFAULTS.outputDir);
+  const structureFile = String((flags.structureFile as string) || DEFAULTS.structureFile);
 
-    ux.action.start('Collecting all actions');
-    const gen = new Generator(
-      srcDir || process.cwd(),
-      outputDir,
-      structureFile,
-      force,
-    );
-    ux.action.stop();
-
-    ux.action.start('Collecting actions from components');
-    const fromComponents = await gen.mapComponentToActions();
-    ux.action.stop();
-
-    ux.action.start('Collecting actions from effects');
-    const fromEffects = await gen.mapeffectsToActions();
-    ux.action.stop();
-
-    ux.action.start('Collecting actions from reducers');
-    const fromReducers = await gen.mapReducersToActions();
-    ux.action.stop();
-
-    ux.action.start('Saving structure for later');
-    gen.saveStructure(fromComponents, fromEffects, fromReducers);
-    ux.action.stop();
-
-    if (!jsonOnly) {
-      if (action) {
-        ux.action.start(` ⚡️ ${action} `);
-        gen.generateActionGraph(
-          action,
-          fromComponents,
-          fromEffects,
-          fromReducers,
-        );
-        ux.action.stop();
-      } else {
-        for (const _action of gen.allActions.map(action => action.name)) {
-          ux.action.start(` ⚡️ ${_action} `);
-          gen.generateActionGraph(
-            _action,
-            fromComponents,
-            fromEffects,
-            fromReducers,
-          );
-          ux.action.stop();
-        }
-      }
-
-      if (all) {
-        ux.action.start('Generating the complete graph');
-        gen.generateAllGraph(fromComponents, fromEffects, fromReducers);
-        ux.action.stop();
-      }
+    let struct = null;
+    if (!flags.force) {
+      struct = readStructure(out, structureFile);
+      if (struct) info('Using cached structure', `${out}/${structureFile}`);
     }
+
+    if (!struct) {
+      info('Scanning source files...');
+  const srcDir = String((flags.srcDir as string) || DEFAULTS.srcDir);
+  const files = await findSourceFiles(srcDir);
+      const parsed = parseFiles(files);
+      const built = buildGraph(parsed.nodes, parsed.edges);
+      struct = { ...built, generatedAt: new Date().toISOString(), version: '0.0.0' };
+      const written = writeStructure(struct, out, structureFile);
+      info('Wrote structure', written);
+    }
+
+    if (flags.jsonOnly) {
+      info('jsonOnly specified, done.');
+      return;
+    }
+
+    if (action) {
+      try {
+        const sub = extractSubgraph(struct, action);
+        const dotPath = `${out}/${action}.dot`;
+        writeDot(sub, dotPath);
+        info('Wrote dot for action', dotPath);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        error(msg);
+        this.exit(2);
+      }
+      return;
+    }
+
+    // default: write full graph
+    const dotPath = `${out}/full.dot`;
+    writeDot(struct, dotPath);
+    info('Wrote full dot file', dotPath);
   }
 }

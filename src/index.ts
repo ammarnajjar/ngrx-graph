@@ -1,1 +1,3 @@
-export { run } from '@oclif/core';
+export * from './commands/graph/index';
+export * from './model/types';
+

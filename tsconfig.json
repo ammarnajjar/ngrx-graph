@@ -1,15 +1,18 @@
 {
   "compilerOptions": {
-    "declaration": true,
-    "importHelpers": true,
+    "target": "ES2020",
     "module": "commonjs",
+    "declaration": true,
     "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
-    "target": "es2019",
-    "composite": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "lib": ["ES2020"]
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist", "test/fixtures/**"]
 }
