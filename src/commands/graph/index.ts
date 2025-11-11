@@ -20,25 +20,28 @@ export default class GraphCommand extends Command {
     structureFile: Flags.string({ char: 's', default: DEFAULTS.structureFile }),
   };
 
-  // loosened typing for oclif args to satisfy TypeScript in this scaffold
-  // do not declare static args to avoid type mismatch with oclif Command static side in this scaffold
+  // no static args declared to avoid oclif static-side typing mismatch; we'll type the parse result instead
 
   public async run(): Promise<void> {
-  // parse with oclif using the defined command class; provide explicit flag typing to avoid any
-  type GraphFlags = {
-    all?: boolean;
-    jsonOnly?: boolean;
-    force?: boolean;
-    outputDir?: string;
-    srcDir?: string;
-    structureFile?: string;
-  };
-  const { flags: rawFlags } = await this.parse(GraphCommand);
-  const flags = rawFlags as GraphFlags;
-  // extract action from argv (positional arg) if provided
-  const action = this.argv && this.argv.length > 0 ? String(this.argv[0]) : undefined;
-  const out = String((flags.outputDir as string) || DEFAULTS.outputDir);
-  const structureFile = String((flags.structureFile as string) || DEFAULTS.structureFile);
+    // parse with oclif; assert parsed shape for stronger typing
+    type GraphFlags = {
+      all?: boolean;
+      jsonOnly?: boolean;
+      force?: boolean;
+      outputDir?: string;
+      srcDir?: string;
+      structureFile?: string;
+    };
+    type GraphArgs = { action?: string };
+
+  // use oclif parse with explicit generics for stronger typing
+  const parsedUnknown = (await this.parse(GraphCommand)) as unknown;
+  const parsedTyped = parsedUnknown as { flags: GraphFlags; args?: GraphArgs };
+  const flags = parsedTyped.flags || {};
+  const args = parsedTyped.args || {};
+    const action = args.action;
+    const out = String(flags.outputDir || DEFAULTS.outputDir);
+    const structureFile = String(flags.structureFile || DEFAULTS.structureFile);
 
     let struct = null;
     if (!flags.force) {

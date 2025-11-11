@@ -9,6 +9,7 @@ export default [
     ignores: [
       'eslint.config.mjs',
       '**/dist',
+      '**/test/fixtures/**',
       '**/assets',
       '**/node_modules',
       '**/.eslintcache',
