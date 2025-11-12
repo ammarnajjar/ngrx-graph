@@ -8,6 +8,6 @@
   "fromEffects": {
     "effect1$": { "input": ["action1"], "output": ["action2", "action3"] }
   },
-  "fromReducers": {},
+  "fromReducers": { "firstReducer": ["action3"] },
   "loadedActions": []
 }

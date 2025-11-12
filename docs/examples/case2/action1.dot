@@ -9,4 +9,6 @@ nestedAction2 [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]
 nestedAction1 -> nestedAction2
 action2 [fillcolor=linen, style=filled]
 nestedAction1 -> action2 [arrowhead=dot]
+firstReducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+action3 -> firstReducer
 }

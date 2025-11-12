@@ -15,6 +15,6 @@
     "effect2$": { "input": ["nestedAction1"], "output": ["nestedAction2"] },
     "effect3$": { "input": ["nestedAction2"], "output": [] }
   },
-  "fromReducers": {},
+  "fromReducers": { "firstReducer": ["action3"] },
   "loadedActions": [{ "name": "nestedAction1", "payloadActions": ["action2"] }]
 }
