@@ -6,7 +6,7 @@
     { "name": "action2", "nested": false },
     { "name": "action3", "nested": false }
   ],
-  "fromComponents": { "FirstComponent": ["action1"] },
+  "fromComponents": { "FirstComponent": ["nestedAction1"] },
   "fromEffects": {
     "effect1$": {
       "input": ["action1"],
@@ -16,5 +16,8 @@
     "effect3$": { "input": ["nestedAction2"], "output": [] }
   },
   "fromReducers": { "firstReducer": ["action3"] },
-  "loadedActions": [{ "name": "nestedAction1", "payloadActions": ["action2"] }]
+  "loadedActions": [
+    { "name": "nestedAction1", "payloadActions": ["action1"] },
+    { "name": "nestedAction1", "payloadActions": ["action2"] }
+  ]
 }
