@@ -57,7 +57,7 @@
     "default": "graph",
     "bin": "ngrx-graph",
     "dirname": "ngrx-graph",
-    "commands": "./dist/commands",
+    "commands": "./dist/src/commands",
     "topics": {
       "graph": {
         "description": "Generate NgRx actions graph"
