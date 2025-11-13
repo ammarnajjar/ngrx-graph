@@ -304,7 +304,7 @@ EXAMPLES
   $ ngrx-graph graph
 ```
 
-_See code: [src/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.13/src/commands/graph/index.ts)_
+_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.13/src/commands/graph.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
