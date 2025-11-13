@@ -98,8 +98,16 @@ function createProgram() {
       }
     });
 
+  program.addHelpText('after', `
+\nExamples:
+  $ npx ngrx-graph graph action1 -d ./src -o ./out
+  $ npx ngrx-graph graph --all -d ./src -o ./out --svg
+  $ npx ngrx-graph graph --jsonOnly -d ./src -o ./out
+`);
+
   return program;
 }
+
 
 export async function runCli(argv: string[]) {
   const p = createProgram();
