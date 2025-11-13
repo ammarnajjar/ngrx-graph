@@ -141,6 +141,19 @@ If this file exists, source code will not be parsed for actions, the recorded st
 </details>
 
 Note: `--all` generates a single combined graph written to `all.dot`. Per-action DOT files (e.g. `action1.dot`) are only produced when you pass the action name as the positional argument, for example `npx ngrx-graph graph action1`.
+
+## Fast Incremental Mode
+
+Use `--fast` to enable a quick prefilter + cache mode that avoids full ts-morph parsing when nothing relevant changed. The CLI flag is `--fast` and you can pass it to the programmatic runner as `fast: true`.
+
+The incremental cache is stored under a `.cache/parse-cache.json` file at the repository root (or the directory you run the CLI against). You can safely add `.cache/` to your `.gitignore` to avoid committing it.
+
+Example:
+
+```bash
+npx ngrx-graph graph --fast -d ./src -o ./out
+```
+
 <details>
   <summary>Examples</summary>
 

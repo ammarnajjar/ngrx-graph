@@ -7,11 +7,12 @@ export type ActionInfo = { name: string; nested: boolean };
  * Parse action creator exports from a source directory.
  * Returns array of action names and whether they are nested (have props that include Action)
  */
-export function parseActions(srcDir: string): ActionInfo[] {
+export function parseActions(srcDir: string, filePaths?: string[]): ActionInfo[] {
   const project = new Project({ tsConfigFilePath: undefined });
 
-  const globPath = path.join(srcDir, '**', '*.ts');
-  const sourceFiles = project.addSourceFilesAtPaths(globPath);
+  const sourceFiles = filePaths && filePaths.length > 0
+    ? project.addSourceFilesAtPaths(filePaths)
+    : project.addSourceFilesAtPaths(path.join(srcDir, '**', '*.ts'));
   const actionMap: Map<string, { nested: boolean }> = new Map();
 
   for (const sf of sourceFiles) {

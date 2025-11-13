@@ -8,7 +8,7 @@ import { assemble } from './assembler';
  * Current minimal implementation: if a `ngrx-graph.json` exists in the parent
  * of `srcDir` it will be used (behaviour described in README as cache).
  */
-export async function analyze(srcDir: string, options: { force?: boolean } = {}): Promise<Structure> {
+export async function analyze(srcDir: string, options: { force?: boolean; fast?: boolean } = {}): Promise<Structure> {
   const parent = path.resolve(srcDir, '..');
   const candidatePaths = [
     path.join(parent, 'ngrx-graph.json'),
@@ -29,7 +29,7 @@ export async function analyze(srcDir: string, options: { force?: boolean } = {})
   }
 
   // Use assembler (ts-morph parsers) to build the Structure from source files
-  return assemble(srcDir, { force: options.force });
+  return assemble(srcDir, { force: options.force, fast: options.fast });
 }
 
 export default analyze;

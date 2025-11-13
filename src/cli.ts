@@ -19,6 +19,8 @@ function createProgram() {
     .option('-o, --outputDir <dir>', 'Output directory', '/tmp')
     .option('-s, --structureFile <file>', 'Structure JSON filename', 'ngrx-graph.json')
     .option('-f, --force', 'Force regenerating the structure')
+    .option('--fast', 'Use fast incremental scan (prefilter + cache)')
+    .option('--verbose', 'Enable verbose logging')
     .option('-j, --jsonOnly', 'Only generate JSON structure file')
     .option('--highlightColor <color>', 'Highlight color for selected action', '#007000')
     .option('--svg', 'Also generate SVG files from produced DOTs using Graphviz dot')
@@ -27,6 +29,8 @@ function createProgram() {
       const outputDir = path.resolve(options.outputDir);
       const structureFile = options.structureFile || 'ngrx-graph.json';
       const force = !!options.force;
+      const fast = !!options.fast;
+      const verbose = !!options.verbose;
       const jsonOnly = !!options.jsonOnly;
       const all = !!options.all;
       const highlightColor = options.highlightColor || '#007000';
@@ -35,7 +39,7 @@ function createProgram() {
       if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
       try {
-  const struct = await assemble(srcDir, { force });
+  const struct = await assemble(srcDir, { force, fast, verbose });
 
         // write structure JSON
         const structPath = path.join(outputDir, structureFile);
@@ -117,6 +121,7 @@ export async function runGraph(action: string | undefined, options: {
   all?: boolean;
   highlightColor?: string;
   svg?: boolean;
+  fast?: boolean;
 } = {}) {
   const srcDir = path.resolve(options.srcDir || process.cwd());
   const outputDir = path.resolve(options.outputDir || '/tmp');
@@ -126,10 +131,11 @@ export async function runGraph(action: string | undefined, options: {
   const all = !!options.all;
   const highlightColor = options.highlightColor || '#007000';
   const emitSvg = !!options.svg;
+  const fast = !!options.fast;
 
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  const struct = await assemble(srcDir, { force });
+  const struct = await assemble(srcDir, { force, fast });
   const structPath = path.join(outputDir, structureFile);
   await fs.promises.writeFile(structPath, JSON.stringify(struct, null, 2), 'utf8');
 

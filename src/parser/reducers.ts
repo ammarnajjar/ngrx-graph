@@ -4,10 +4,11 @@ import { Project, SyntaxKind } from 'ts-morph';
 /**
  * Parse reducers and detect which actions are handled by on(...)
  */
-export function parseReducers(srcDir: string): Record<string, string[]> {
+export function parseReducers(srcDir: string, filePaths?: string[]): Record<string, string[]> {
   const project = new Project({ tsConfigFilePath: undefined });
-  const globPath = path.join(srcDir, '**', '*.ts');
-  const sourceFiles = project.addSourceFilesAtPaths(globPath);
+  const sourceFiles = filePaths && filePaths.length > 0
+    ? project.addSourceFilesAtPaths(filePaths)
+    : project.addSourceFilesAtPaths(path.join(srcDir, '**', '*.ts'));
 
   const result: Record<string, string[]> = {};
 

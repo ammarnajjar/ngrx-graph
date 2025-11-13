@@ -1,6 +1,8 @@
+import fg from 'fast-glob';
 import fs from 'fs';
 import path from 'path';
 import { Project, SyntaxKind } from 'ts-morph';
+import incrementalParse from './incremental';
 import { parseActions } from './parser/actions';
 import { parseComponents } from './parser/components';
 import { parseEffects } from './parser/effects';
@@ -18,7 +20,7 @@ export type Structure = {
  * Assemble structure using parsers. If a structure file exists in parent of srcDir, load that instead
  * (mimic README behavior) unless force=true.
  */
-export async function assemble(srcDir: string, options: { force?: boolean; propagateLoadedActions?: boolean } = {}): Promise<Structure> {
+export async function assemble(srcDir: string, options: { force?: boolean; propagateLoadedActions?: boolean; fast?: boolean; verbose?: boolean } = {}): Promise<Structure> {
   const parent = path.resolve(srcDir, '..');
   const structPath = path.join(parent, 'ngrx-graph.json');
   if (!options.force && fs.existsSync(structPath)) {
@@ -26,16 +28,52 @@ export async function assemble(srcDir: string, options: { force?: boolean; propa
     return JSON.parse(raw) as Structure;
   }
 
-  const actions = parseActions(srcDir);
-  const components = parseComponents(srcDir);
-  const effects = parseEffects(srcDir);
-  const reducers = parseReducers(srcDir);
+  let actions: Array<{ name: string; nested: boolean }> = [];
+  let components: Record<string, string[]> = {};
+  let effects: Record<string, { input: string[]; output: string[] }> = {};
+  let reducers: Record<string, string[]> = {};
+
+  if (options.fast) {
+    if (options.verbose) console.log('assemble: running incremental (fast) parse');
+    const r = await incrementalParse(srcDir, { force: options.force, verbose: options.verbose });
+    actions = r.actions;
+    components = r.components;
+    effects = r.effects;
+    reducers = r.reducers;
+  } else {
+    if (options.verbose) console.log('assemble: running full parsers (non-fast)');
+    actions = parseActions(srcDir);
+    if (options.verbose) console.log(`assemble: collected actions=${actions.length}`);
+    components = parseComponents(srcDir);
+    effects = parseEffects(srcDir);
+    reducers = parseReducers(srcDir);
+    if (options.verbose) console.log(`assemble: collected components=${Object.keys(components).length}`);
+    if (options.verbose) console.log(`assemble: collected effects=${Object.keys(effects).length}`);
+    if (options.verbose) console.log(`assemble: collected reducers=${Object.keys(reducers).length}`);
+  }
 
   // Detect nested action payloads by scanning source files for calls to nested action creators
   const loadedActions: Array<{ name: string; payloadActions?: string[] }> = [];
   const project = new Project({ tsConfigFilePath: undefined });
-  const globPath = path.join(srcDir, '**', '*.ts');
-  const sourceFiles = project.addSourceFilesAtPaths(globPath);
+  let sourceFiles = [] as import('ts-morph').SourceFile[];
+  if (options.fast) {
+    if (options.verbose) console.log('assemble: fast mode - prefiltering source files for nested action detection');
+    const patterns = [
+      '**/*.component.ts',
+      '**/*.effects.ts',
+      '**/*.reducer.ts',
+      '**/*.actions.ts',
+      '!**/*.d.ts',
+      '!**/node_modules/**',
+      '!**/dist/**',
+      '!**/out/**',
+    ];
+    const entries = await fg(patterns, { cwd: srcDir, absolute: true });
+    sourceFiles = project.addSourceFilesAtPaths(entries);
+  } else {
+    const globPath = path.join(srcDir, '**', '*.ts');
+    sourceFiles = project.addSourceFilesAtPaths(globPath);
+  }
 
   const nestedActionNames = new Set(actions.filter(x => x.nested).map(x => x.name));
 

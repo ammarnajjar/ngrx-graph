@@ -5,10 +5,11 @@ import { CallExpression, Project, PropertyAccessExpression, SyntaxKind } from 't
  * Parse components and detect actions dispatched from components.
  * Returns a map: componentName -> array of dispatched action creator names.
  */
-export function parseComponents(srcDir: string): Record<string, string[]> {
+export function parseComponents(srcDir: string, filePaths?: string[]): Record<string, string[]> {
   const project = new Project({ tsConfigFilePath: undefined });
-  const globPath = path.join(srcDir, '**', '*.ts');
-  const sourceFiles = project.addSourceFilesAtPaths(globPath);
+  const sourceFiles = filePaths && filePaths.length > 0
+    ? project.addSourceFilesAtPaths(filePaths)
+    : project.addSourceFilesAtPaths(path.join(srcDir, '**', '*.ts'));
 
   const result: Record<string, string[]> = {};
 

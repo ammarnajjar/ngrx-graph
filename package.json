@@ -21,6 +21,7 @@
   "homepage": "https://github.com/ammarnajjar/ngrx-graph",
   "dependencies": {
     "fast-glob": "^3.3.3",
+    "p-limit": "^4.0.0",
     "@oclif/core": "^4.8.0",
     "@oclif/plugin-help": "^6.2.35",
     "lodash": "^4.17.21",

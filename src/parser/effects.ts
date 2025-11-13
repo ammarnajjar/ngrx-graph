@@ -8,12 +8,13 @@ export type EffectInfo = { name: string; input: string[]; output: string[] };
  * Parse effects and extract ofType inputs and output action creators.
  * Only records outputs that match known action creator names found in the project.
  */
-export function parseEffects(srcDir: string): Record<string, { input: string[]; output: string[] }> {
+export function parseEffects(srcDir: string, filePaths?: string[], knownActionNames?: Set<string>): Record<string, { input: string[]; output: string[] }> {
   const project = new Project({ tsConfigFilePath: undefined });
-  const globPath = path.join(srcDir, '**', '*.ts');
-  const sourceFiles = project.addSourceFilesAtPaths(globPath);
+  const sourceFiles = filePaths && filePaths.length > 0
+    ? project.addSourceFilesAtPaths(filePaths)
+    : project.addSourceFilesAtPaths(path.join(srcDir, '**', '*.ts'));
 
-  const actionNames = new Set(parseActions(srcDir).map(a => a.name));
+  const actionNames = knownActionNames || new Set(parseActions(srcDir).map(a => a.name));
 
   const result: Record<string, { input: string[]; output: string[] }> = {};
 

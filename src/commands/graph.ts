@@ -8,6 +8,8 @@ export default class Graph extends Command {
     all: Flags.boolean({ char: 'a' }),
     jsonOnly: Flags.boolean({ char: 'j' }),
     force: Flags.boolean({ char: 'f' }),
+    fast: Flags.boolean({ description: 'Use fast incremental scan (prefilter + cache)' }),
+    verbose: Flags.boolean({ description: 'Enable verbose logging' }),
     svg: Flags.boolean({ char: 'g', description: 'also emit SVG files using Graphviz dot' }),
     outputDir: Flags.string({ char: 'o' }),
     srcDir: Flags.string({ char: 'd' }),
@@ -28,12 +30,16 @@ export default class Graph extends Command {
       force?: boolean;
       jsonOnly?: boolean;
       all?: boolean;
+      verbose?: boolean;
       highlightColor?: string;
       svg?: boolean;
+      fast?: boolean;
     } = {
       srcDir: flags.srcDir,
+      verbose: flags.verbose,
       outputDir: flags.outputDir,
       force: flags.force,
+      fast: flags.fast,
       jsonOnly: flags.jsonOnly,
       all: flags.all,
       highlightColor: flags.highlightColor,
