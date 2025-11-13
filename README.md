@@ -266,7 +266,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/0.0.13 darwin-arm64 node-v22.10.0
+ngrx-graph/0.0.14 darwin-arm64 node-v24.11.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -279,40 +279,33 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-* [`ngrx-graph graph [ACTION]`](#ngrx-graph-graph-action)
+* [`ngrx-graph graph`](#ngrx-graph-graph)
 * [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
 
-## `ngrx-graph graph [ACTION]`
+## `ngrx-graph graph`
 
 Generate NgRx actions graph
 
 ```
 USAGE
-  $ ngrx-graph graph [ACTION] [-a] [-f] [-j] [-o <value>] [-d <value>] [-s <value>]
-
-ARGUMENTS
-  ACTION  Action of interest. It will be ignored if --jsonOnly is used
+  $ ngrx-graph graph [-a] [-j] [-f] [-g] [-o <value>] [-d <value>] [-s <value>] [-c <value>] [-h]
 
 FLAGS
-  -a, --all                    Generate the whole graph for all actions and connected component, effects and reducers.
-                               It will be ignored if --jsonOnly is used
-  -d, --srcDir=<value>         [default: current directory] Source directory to grab actions from, usually the directory
-                               with package.json in it
-  -f, --force                  Force regenrating the graph structure
-  -j, --jsonOnly               Generate only the structure json file, can be combined with --structureFile option. It
-                               overrides --all and [ACTION]
-  -o, --outputDir=<value>      [default: /tmp] Destination directory, where to save the generated files
-  -s, --structureFile=<value>  [default: ngrx-graph.json] Then name of the structure json file, Path is taken from
-                               --outputDir option
+  -a, --all
+  -c, --highlightColor=<value>
+  -d, --srcDir=<value>
+  -f, --force
+  -g, --svg                     also emit SVG files using Graphviz dot
+  -h, --help                    Show CLI help.
+  -j, --jsonOnly
+  -o, --outputDir=<value>
+  -s, --structureFile=<value>
 
 DESCRIPTION
   Generate NgRx actions graph
-
-EXAMPLES
-  $ ngrx-graph graph
 ```
 
-_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.13/src/commands/graph.ts)_
+_See code: [src/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -323,7 +316,7 @@ USAGE
   $ ngrx-graph help [COMMAND...] [-n]
 
 ARGUMENTS
-  COMMAND...  Command to show help for.
+  [COMMAND...]  Command to show help for.
 
 FLAGS
   -n, --nested-commands  Include all nested commands in the output.
@@ -332,7 +325,7 @@ DESCRIPTION
   Display help for ngrx-graph.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.15/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
 <!-- commandsstop -->
 </details>
 

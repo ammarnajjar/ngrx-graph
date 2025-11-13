@@ -9,7 +9,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "version": "0.0.13",
+  "version": "0.0.14",
   "name": "ngrx-graph",
   "author": "Ammar Najjar",
   "repository": "ammarnajjar/ngrx-graph",
@@ -74,7 +74,7 @@
     "test": "jest --config jest.config.ts --runInBand",
     "cli": "ts-node src/cli.ts",
     "gen:examples": "ts-node ./scripts/gen-examples.ts",
-    "prepack": "npm run build && rm tsconfig.tsbuildinfo || true"
+    "prepack": "npm run build"
   },
   "engines": {
     "node": ">=16.0.0"
