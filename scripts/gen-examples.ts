@@ -28,11 +28,25 @@ for (const e of entries) {
     process.exit(res.status || 1);
   }
 
+  // ensure all.dot exists
+  const allDot = path.join(out, 'all.dot');
+  if (!fs.existsSync(allDot)) {
+    console.error(`Expected ${allDot} to be produced for ${name} but it was not found`);
+    process.exit(2);
+  }
+
   console.log(`Generating SVGs for ${name}`);
   res = spawnSync('npx', ['ts-node', 'src/cli.ts', '-a', '-d', src, '-o', out, '-f', '--svg'], { stdio: 'inherit' });
   if (res.status !== 0) {
     console.error(`Failed to generate SVGs for ${name}`);
     process.exit(res.status || 1);
+  }
+
+  // ensure all.svg exists
+  const allSvg = path.join(out, 'all.svg');
+  if (!fs.existsSync(allSvg)) {
+    console.error(`Expected ${allSvg} to be produced for ${name} but it was not found`);
+    process.exit(2);
   }
 }
 

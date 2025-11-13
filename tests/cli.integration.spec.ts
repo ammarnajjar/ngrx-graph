@@ -97,23 +97,17 @@ describe('CLI integration', () => {
     // request all DOTs but highlight 'action1'
     await runCli(['action1', '-d', src, '-o', out, '-a', '-f']);
 
-    const actionFiles = ['action1.dot', 'action2.dot', 'action3.dot', 'nestedAction1.dot', 'nestedAction2.dot'];
-    for (const f of actionFiles) {
-      const p = path.join(out, f);
-      expect(fs.existsSync(p)).toBe(true);
-      const dot = fs.readFileSync(p, 'utf8');
-  // every dot should contain its action node (unprefixed)
-  const name = f.replace('.dot', '');
-  expect(dot).toContain(name);
-    }
+    const combined = path.join(out, 'all.dot');
+    expect(fs.existsSync(combined)).toBe(true);
+    const dot = fs.readFileSync(combined, 'utf8');
 
-    // highlighted action should contain the highlight color
-    const highlighted = fs.readFileSync(path.join(out, 'action1.dot'), 'utf8');
-    expect(highlighted).toContain('fillcolor="#007000"');
+    // the combined dot should contain the highlighted action
+    expect(dot).toContain('action1');
+    expect(dot).toContain('fillcolor="#007000"');
 
-    // another action should not contain the highlight color
-    const other = fs.readFileSync(path.join(out, 'action2.dot'), 'utf8');
-    expect(other).not.toContain('fillcolor="#007000"');
+    // it should also contain other action nodes
+    expect(dot).toContain('action2');
+    expect(dot).toContain('action3');
 
     fs.rmSync(out, { recursive: true, force: true });
   });

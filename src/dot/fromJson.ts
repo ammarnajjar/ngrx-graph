@@ -164,3 +164,121 @@ export function generateDotFromJson(struct: Structure, actionName: string, opts:
 }
 
 export default generateDotFromJson;
+
+export function generateDotAllFromJson(struct: Structure, opts: JsonDotOptions = {}): string {
+  const { highlightAction, highlightColor = '#007000' } = opts;
+  const lines: string[] = [];
+
+  // Build adjacency from effects (in -> outs)
+  const actionAdj = new Map<string, Set<string>>();
+  for (const a of struct.allActions || []) actionAdj.set(a.name, new Set<string>());
+  for (const [, info] of Object.entries(struct.fromEffects || {})) {
+    for (const inA of info.input) {
+      if (!actionAdj.has(inA)) actionAdj.set(inA, new Set<string>());
+      const set = actionAdj.get(inA)!;
+      for (const outA of info.output) set.add(outA);
+    }
+  }
+
+  const payloadMap = new Map<string, Set<string>>();
+  for (const l of struct.loadedActions || []) {
+    const name = String(l.name);
+    const payloads: string[] = l.payloadActions || [];
+    if (!payloadMap.has(name)) payloadMap.set(name, new Set());
+    for (const p of payloads) payloadMap.get(name)!.add(String(p));
+  }
+
+  // compute reachable set across all actions (start from every action)
+  const reachable = new Set<string>();
+  const queue: string[] = [];
+  for (const a of struct.allActions || []) {
+    reachable.add(a.name);
+    queue.push(a.name);
+  }
+  // build reverse adjacency
+  const revAdj = new Map<string, Set<string>>();
+  for (const [from, outs] of actionAdj) {
+    for (const out of outs) {
+      if (!revAdj.has(out)) revAdj.set(out, new Set());
+      revAdj.get(out)!.add(from);
+    }
+  }
+  for (const [from, set] of payloadMap.entries()) {
+    for (const p of set) {
+      if (!revAdj.has(p)) revAdj.set(p, new Set());
+      revAdj.get(p)!.add(from);
+    }
+  }
+
+  while (queue.length) {
+    const cur = queue.shift()!;
+    const outs = actionAdj.get(cur) || new Set<string>();
+    for (const o of outs) if (!reachable.has(o)) { reachable.add(o); queue.push(o); }
+    const pset = payloadMap.get(cur) || new Set<string>();
+    for (const p of pset) if (!reachable.has(p)) { reachable.add(p); queue.push(p); }
+    const preds = revAdj.get(cur) || new Set<string>();
+    for (const pr of preds) if (!reachable.has(pr)) { reachable.add(pr); queue.push(pr); }
+  }
+
+  lines.push('digraph {');
+
+  for (const comp of Object.keys(struct.fromComponents || {})) {
+    const actions = struct.fromComponents?.[comp] || [];
+    const includeComp = actions.some(a => reachable.has(a));
+    if (includeComp) lines.push(`${qstr(sanitizeId(comp))} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]`);
+  }
+
+  const nestedNames = new Set((struct.allActions || []).filter(a => a && a.nested).map(a => a.name));
+
+  for (const a of struct.allActions || []) {
+    const name = a.name;
+    if (!reachable.has(name)) continue;
+    if (name === highlightAction) {
+      lines.push(`${qstr(sanitizeId(name))} [color=green, fillcolor="${highlightColor}", fontcolor=white, style=filled]`);
+    } else if (nestedNames.has(name)) {
+      lines.push(`${qstr(sanitizeId(name))} [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]`);
+    } else {
+      lines.push(`${qstr(sanitizeId(name))} [fillcolor=linen, style=filled]`);
+    }
+  }
+
+  for (const [r, actions] of Object.entries(struct.fromReducers || {})) {
+    const handlesReachable = (actions as string[]).some(a => reachable.has(a));
+    if (handlesReachable) lines.push(`${qstr(sanitizeId(r))} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]`);
+  }
+
+  for (const [comp, actions] of Object.entries(struct.fromComponents || {})) {
+    for (const a of actions) {
+      if (!reachable.has(a)) continue;
+      lines.push(`${qstr(sanitizeId(comp))} -> ${qstr(sanitizeId(a))}`);
+    }
+  }
+
+  for (const [, info] of Object.entries(struct.fromEffects || {})) {
+    for (const inA of info.input) {
+      for (const outA of info.output) {
+        if (!reachable.has(inA) || !reachable.has(outA)) continue;
+        lines.push(`${qstr(sanitizeId(inA))} -> ${qstr(sanitizeId(outA))}`);
+      }
+    }
+  }
+
+  for (const [r, actions] of Object.entries(struct.fromReducers || {})) {
+    for (const a of actions) {
+      if (!reachable.has(a)) continue;
+      lines.push(`${qstr(sanitizeId(a))} -> ${qstr(sanitizeId(r))}`);
+    }
+  }
+
+  for (const l of struct.loadedActions || []) {
+    const payloads = l.payloadActions || [];
+    if (!reachable.has(l.name)) continue;
+    for (const p of payloads) {
+      if (!reachable.has(p)) continue;
+      lines.push(`${qstr(sanitizeId(l.name))} -> ${qstr(sanitizeId(p))} [arrowhead=dot]`);
+    }
+  }
+
+  lines.push('}');
+  return lines.join('\n');
+}

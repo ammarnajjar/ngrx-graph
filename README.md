@@ -12,7 +12,7 @@ JSON only:
 
   node ./dist/cli.js graph -j -d docs/examples/case1/src -o /tmp/ngrx
 
-Generate all DOTs:
+Generate a single combined DOT for the whole project:
 
   node ./dist/cli.js graph --all -d docs/examples/case1/src -o /tmp/ngrx
 # ngrx-graph
@@ -29,7 +29,7 @@ Generate JSON only:
 
   npx ngrx-graph graph -j -d docs/examples/case1/src -o /tmp/ngrx
 
-Generate all action graphs:
+Generate a single combined DOT for the whole project (written as `all.dot`):
 
   npx ngrx-graph graph --all -d docs/examples/case1/src -o /tmp/ngrx
 # ngrx-graph (generated)
@@ -44,7 +44,7 @@ Generate structure JSON and DOT for specific action:
 npx ngrx-graph graph action1 -d ./src -o ./out
 ```
 
-Generate all DOTs:
+Generate a single combined DOT (all actions/chains) written to `all.dot`:
 
 ```bash
 npx ngrx-graph graph -a -d ./src -o ./out
@@ -88,7 +88,7 @@ Generate JSON only:
 
   npx ngrx-graph graph --jsonOnly --srcDir ./docs/examples/case1/src --outputDir ./out
 
-Generate all DOTs:
+Generate a single combined DOT for the whole project (written to `all.dot`):
 
   npx ngrx-graph graph --all --srcDir ./docs/examples/case1/src --outputDir ./out
 
@@ -139,6 +139,8 @@ If this file exists, source code will not be parsed for actions, the recorded st
 | Reducer         | ![component](./docs/keys/reducer.png)        |
 
 </details>
+
+Note: `--all` generates a single combined graph written to `all.dot`. Per-action DOT files (e.g. `action1.dot`) are only produced when you pass the action name as the positional argument, for example `npx ngrx-graph graph action1`.
 <details>
   <summary>Examples</summary>
 
@@ -254,6 +256,44 @@ npx ngrx-graph action2
 - [dotFile](./docs/examples/case3/out/action2.dot)
 - graph:  
   ![graph](./docs/examples/case3/out/action2.svg)
+
+### Case 4 (aliases and re-exports):
+
+### Input:
+
+Input files (see the canonical example sources under `docs/examples/case4/src`):
+
+- Actions: `docs/examples/case4/src/case4.actions.ts`
+- Barrel / re-exports: `docs/examples/case4/src/index.ts`
+- Component: `docs/examples/case4/src/case4.component.ts`
+- Effects: `docs/examples/case4/src/case4.effects.ts`
+- Reducer: `docs/examples/case4/src/case4.reducer.ts`
+
+### Output:
+
+```bash
+npx ngrx-graph -j -f
+```
+
+- [ngrx-graph.json](./docs/examples/case4/out/ngrx-graph.json)
+
+Generate a combined graph for the whole example:
+
+```bash
+npx ngrx-graph graph -a -d docs/examples/case4/src -o docs/examples/case4/out
+```
+
+- [combined DOT](./docs/examples/case4/out/all.dot)
+- combined graph:  
+  ![graph](./docs/examples/case4/out/all.svg)
+
+Generate a graph for a specific action (produces per-action DOT only when an action is supplied):
+
+```bash
+npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/out
+```
+
+- [dotFile](./docs/examples/case4/out/actionA.dot)
 
 </details>
 

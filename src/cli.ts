@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
 import assemble from './assembler';
-import generateDotFromJson from './dot/fromJson';
+import generateDotFromJson, { generateDotAllFromJson } from './dot/fromJson';
 
 function createProgram() {
   const program = new Command();
@@ -48,22 +48,17 @@ function createProgram() {
   const actionNames = struct.allActions.map(a => a.name as string);
 
         if (all) {
-          for (const a of actionNames) {
-            const highlightForThis = action ? (a === action ? a : undefined) : a;
-            const dot = generateDotFromJson(struct, a, { highlightAction: highlightForThis, highlightColor });
-            if (emitSvg) {
-              const svgPath = path.join(outputDir, `${a}.svg`);
-              const res = spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-              if (res.error || res.status !== 0) {
-                console.error(`Failed to generate SVG for ${a}:`, res.error || res.stderr?.toString());
-              } else {
-                console.log(`Wrote SVG for ${a} -> ${svgPath}`);
-              }
-              continue;
-            }
-            const out = path.join(outputDir, `${a}.dot`);
-            await fs.promises.writeFile(out, dot, 'utf8');
-            console.log(`Wrote DOT for ${a} -> ${out}`);
+          // generate a single combined DOT for all actions
+          const dot = generateDotAllFromJson(struct, { highlightAction: action, highlightColor });
+          const outName = 'all.dot';
+          const out = path.join(outputDir, outName);
+          await fs.promises.writeFile(out, dot, 'utf8');
+          console.log(`Wrote combined DOT -> ${out}`);
+          if (emitSvg) {
+            const svgPath = path.join(outputDir, `all.svg`);
+            const res = spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
+            if (res.error || res.status !== 0) console.error('Failed to generate SVG for all:', res.error || res.stderr?.toString());
+            else console.log(`Wrote combined SVG -> ${svgPath}`);
           }
           return;
         }
@@ -144,16 +139,15 @@ export async function runGraph(action: string | undefined, options: {
   const outputs: string[] = [];
 
   if (all) {
-    for (const a of actionNames) {
-      const dot = generateDotFromJson(struct, a, { highlightAction: a, highlightColor });
-      const out = path.join(outputDir, `${a}.dot`);
-      await fs.promises.writeFile(out, dot, 'utf8');
-      outputs.push(out);
-      if (emitSvg) {
-        const svgPath = path.join(outputDir, `${a}.svg`);
-        spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-        outputs.push(svgPath);
-      }
+    const dot = generateDotAllFromJson(struct, { highlightAction: action, highlightColor });
+    const outName = 'all.dot';
+    const out = path.join(outputDir, outName);
+    await fs.promises.writeFile(out, dot, 'utf8');
+    outputs.push(out);
+    if (emitSvg) {
+      const svgPath = path.join(outputDir, `all.svg`);
+      spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
+      outputs.push(svgPath);
     }
     return { structure: struct, outputs };
   }
