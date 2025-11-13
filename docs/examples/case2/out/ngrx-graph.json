@@ -48,7 +48,9 @@
       "input": [
         "nestedAction2"
       ],
-      "output": []
+      "output": [
+        "action"
+      ]
     }
   },
   "fromReducers": {

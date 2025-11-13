@@ -33,7 +33,7 @@
 <text xml:space="preserve" text-anchor="middle" x="64.15" y="-156.95" font-family="Times,serif" font-size="14.00">nestedAction2</text>
 </g>
 <!-- nestedAction1&#45;&gt;nestedAction2 -->
-<g id="edge4" class="edge">
+<g id="edge2" class="edge">
 <title>nestedAction1&#45;&gt;nestedAction2</title>
 <path fill="none" stroke="black" d="M157.22,-217.29C140.54,-207.56 118.91,-194.95 100.7,-184.32"/>
 <polygon fill="black" stroke="black" points="102.7,-181.44 92.29,-179.42 99.17,-187.48 102.7,-181.44"/>
@@ -45,7 +45,7 @@
 <text xml:space="preserve" text-anchor="middle" x="184.15" y="-156.95" font-family="Times,serif" font-size="14.00">action1</text>
 </g>
 <!-- nestedAction1&#45;&gt;action1 -->
-<g id="edge6" class="edge">
+<g id="edge3" class="edge">
 <title>nestedAction1&#45;&gt;action1</title>
 <path fill="none" stroke="black" d="M178.23,-215.7C177.4,-207.64 177.19,-197.89 177.6,-188.98"/>
 <ellipse fill="black" stroke="black" cx="177.92" cy="-184.59" rx="4" ry="4"/>
@@ -57,13 +57,13 @@
 <text xml:space="preserve" text-anchor="middle" x="278.15" y="-156.95" font-family="Times,serif" font-size="14.00">action2</text>
 </g>
 <!-- nestedAction1&#45;&gt;action2 -->
-<g id="edge7" class="edge">
+<g id="edge4" class="edge">
 <title>nestedAction1&#45;&gt;action2</title>
 <path fill="none" stroke="black" d="M205.95,-216.76C219.43,-206.72 236.85,-193.75 251.2,-183.07"/>
 <ellipse fill="black" stroke="black" cx="254.77" cy="-180.4" rx="4" ry="4"/>
 </g>
 <!-- action1&#45;&gt;nestedAction1 -->
-<g id="edge2" class="edge">
+<g id="edge5" class="edge">
 <title>action1&#45;&gt;nestedAction1</title>
 <path fill="none" stroke="black" d="M190.04,-180.1C190.8,-187.37 191.06,-196.04 190.8,-204.24"/>
 <polygon fill="black" stroke="black" points="187.31,-203.98 190.16,-214.19 194.3,-204.43 187.31,-203.98"/>
@@ -75,7 +75,7 @@
 <text xml:space="preserve" text-anchor="middle" x="184.15" y="-84.95" font-family="Times,serif" font-size="14.00">action3</text>
 </g>
 <!-- action1&#45;&gt;action3 -->
-<g id="edge3" class="edge">
+<g id="edge6" class="edge">
 <title>action1&#45;&gt;action3</title>
 <path fill="none" stroke="black" d="M184.15,-143.7C184.15,-136.41 184.15,-127.73 184.15,-119.54"/>
 <polygon fill="black" stroke="black" points="187.65,-119.62 184.15,-109.62 180.65,-119.62 187.65,-119.62"/>
@@ -87,7 +87,7 @@
 <text xml:space="preserve" text-anchor="middle" x="184.15" y="-12.95" font-family="Times,serif" font-size="14.00" fill="white">firstReducer</text>
 </g>
 <!-- action3&#45;&gt;firstReducer -->
-<g id="edge5" class="edge">
+<g id="edge7" class="edge">
 <title>action3&#45;&gt;firstReducer</title>
 <path fill="none" stroke="black" d="M184.15,-71.7C184.15,-64.41 184.15,-55.73 184.15,-47.54"/>
 <polygon fill="black" stroke="black" points="187.65,-47.62 184.15,-37.62 180.65,-47.62 187.65,-47.62"/>

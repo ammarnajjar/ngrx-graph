@@ -8,8 +8,9 @@ export default [
   {
     ignores: [
       'eslint.config.mjs',
-      'docs/examples/**',
+      '**/docs/examples',
       '**/dist',
+      '**/tmp',
       '**/test/fixtures/**',
       '**/assets',
       '**/node_modules',

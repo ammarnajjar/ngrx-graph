@@ -1,10 +1,23 @@
 #!/usr/bin/env node
 import chalk from 'chalk';
+import { execFile } from 'child_process';
 import { Command } from 'commander';
 import fg from 'fast-glob';
+import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
+import { promisify } from 'util';
 import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
+async function renderDotWithViz(dotText: string) {
+  try {
+    // prefer the CJS helper which uses require and is simpler to type
+    // @ts-expect-error - dynamic CJS helper, declaration may be missing in some toolchains
+    const helper = await import('./cli/viz-fallback.cjs');
+    return await helper.renderDotWithViz(dotText);
+  } catch {
+    return null;
+  }
+}
 
 const program = new Command();
 
@@ -17,6 +30,9 @@ program
   .option('-o, --out <file>', 'output JSON file', undefined)
   .option('-v, --verbose', 'enable verbose logging', false)
   .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
+  .option('--dot <dir>', 'generate DOT files from produced JSON into directory', undefined)
+  .option('--svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
+  .option('--action <name>', 'generate focused DOT for an action name', undefined)
   .parse(process.argv);
 
 const opts = program.opts();
@@ -64,6 +80,72 @@ async function run() {
     if (opts.out) {
       await import('fs/promises').then(fs => fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8'));
       console.log(chalk.green(`Wrote ${outFile}`));
+      if (opts.dot) {
+        const gen = await import('./dot-generator');
+        if (opts.action) {
+          const p = await gen.generateDotForAction(outFile, opts.action, opts.dot);
+          console.log(chalk.green(`Wrote focused DOT file ${p}`));
+            if (opts.svg) {
+              // try to convert the focused dot to svg
+              try {
+                const svgPath = path.join(opts.dot, `${opts.action}.svg`);
+                const execFileP = promisify(execFile);
+                await execFileP('dot', ['-Tsvg', p, '-o', svgPath]);
+                console.log(chalk.green(`Wrote SVG file ${svgPath}`));
+              } catch (err) {
+                console.log(chalk.yellow('Could not generate SVG with `dot` (falling back to viz.js):'), String(err));
+                try {
+                  const dotTxt = await fs.readFile(p, 'utf8');
+                  const svgPathFallback = path.join(opts.dot, `${opts.action}.svg`);
+                  const svg = await renderDotWithViz(dotTxt);
+                  if (svg) {
+                    await fs.writeFile(svgPathFallback, svg, 'utf8');
+                    console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
+                  } else {
+                    console.log(chalk.yellow('Could not generate SVG via viz.js (install viz.js to enable fallback)'));
+                  }
+                } catch (readErr) {
+                  console.log(chalk.yellow('Could not read DOT file for viz.js fallback:'), String(readErr));
+                }
+              }
+            }
+        } else {
+          await gen.generateDotFilesFromJson(outFile, opts.dot);
+          console.log(chalk.green(`Wrote DOT files to ${opts.dot}`));
+            if (opts.svg) {
+              // convert all .dot files in the output dir to .svg
+              try {
+                const execFileP = promisify(execFile);
+                const files = await fs.readdir(opts.dot);
+                for (const f of files.filter(x => x.endsWith('.dot'))) {
+                  const dotPath = path.join(opts.dot, f);
+                  const svgPath = path.join(opts.dot, `${path.basename(f, '.dot')}.svg`);
+                  try {
+                      await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
+                      console.log(chalk.green(`Wrote SVG file ${svgPath}`));
+                    } catch (innerErr) {
+                    console.log(chalk.yellow(`Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`), String(innerErr));
+                    try {
+                      const dotTxt = await fs.readFile(dotPath, 'utf8');
+                      const svgPathFallback = svgPath;
+                      const svg = await renderDotWithViz(dotTxt);
+                      if (svg) {
+                        await fs.writeFile(svgPathFallback, svg, 'utf8');
+                        console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
+                      } else {
+                        console.log(chalk.yellow(`Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`));
+                      }
+                    } catch (readErr) {
+                      console.log(chalk.yellow(`Could not read DOT file ${dotPath} for viz.js fallback:`), String(readErr));
+                    }
+                  }
+                }
+              } catch (err) {
+                console.log(chalk.yellow('Could not generate SVGs (is Graphviz `dot` installed?):'), String(err));
+              }
+            }
+        }
+      }
     } else {
       console.log(JSON.stringify(payload, null, 2));
     }

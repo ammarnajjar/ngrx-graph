@@ -10,7 +10,7 @@ FirstComponent -> nestedAction1
 action1 -> nestedAction1
 action1 -> action3
 nestedAction1 -> nestedAction2
-action3 -> firstReducer
 nestedAction1 -> action1 [arrowhead=dot]
 nestedAction1 -> action2 [arrowhead=dot]
+action3 -> firstReducer
 }

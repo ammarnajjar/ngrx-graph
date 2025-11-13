@@ -15,9 +15,9 @@
 <text xml:space="preserve" text-anchor="middle" x="74.89" y="-228.95" font-family="Times,serif" font-size="14.00" fill="white">Case4Component</text>
 </g>
 <!-- exportedActionA -->
-<g id="node4" class="node">
+<g id="node5" class="node">
 <title>exportedActionA</title>
-<ellipse fill="linen" stroke="black" cx="74.89" cy="-162" rx="74.89" ry="18"/>
+<ellipse fill="none" stroke="black" cx="74.89" cy="-162" rx="74.89" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="74.89" y="-156.95" font-family="Times,serif" font-size="14.00">exportedActionA</text>
 </g>
 <!-- Case4Component&#45;&gt;exportedActionA -->
@@ -39,7 +39,7 @@
 <text xml:space="preserve" text-anchor="middle" x="74.89" y="-84.95" font-family="Times,serif" font-size="14.00">actionB</text>
 </g>
 <!-- case4Reducer -->
-<g id="node5" class="node">
+<g id="node4" class="node">
 <title>case4Reducer</title>
 <polygon fill="purple" stroke="purple" points="146.6,-18 110.75,-36 39.04,-36 3.19,-18 39.04,0 110.75,0 146.6,-18"/>
 <text xml:space="preserve" text-anchor="middle" x="74.89" y="-12.95" font-family="Times,serif" font-size="14.00" fill="white">case4Reducer</text>
