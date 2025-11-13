@@ -36,7 +36,7 @@ cmd = cmd.replace(/\/\* SYNCHRONIZED_HELP_START \*\/[\s\S]*?\/\* SYNCHRONIZED_HE
 
 // insert examples after description
 if (cmd.includes("Graph.description")) {
-  cmd = cmd.replace(/(Graph\.description\s*=\s*'[\s\S]*?';\n)/, `$1/* SYNCHRONIZED_HELP_START */\n${examplesTs}Graph.description += ` + "`" + appendedDesc + "`" + `;\n/* SYNCHRONIZED_HELP_END */\n`);
+  cmd = cmd.replace(/(Graph\.description\s*=\s*'[\s\S]*?';\n)/, `$1/* SYNCHRONIZED_HELP_START */\n${examplesTs}Graph.description += ` + "`" + appendedDesc + "`" + `;\n/* SYNCHRONIZED_HELP_END */`);
 } else {
   console.error('could not find Graph.description in command shim');
   process.exit(2);
