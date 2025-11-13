@@ -72,6 +72,7 @@
   "scripts": {
     "prepare": "husky",
     "lint": "eslint",
+    "prebuild": "ts-node ./scripts/sync-help.ts",
     "build": "tsc -p tsconfig.json",
     "postpack": "shx rm -f oclif.manifest.json",
     "version": "oclif readme && git add README.md",

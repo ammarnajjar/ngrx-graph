@@ -25,9 +25,8 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 10000) {
 
 test('CLI generates DOT and attempts SVG (graceful if dot missing)', async () => {
   const outDir = path.resolve('tmp/cli-case2');
-  const jsonPath = path.join(outDir, 'ngrx-graph.json');
-  // CLI now always writes JSON to --out and places DOT/SVG under --dir
-  const args = ['-d', outDir, '--out', jsonPath, '--svg'];
+  // CLI now takes --out as an output directory; JSON will be written to --out/ngrx-graph.json
+  const args = ['-d', outDir, '--out', outDir, '--svg'];
   // ensure outDir exists
   await fs.mkdir(outDir, { recursive: true });
   const res = await runCli(args);

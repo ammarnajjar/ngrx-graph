@@ -25,7 +25,7 @@ program
   .name('ngrx-graph')
   .description('Scan a project for NgRx actions declarations')
   .option('-d, --dir <dir>', 'Directory to scan', process.cwd())
-  .option('-o, --out [file]', 'output JSON file name (placed in --dir)', 'ngrx-graph.json')
+  .option('-o, --out [dir]', "output directory where 'ngrx-graph.json' will be written (defaults to scan dir)")
   .option('-v, --verbose', 'enable verbose logging', false)
   .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
   .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
@@ -36,22 +36,23 @@ program
 
 Examples:
 
-  # Scan a project and write JSON (default filename: ngrx-graph.json)
-  $ ngrx-graph -d ./src --out ngrx-graph.json
 
-  # Generate aggregated DOT and SVG (all.dot / all.svg) under the scan directory
-  $ ngrx-graph -d ./src --out ngrx-graph.json --all --svg
+  # Scan a project and write JSON into the output directory (file: ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out
+
+  # Generate aggregated DOT and SVG (all.dot / all.svg) under the output directory
+  $ ngrx-graph -d ./src --out ./out --all --svg
 
   # Generate focused DOT/SVG for a specific action (positional argument)
-  $ ngrx-graph "MyAction" -d ./src --out ngrx-graph.json --svg
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
 
-  # Force re-generate JSON and stop
-  $ ngrx-graph -d ./src --out ngrx-graph.json --force
+  # Force re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --force
 
 Notes:
 
-  - The CLI always writes the JSON payload to the file specified by '--out' (default: 'ngrx-graph.json').
-  - DOT and SVG files are written under the directory specified by '--dir'.
+  - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
+  - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
   - Use '--force' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.
 `)
   .parse(process.argv);
@@ -91,8 +92,11 @@ async function run() {
       console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
     }
   }
-  // resolve output path relative to selected dir unless an absolute path was provided
-  const outFile = path.isAbsolute(opts.out) ? path.resolve(opts.out) : path.resolve(dir, opts.out);
+  // resolve output directory relative to selected dir unless an absolute path was provided
+  const outDir = opts.out
+    ? (path.isAbsolute(opts.out) ? path.resolve(opts.out) : path.resolve(dir, opts.out))
+    : dir;
+  const outFile = path.join(outDir, 'ngrx-graph.json');
   const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
   const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
   const fromComponents = componentsResult.mapping ?? {};

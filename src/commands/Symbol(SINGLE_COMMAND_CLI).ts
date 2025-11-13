@@ -19,11 +19,38 @@ export default class Graph extends Command {
 }
 
 Graph.description = 'Generate NgRx actions graph';
+/* SYNCHRONIZED_HELP_START */
 Graph.examples = [
-  '$ ngrx-graph --dir ./src --out ngrx-graph.json',
-  '$ ngrx-graph loadUser --dir ./src --svg',
-  '$ ngrx-graph --all --dir ./src --svg'
+  '$ ngrx-graph -d ./src --out ./out',
+  '$ ngrx-graph -d ./src --out ./out --all --svg',
+  '$ ngrx-graph "MyAction" -d ./src --out ./out --svg',
+  '$ ngrx-graph -d ./src --out ./out --force'
 ];
+
+Graph.description += `
+
+Examples:
+
+
+  # Scan a project and write JSON into the output directory (file: ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out
+
+  # Generate aggregated DOT and SVG (all.dot / all.svg) under the output directory
+  $ ngrx-graph -d ./src --out ./out --all --svg
+
+  # Generate focused DOT/SVG for a specific action (positional argument)
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
+
+  # Force re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --force
+
+Notes:
+
+  - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
+  - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
+  - Use '--force' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.`;
+/* SYNCHRONIZED_HELP_END */
+
 
 Graph.usage = '[ACTION]';
 

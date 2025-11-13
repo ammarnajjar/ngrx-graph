@@ -25,11 +25,9 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 15000) {
 
 test('--force alone writes JSON and stops', async () => {
   const outDir = path.resolve('tmp/force-case1');
-  const jsonPath = path.join(outDir, 'ngrx-graph.json');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
-
-  const args = ['-d', outDir, '--out', jsonPath, '--force'];
+  const args = ['-d', outDir, '--out', outDir, '--force'];
   const res = await runCli(args);
   expect(res.code).toBeGreaterThanOrEqual(0);
   // JSON must exist; there should be no .dot files
@@ -41,11 +39,10 @@ test('--force alone writes JSON and stops', async () => {
 
 test('--force combined with --all regenerates JSON and writes all.dot', async () => {
   const outDir = path.resolve('tmp/force-case2');
-  const jsonPath = path.join(outDir, 'ngrx-graph.json');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
-  const args = ['-d', outDir, '--out', jsonPath, '--force', '--all'];
+  const args = ['-d', outDir, '--out', outDir, '--force', '--all'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -57,13 +54,12 @@ test('--force combined with --all regenerates JSON and writes all.dot', async ()
 
 test('--force combined with positional action regenerates JSON and writes focused dot', async () => {
   const outDir = path.resolve('tmp/force-case3');
-  const jsonPath = path.join(outDir, 'ngrx-graph.json');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
   // use an action name known to exist in examples
   const actionName = 'Action1';
-  const args = ['-d', outDir, '--out', jsonPath, '--force', actionName];
+  const args = ['-d', outDir, '--out', outDir, '--force', actionName];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -75,11 +71,10 @@ test('--force combined with positional action regenerates JSON and writes focuse
 
 test('--force combined with --svg regenerates JSON and attempts SVG generation', async () => {
   const outDir = path.resolve('tmp/force-case4');
-  const jsonPath = path.join(outDir, 'ngrx-graph.json');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
-  const args = ['-d', outDir, '--out', jsonPath, '--force', '--all', '--svg'];
+  const args = ['-d', outDir, '--out', outDir, '--force', '--all', '--svg'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);

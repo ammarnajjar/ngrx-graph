@@ -25,28 +25,28 @@ Basic usage examples:
 - Generate the structure JSON (always written to `--out`, default `ngrx-graph.json`):
 
 ```bash
-ngrx-graph -d ./src --out ngrx-graph.json
+ngrx-graph -d ./src --out ./out    # writes ./out/ngrx-graph.json
 ```
 
 - Generate an action-focused DOT (and optional SVG) for a specific action:
 
 ```bash
-ngrx-graph "MyAction" -d ./src --out ngrx-graph.json --svg
+ngrx-graph "MyAction" -d ./src --out ./out --svg
 ```
 
 - Generate a single aggregated DOT for the whole project (writes `all.dot`):
 
 ```bash
-ngrx-graph -a -d ./src --out ngrx-graph.json --svg
+ngrx-graph -a -d ./src --out ./out --svg
 ```
 
 - Force re-generate the JSON (use `--force` alone to stop after JSON):
 
 ```bash
-ngrx-graph -d ./src --out ngrx-graph.json --force
+ngrx-graph -d ./src --out ./out --force
 ```
 
-Short flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-f/--force`, `-v/--verbose`, `-c/--concurrency`
+Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-f/--force`, `-v/--verbose`, `-c/--concurrency`
 
 Notes
 -----
