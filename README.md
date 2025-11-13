@@ -1,101 +1,6 @@
-# ngrx-graph (scaffold)
-
-This scaffold provides a CLI to parse an Angular NgRx project and generate a structure JSON and DOT graphs.
-
-Usage examples:
-
-Generate JSON and DOT for a single action:
-
-  node ./dist/cli.js graph action1 -d docs/examples/case1/src -o /tmp/ngrx
-
-JSON only:
-
-  node ./dist/cli.js graph -j -d docs/examples/case1/src -o /tmp/ngrx
-
-Generate a single combined DOT for the whole project:
-
-  node ./dist/cli.js graph --all -d docs/examples/case1/src -o /tmp/ngrx
 # ngrx-graph
 
-CLI to scan an Angular NgRx codebase and generate DOT graphs and a structure JSON.
-
-Usage examples:
-
-Generate JSON and DOT for a single action:
-
-  npx ngrx-graph graph action1 -d docs/examples/case1/src -o /tmp/ngrx
-
-Generate JSON only:
-
-  npx ngrx-graph graph -j -d docs/examples/case1/src -o /tmp/ngrx
-
-Generate a single combined DOT for the whole project (written as `all.dot`):
-
-  npx ngrx-graph graph --all -d docs/examples/case1/src -o /tmp/ngrx
-# ngrx-graph (generated)
-
-A small CLI to analyze an Angular project using NgRx and produce DOT graphs of actions, effects, components, and reducers.
-
-Usage:
-
-Generate structure JSON and DOT for specific action:
-
-```bash
-npx ngrx-graph graph action1 -d ./src -o ./out
-```
-
-Generate a single combined DOT (all actions/chains) written to `all.dot`:
-
-```bash
-npx ngrx-graph graph -a -d ./src -o ./out
-```
-
-Generate SVGs directly instead of DOT files:
-
-```bash
-# Generate a single action's SVG
-npx ngrx-graph graph action1 -d ./src -o ./out --svg
-
-# Generate SVGs for all actions
-npx ngrx-graph graph -a -d ./src -o ./out --svg
-```
-
-Note: the `--svg` flag requires Graphviz's `dot` command to be available on your PATH (install via `brew install graphviz` on macOS).
-
-Only generate JSON structure:
-
-```bash
-npx ngrx-graph graph -j -d ./src -o ./out
-```
-
-Run tests:
-
-```bash
-npm install
-npm test
-```
-# ngrx-graph (generated)
-
-Simple CLI to analyze an Angular project that uses NgRx and produce DOT graphs and a structure JSON.
-
-Usage examples:
-
-Generate JSON and DOT for an action:
-
-  npx ngrx-graph graph action1 --srcDir ./docs/examples/case1/src --outputDir ./out
-
-Generate JSON only:
-
-  npx ngrx-graph graph --jsonOnly --srcDir ./docs/examples/case1/src --outputDir ./out
-
-Generate a single combined DOT for the whole project (written to `all.dot`):
-
-  npx ngrx-graph graph --all --srcDir ./docs/examples/case1/src --outputDir ./out
-
-Run tests:
-
-  npm test
-# ngrx-graph
+CLI to scan an Angular NgRx codebase and produce a structure JSON and DOT/SVG graphs.
 
 ## Motivation:
 
@@ -105,27 +10,51 @@ This package tries to collect all actions/components/reducers participating in a
 
 It is also possible to see the whole net with all actions/components/reducers, but that is more important is to follow a particular action from the start to the end (the optional argument)
 
-## How it works
+Quick start
+-----------
 
-This package generates dot files representing the interaction between ngrx actions, components, effects and reducers.
-
-Dot files can be then used to generate graphs using [Graphviz](https://www.graphviz.org/), so this needs to be installed first, e.g:
-
-```bash
-for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
-```
-
-Alternatively a convenience script is provided to regenerate SVGs for the examples:
+Install (optional):
 
 ```bash
-chmod +x scripts/gen-svgs.sh
-./scripts/gen-svgs.sh
+npm install -g ngrx-graph
+# or use npx: npx ngrx-graph ...
 ```
 
-This script requires the `dot` command from Graphviz to be installed (macOS: `brew install graphviz`).
+Basic usage examples:
 
-The first run will generate a json file (see `--structureFile` flag), which is used for the next runs if the flag `--force` was not set as cache.
-If this file exists, source code will not be parsed for actions, the recorded structure will be taken from that json file. This speeds up the process considerably.
+- Generate the structure JSON (always written to `--out`, default `ngrx-graph.json`):
+
+```bash
+ngrx-graph -d ./src --out ngrx-graph.json
+```
+
+- Generate an action-focused DOT (and optional SVG) for a specific action:
+
+```bash
+ngrx-graph "MyAction" -d ./src --out ngrx-graph.json --svg
+```
+
+- Generate a single aggregated DOT for the whole project (writes `all.dot`):
+
+```bash
+ngrx-graph -a -d ./src --out ngrx-graph.json --svg
+```
+
+- Force re-generate the JSON (use `--force` alone to stop after JSON):
+
+```bash
+ngrx-graph -d ./src --out ngrx-graph.json --force
+```
+
+Short flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-f/--force`, `-v/--verbose`, `-c/--concurrency`
+
+Notes
+-----
+
+- The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
+- DOT and SVG files are written under the directory specified by `--dir`.
+- Use `--force` to re-generate the JSON first; combine with other flags to continue generating DOT/SVG.
+
 
 <details>
   <summary>Graph Keys</summary>
@@ -139,20 +68,6 @@ If this file exists, source code will not be parsed for actions, the recorded st
 | Reducer         | ![component](./docs/keys/reducer.png)        |
 
 </details>
-
-Note: `--all` generates a single combined graph written to `all.dot`. Per-action DOT files (e.g. `action1.dot`) are only produced when you pass the action name as the positional argument, for example `npx ngrx-graph graph action1`.
-
-## Fast Incremental Mode
-
-Use `--fast` to enable a quick prefilter + cache mode that avoids full ts-morph parsing when nothing relevant changed. The CLI flag is `--fast` and you can pass it to the programmatic runner as `fast: true`.
-
-The incremental cache is stored under a `.cache/parse-cache.json` file at the repository root (or the directory you run the CLI against). You can safely add `.cache/` to your `.gitignore` to avoid committing it.
-
-Example:
-
-```bash
-npx ngrx-graph graph --fast -d ./src -o ./out
-```
 
 <details>
   <summary>Examples</summary>
@@ -171,7 +86,7 @@ Input files (see the canonical example sources under `docs/examples/case1/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -j -f
+npx ngrx-graph -f
 ```
 
 - [ngrx-graph.json](./docs/examples/case1/out/ngrx-graph.json)
@@ -206,7 +121,7 @@ Input files (see the canonical example sources under `docs/examples/case2/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -j -f
+npx ngrx-graph -f
 ```
 
 - [ngrx-graph.json](./docs/examples/case2/out/ngrx-graph.json)
@@ -241,7 +156,7 @@ Input files (see the canonical example sources under `docs/examples/case3/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -j -f
+npx ngrx-graph -f
 ```
 
 - [ngrx-graph.json](./docs/examples/case3/out/ngrx-graph.json)
@@ -285,7 +200,7 @@ Input files (see the canonical example sources under `docs/examples/case4/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -j -f
+npx ngrx-graph -f
 ```
 
 - [ngrx-graph.json](./docs/examples/case4/out/ngrx-graph.json)
@@ -332,33 +247,7 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-* [`ngrx-graph graph`](#ngrx-graph-graph)
 * [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
-
-## `ngrx-graph graph`
-
-Generate NgRx actions graph
-
-```
-USAGE
-  $ ngrx-graph graph [-a] [-j] [-f] [-g] [-o <value>] [-d <value>] [-s <value>] [-c <value>] [-h]
-
-FLAGS
-  -a, --all
-  -c, --highlightColor=<value>
-  -d, --srcDir=<value>
-  -f, --force
-  -g, --svg                     also emit SVG files using Graphviz dot
-  -h, --help                    Show CLI help.
-  -j, --jsonOnly
-  -o, --outputDir=<value>
-  -s, --structureFile=<value>
-
-DESCRIPTION
-  Generate NgRx actions graph
-```
-
-_See code: [src/commands/graph/index.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/graph/index.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 

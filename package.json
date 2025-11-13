@@ -60,6 +60,9 @@
     "bin": "ngrx-graph",
     "dirname": "ngrx-graph",
     "commands": "./dist/src/commands",
+    "hooks": {
+      "init": "./dist/src/hooks/init.js"
+    },
     "topics": {
       "graph": {
         "description": "Generate NgRx actions graph"
