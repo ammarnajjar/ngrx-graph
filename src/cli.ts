@@ -125,7 +125,9 @@ async function run() {
     return;
   }
 
-  const dotOut = dir;
+  // Use the resolved output directory for DOT/SVG when an explicit --out
+  // directory was provided. Otherwise fall back to the scan directory.
+  const dotOut = outDir || dir;
   if (dotOut) {
     if (opts.action) {
       const gen = await import('./dot-generator');
