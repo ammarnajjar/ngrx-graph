@@ -13,6 +13,7 @@ export default class Graph extends Command {
     srcDir: Flags.string({ char: 'd' }),
     structureFile: Flags.string({ char: 's' }),
     highlightColor: Flags.string({ char: 'c' }),
+    help: Flags.help({ char: 'h' }),
   };
 
   async run() {

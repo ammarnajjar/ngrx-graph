@@ -247,6 +247,14 @@ npx ngrx-graph action3
 - graph:  
   ![graph](./docs/examples/case3/out/action3.svg)
 
+```bash
+npx ngrx-graph action2
+```
+
+- [dotFile](./docs/examples/case3/out/action2.dot)
+- graph:  
+  ![graph](./docs/examples/case3/out/action2.svg)
+
 </details>
 
 <details>
