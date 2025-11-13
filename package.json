@@ -77,7 +77,7 @@
     "prepack": "npm run build"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "types": "dist/index.d.ts",
   "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues"
