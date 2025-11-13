@@ -9,14 +9,21 @@ import type { Structure } from './assembler';
  */
 export async function analyze(srcDir: string, options: { force?: boolean } = {}): Promise<Structure> {
   const parent = path.resolve(srcDir, '..');
-  const structurePath = path.join(parent, 'ngrx-graph.json');
+  const candidatePaths = [
+    path.join(parent, 'ngrx-graph.json'),
+    path.join(parent, 'out', 'ngrx-graph.json'),
+  ];
 
-  if (!options.force && fs.existsSync(structurePath)) {
-    const raw = await fs.promises.readFile(structurePath, 'utf8');
-    try {
-      return JSON.parse(raw);
-    } catch (err) {
-      throw new Error(`Failed to parse structure file at ${structurePath}: ${err}`);
+  if (!options.force) {
+    for (const p of candidatePaths) {
+      if (fs.existsSync(p)) {
+        const raw = await fs.promises.readFile(p, 'utf8');
+        try {
+          return JSON.parse(raw);
+        } catch (err) {
+          throw new Error(`Failed to parse structure file at ${p}: ${err}`);
+        }
+      }
     }
   }
 

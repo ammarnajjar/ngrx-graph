@@ -7,7 +7,7 @@ describe('analyzer (integration)', () => {
     const exampleDir = path.resolve(__dirname, '..', 'docs', 'examples', 'case2');
     const srcDir = path.join(exampleDir, 'src');
 
-    const expectedRaw = await fs.promises.readFile(path.join(exampleDir, 'ngrx-graph.json'), 'utf8');
+    const expectedRaw = await fs.promises.readFile(path.join(exampleDir, 'out', 'ngrx-graph.json'), 'utf8');
     const expected = JSON.parse(expectedRaw);
 
     const result = await analyze(srcDir, { force: false });

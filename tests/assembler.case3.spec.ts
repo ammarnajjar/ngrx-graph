@@ -5,7 +5,7 @@ import { assemble } from '../src/assembler';
 test('assembler produces case3 structure matching fixture', async () => {
   const exampleDir = path.resolve(__dirname, '..', 'docs', 'examples', 'case3');
   const src = path.join(exampleDir, 'src');
-  const expectedRaw = await fs.promises.readFile(path.join(exampleDir, 'ngrx-graph.json'), 'utf8');
+  const expectedRaw = await fs.promises.readFile(path.join(exampleDir, 'out', 'ngrx-graph.json'), 'utf8');
   const expected = JSON.parse(expectedRaw);
 
   const result = await assemble(src, { force: false });

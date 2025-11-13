@@ -12,6 +12,7 @@ function createProgram() {
   program
     .name('ngrx-graph')
     .description('Generate NgRx actions graph')
+    .helpOption('-h, --help', 'Display help for ngrx-graph')
     .argument('[action]', 'Action of interest')
     .option('-a, --all', 'Generate DOTs for all actions')
     .option('-d, --srcDir <dir>', 'Source directory to scan', process.cwd())

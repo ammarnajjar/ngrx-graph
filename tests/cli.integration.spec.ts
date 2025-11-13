@@ -21,7 +21,7 @@ describe('CLI integration', () => {
     expect(fs.existsSync(structPath)).toBe(true);
 
   const produced = JSON.parse(fs.readFileSync(structPath, 'utf8')) as { allActions: Array<{ name: string }>; };
-  const expected = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'docs', 'examples', 'case1', 'ngrx-graph.json'), 'utf8')) as { allActions: Array<{ name: string }>; };
+  const expected = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'docs', 'examples', 'case1', 'out', 'ngrx-graph.json'), 'utf8')) as { allActions: Array<{ name: string }>; };
   // Compare keys we care about
   expect(produced.allActions.map(a => a.name).sort()).toEqual(expected.allActions.map(a => a.name).sort());
 
@@ -57,7 +57,7 @@ describe('CLI integration', () => {
       await runCli(['-d', src, '-o', out, '-f', '-j']);
 
       const producedPath = path.join(out, 'ngrx-graph.json');
-      const fixturePath = path.join(examplesDir, name, 'ngrx-graph.json');
+      const fixturePath = path.join(examplesDir, name, 'out', 'ngrx-graph.json');
 
       expect(fs.existsSync(producedPath)).toBe(true);
 
