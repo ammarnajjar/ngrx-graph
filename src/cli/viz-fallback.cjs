@@ -1,9 +1,9 @@
+/* eslint-disable */
 // CommonJS helper to render DOT to SVG using viz.js with multiple fallbacks.
-const fs = require('fs');
 function tryRequire(name) {
   try {
     return require(name);
-  } catch (e) {
+  } catch (_) {
     return null;
   }
 }
@@ -18,7 +18,7 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz({ render: Full.render, Module: Full.Module });
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (e) {
+  } catch (_) {
     // ignore
   }
   // Try lite.render.js
@@ -30,7 +30,7 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz({ render: Lite.render, Module: Lite.Module });
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (e) {
+  } catch (_) {
     // ignore
   }
   // Try plain Viz
@@ -41,10 +41,11 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz();
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (e) {
+  } catch (_) {
     // ignore
   }
   return null;
 }
 
-module.exports = { renderDotWithViz };
+exports.renderDotWithViz = renderDotWithViz;
+/* eslint-enable @typescript-eslint/no-var-requires, @typescript-eslint/no-unused-vars, global-require */

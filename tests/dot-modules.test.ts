@@ -3,14 +3,16 @@ import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
+import { GraphPayload } from '../src/dot/types';
 
 test('makeNodes emits component and action node strings', () => {
-  const payload: any = {
+  const payload: GraphPayload = {
     allActions: [{ name: 'a', nested: false }, { name: 'b', nested: true }],
     fromComponents: { Comp: ['a'] },
     fromReducers: { red: ['a'] },
+    fromEffects: {},
   };
-  const nodes = makeNodes(payload as any);
+  const nodes = makeNodes(payload);
   expect(nodes).toEqual(expect.arrayContaining([
     'Comp [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]',
     'a [fillcolor=linen, style=filled]',
@@ -20,7 +22,7 @@ test('makeNodes emits component and action node strings', () => {
 });
 
 test('generateDotFilesFromPayload and generateDotForActionPayload produce files', async () => {
-  const payload: any = JSON.parse(await fs.readFile(path.resolve('docs/examples/case2/out/ngrx-graph.json'), 'utf8'));
+  const payload: GraphPayload = JSON.parse(await fs.readFile(path.resolve('docs/examples/case2/out/ngrx-graph.json'), 'utf8')) as GraphPayload;
   const out = path.resolve('tmp/dot-modules');
   await generateDotFilesFromPayload(payload, out);
   const all = await fs.readFile(path.join(out, 'all.dot'), 'utf8');

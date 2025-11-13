@@ -19,6 +19,28 @@ export async function generateDotFilesFromPayload(payload: GraphPayload, out: st
   return out;
 }
 
+export async function generateAllFromJson(jsonPath: string, outDir?: string) {
+  const txt = await fs.readFile(jsonPath, 'utf8');
+  const payload = JSON.parse(txt) as GraphPayload;
+  const out = outDir ? path.resolve(outDir) : path.dirname(path.resolve(jsonPath));
+  await fs.mkdir(out, { recursive: true });
+  const nodes = makeNodes(payload);
+  const edges = makeEdges(payload);
+  const allLines = ['digraph {', ...nodes, ...edges, '}'];
+  await fs.writeFile(path.join(out, 'all.dot'), dedupeLines(allLines).join('\n'), 'utf8');
+  return path.join(out, 'all.dot');
+}
+
+export async function generateAllFromPayload(payload: GraphPayload, outDir: string) {
+  const out = outDir ? path.resolve(outDir) : '.';
+  await fs.mkdir(out, { recursive: true });
+  const nodes = makeNodes(payload);
+  const edges = makeEdges(payload);
+  const allLines = ['digraph {', ...nodes, ...edges, '}'];
+  await fs.writeFile(path.join(out, 'all.dot'), dedupeLines(allLines).join('\n'), 'utf8');
+  return path.join(out, 'all.dot');
+}
+
 export async function generateDotFilesFromJson(jsonPath: string, outDir?: string) {
   const txt = await fs.readFile(jsonPath, 'utf8');
   const payload = JSON.parse(txt) as GraphPayload;

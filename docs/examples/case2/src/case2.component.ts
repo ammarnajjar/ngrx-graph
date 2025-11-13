@@ -1,4 +1,6 @@
+// @ts-ignore
 import { Component } from '@angular/core';
+// @ts-ignore
 import { Store } from '@ngrx/store';
 import { action1, nestedAction1 } from './actions';
 

@@ -3,9 +3,10 @@ import path from 'path';
 import { makeEdges } from '../src/dot/edges';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
+import { GraphPayload } from '../src/dot/types';
 
 test('cycle in effects does not infinite loop in focused generator', async () => {
-  const payload: any = {
+  const payload: GraphPayload = {
     allActions: [{ name: 'a' }, { name: 'b' }],
     fromComponents: {},
     fromEffects: { e1: { input: ['a'], output: ['b'] }, e2: { input: ['b'], output: ['a'] } },
@@ -20,7 +21,7 @@ test('cycle in effects does not infinite loop in focused generator', async () =>
 });
 
 test('reducers are shown as hexagon and not traversed as actions', () => {
-  const payload: any = {
+  const payload: GraphPayload = {
     allActions: [{ name: 'a' }],
     fromComponents: {},
     fromEffects: {},
@@ -33,7 +34,7 @@ test('reducers are shown as hexagon and not traversed as actions', () => {
 });
 
 test('empty payloads produce only digraph wrapper', async () => {
-  const payload: any = {
+  const payload: GraphPayload = {
     allActions: [],
     fromComponents: {},
     fromEffects: {},

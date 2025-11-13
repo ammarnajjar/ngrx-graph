@@ -50,7 +50,7 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
       const r = await parseComponentsFromFile(file);
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -68,7 +68,7 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
       const r = await parseEffectsFromFile(file);
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -86,7 +86,7 @@ export async function scanReducers(options?: { dir?: string; pattern?: string; c
     try {
       const r = await parseReducersFromFile(p);
       Object.assign(res, r.mapping);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }));
