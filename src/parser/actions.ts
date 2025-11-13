@@ -1,5 +1,5 @@
 import path from 'path';
-import { Project, SyntaxKind, VariableDeclaration } from 'ts-morph';
+import { Node, Project, SyntaxKind } from 'ts-morph';
 
 export type ActionInfo = { name: string; nested: boolean };
 
@@ -12,43 +12,67 @@ export function parseActions(srcDir: string): ActionInfo[] {
 
   const globPath = path.join(srcDir, '**', '*.ts');
   const sourceFiles = project.addSourceFilesAtPaths(globPath);
-
-  const actions: ActionInfo[] = [];
+  const actionMap: Map<string, { nested: boolean }> = new Map();
 
   for (const sf of sourceFiles) {
-    const exports = sf.getExportedDeclarations();
-    for (const [name, decls] of exports.entries()) {
-      for (const d of decls) {
-        // look for variable export with initializer being a call to createAction
-        // narrow to VariableDeclaration when possible
-        const varDecl = (d as unknown) as VariableDeclaration;
-  const init = varDecl.getInitializer && varDecl.getInitializer();
-        if (!init) continue;
-        if (init.getKind && init.getKind() === SyntaxKind.CallExpression) {
-          const callExpr = init as import('ts-morph').CallExpression;
-          const exprText = callExpr.getExpression().getText();
-          if (exprText === 'createAction') {
-            // detect props presence by checking call args for a call expression to props
-            const args = callExpr.getArguments();
-            let nested = false;
-            for (const a of args) {
-              if (a.getKind && a.getKind() === SyntaxKind.CallExpression) {
-                const innerExpr = (a as import('ts-morph').CallExpression).getExpression().getText();
-                if (innerExpr === 'props') {
-                  const text = a.getText();
-                  // simple heuristic: if props's type mentions 'Action' consider nested
-                  if (/Action/.test(text)) nested = true;
-                }
+    const varDecls = sf.getVariableDeclarations();
+    for (const varDecl of varDecls) {
+      const name = varDecl.getName();
+      const init = varDecl.getInitializer && varDecl.getInitializer();
+      if (!init) continue;
+      if (init.getKind && init.getKind() === SyntaxKind.CallExpression) {
+        const callExpr = init as import('ts-morph').CallExpression;
+        const exprText = callExpr.getExpression().getText();
+        if (exprText === 'createAction') {
+          // detect props presence by checking call args for a call expression to props
+          const args = callExpr.getArguments();
+          let nested = false;
+          for (const a of args) {
+            if (a.getKind && a.getKind() === SyntaxKind.CallExpression) {
+              const innerExpr = (a as import('ts-morph').CallExpression).getExpression().getText();
+              if (innerExpr === 'props') {
+                const text = a.getText();
+                if (/Action/.test(text)) nested = true;
               }
             }
-
-            actions.push({ name, nested });
           }
+
+          const prev = actionMap.get(name);
+          if (!prev) actionMap.set(name, { nested });
+          else if (nested && !prev.nested) prev.nested = true;
         }
       }
     }
   }
 
+  // build final actions list from actionMap (including any aliases added above)
+  // Also include exported aliases (re-exports) that point to known action creators
+  for (const sf of sourceFiles) {
+    const exports = sf.getExportedDeclarations();
+    for (const [exportedName, decls] of exports.entries()) {
+      if (actionMap.has(exportedName)) continue;
+      for (const d of decls) {
+        const declNode = d as unknown as Node;
+        const sym = declNode.getSymbol && declNode.getSymbol();
+        if (!sym) continue;
+        let aliased: import('ts-morph').Symbol | undefined;
+        try {
+          aliased = sym.getAliasedSymbol && sym.getAliasedSymbol();
+        } catch {
+          aliased = undefined;
+        }
+        const targetName = (aliased && aliased.getName && aliased.getName()) || sym.getName && sym.getName();
+        if (targetName && actionMap.has(targetName)) {
+          const info = actionMap.get(targetName)!;
+          actionMap.set(exportedName, { nested: info.nested });
+          break;
+        }
+      }
+    }
+  }
+  // build final actions list from actionMap (including any aliases added above)
+  const actions: ActionInfo[] = [];
+  for (const [name, info] of actionMap.entries()) actions.push({ name, nested: info.nested });
   return actions;
 }
 

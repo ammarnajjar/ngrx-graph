@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { Structure } from './assembler';
+import { assemble } from './assembler';
 
 /**
  * Analyze a source directory for NgRx structure.
@@ -27,15 +28,8 @@ export async function analyze(srcDir: string, options: { force?: boolean } = {})
     }
   }
 
-  // TODO: implement full TypeScript parsing using ts-morph to extract actions,
-  // components, effects and reducers. For now provide an empty structure.
-  return {
-    allActions: [],
-    fromComponents: {},
-    fromEffects: {},
-    fromReducers: {},
-    loadedActions: [],
-  };
+  // Use assembler (ts-morph parsers) to build the Structure from source files
+  return assemble(srcDir, { force: options.force });
 }
 
 export default analyze;
