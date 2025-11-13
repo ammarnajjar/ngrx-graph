@@ -7,6 +7,7 @@ import path from 'path';
 import { parseActions } from './parser/actions';
 import { parseComponents } from './parser/components';
 import { parseEffects } from './parser/effects';
+import { PerFileAction, quickActionsFromFiles } from './parser/quickActions';
 import { parseReducers } from './parser/reducers';
 
 type CacheEntry = {
@@ -83,11 +84,12 @@ async function quickPrefilter(root: string) {
 }
 
 export async function incrementalParse(root: string, options: { concurrency?: number; force?: boolean; verbose?: boolean } = {}): Promise<ParseResult> {
+  const start = Date.now();
   if (options.verbose) console.log('incremental: prefiltering files...');
   const cache = await loadCache(root);
-  if (options.verbose) console.log('incremental: cache loaded');
+  if (options.verbose) console.log('incremental: cache loaded', { time: Date.now() - start, mem: process.memoryUsage() });
   const suspects = await quickPrefilter(root);
-  if (options.verbose) console.log(`incremental: suspects found=${suspects.length}`);
+  if (options.verbose) console.log(`incremental: suspects found=${suspects.length}`, { time: Date.now() - start, mem: process.memoryUsage() });
 
   const results: ParseResult = { actions: [], components: {}, effects: {}, reducers: {} };
 
@@ -111,11 +113,11 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
     }
   }
 
-  if (options.verbose) console.log(`incremental: changed=${changed.length} unchanged=${unchanged.length}`);
+  if (options.verbose) console.log(`incremental: changed=${changed.length} unchanged=${unchanged.length}`, { time: Date.now() - start, mem: process.memoryUsage() });
 
   // If nothing changed and we have a cached full parse, reuse it
   if (changed.length === 0 && cache['__full'] && cache['__full'].result) {
-    if (options.verbose) console.log('incremental: cache hit, reusing full parse result');
+    if (options.verbose) console.log('incremental: cache hit, reusing full parse result', { time: Date.now() - start, mem: process.memoryUsage() });
     return cache['__full'].result as ParseResult;
   }
 
@@ -125,13 +127,24 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
 
   // If no cached full result, parse suspects per-file and assemble
   if (!cache['__full'] || !cache['__full'].result) {
-    if (options.verbose) console.log('incremental: no cached full parse — parsing suspects per-file');
+    if (options.verbose) console.log('incremental: no cached full parse — parsing suspects per-file', { time: Date.now() - start, mem: process.memoryUsage() });
 
-    // 1) parse actions for all suspects to discover known action names
-    const actionTasks = suspects.map(fp => limit(() => Promise.resolve(parseActions(root, [fp]))));
-    const actionResults = await Promise.all(actionTasks);
-    const knownActions = new Set<string>();
-    for (const ar of actionResults) for (const a of ar) knownActions.add(a.name);
+    // 1) lightweight text-based action discovery to avoid ts-morph where possible
+    const quickMap: Record<string, PerFileAction> = quickActionsFromFiles(suspects);
+    const quickList: PerFileAction[] = Object.values(quickMap);
+    if (options.verbose) console.log('incremental: quick-discovered actions', quickList.length, { time: Date.now() - start, mem: process.memoryUsage() });
+    const knownActions = new Set<string>(quickList.map(a => a.id));
+    // also record quick results into per-file cache where possible
+    for (const fp of suspects) {
+      const rel = path.relative(root, fp);
+      const existing = cache[rel] && cache[rel].result ? cache[rel].result : undefined;
+      if (!existing) {
+        // store quick-discovered actions for this file (best-effort)
+        const fileActions = quickList.filter(a => a.file === fp).map(a => ({ name: a.id, nested: false }));
+        const per: ParseResult = { actions: fileActions, components: {}, effects: {}, reducers: {} };
+        cache[rel] = Object.assign({}, cache[rel] || {}, { result: per });
+      }
+    }
 
     // 2) parse components/reducers/effects per-file in parallel
     const compTasks = suspects.map(fp => limit(() => Promise.resolve(parseComponents(root, [fp]))));
@@ -139,18 +152,19 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
     const effTasks = suspects.map(fp => limit(() => Promise.resolve(parseEffects(root, [fp], knownActions))));
 
     const [compResults, redResults, effResults] = await Promise.all([Promise.all(compTasks), Promise.all(redTasks), Promise.all(effTasks)]);
+    if (options.verbose) console.log('incremental: parsed components/reducers/effects for suspects', { time: Date.now() - start, mem: process.memoryUsage() });
 
     const actionMap = new Map<string, { nested: boolean }>();
     const componentsMap: Record<string, string[]> = {};
     const effectsMap: Record<string, { input: string[]; output: string[] }> = {};
     const reducersMap: Record<string, string[]> = {};
-
     // merge per-file results and store per-file cache entries
     for (let i = 0; i < suspects.length; i++) {
       const fp = suspects[i];
       const rel = path.relative(root, fp);
-      const ar = actionResults[i] || [];
-      for (const a of ar) {
+      // best-effort: include any quick-discovered actions for this file as file actions
+      const perActions = quickList.filter(a => a.file === fp).map(a => ({ name: a.id, nested: false }));
+      for (const a of perActions) {
         const prev = actionMap.get(a.name);
         if (!prev) actionMap.set(a.name, { nested: a.nested });
         else if (a.nested && !prev.nested) prev.nested = true;
@@ -163,7 +177,7 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
       for (const [k, v] of Object.entries(er)) effectsMap[k] = v;
 
       // persist per-file parse into cache
-      cache[rel] = Object.assign({}, cache[rel] || {}, { result: { actions: ar.map(a => ({ name: a.name, nested: a.nested })), components: cr, effects: er, reducers: rr } });
+      cache[rel] = Object.assign({}, cache[rel] || {}, { result: { actions: perActions, components: cr, effects: er, reducers: rr } });
     }
 
     results.actions = Array.from(actionMap.entries()).map(([name, info]) => ({ name, nested: info.nested }));
@@ -173,11 +187,12 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
 
     cache['__full'] = { mtimeMs: Date.now(), hash: '', result: results };
     await saveCache(root, cache);
+    if (options.verbose) console.log('incremental: saved cache', { time: Date.now() - start, mem: process.memoryUsage() });
     return results;
   }
 
   // Merge changed files into cached full result
-  if (options.verbose) console.log('incremental: merging changed files into cached full parse');
+  if (options.verbose) console.log('incremental: merging changed files into cached full parse', { time: Date.now() - start, mem: process.memoryUsage() });
   const base = cache['__full'].result as ParseResult;
   const actionMap = new Map(base.actions.map(a => [a.name, { nested: a.nested } as { nested: boolean }]));
   const componentsMap: Record<string, string[]> = Object.assign({}, base.components);
@@ -203,6 +218,7 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
   const effTasks = changed.map(fp => limit(() => Promise.resolve(parseEffects(root, [fp], knownActions))));
 
   const [compResults, redResults, effResults] = await Promise.all([Promise.all(compTasks), Promise.all(redTasks), Promise.all(effTasks)]);
+  if (options.verbose) console.log('incremental: parsed changed file components/reducers/effects', { time: Date.now() - start, mem: process.memoryUsage() });
 
   for (const cr of compResults) for (const [k, v] of Object.entries(cr)) componentsMap[k] = v;
   for (const er of effResults) for (const [k, v] of Object.entries(er)) effectsMap[k] = v;
@@ -226,6 +242,7 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
 
   cache['__full'] = { mtimeMs: Date.now(), hash: '', result: results };
   await saveCache(root, cache);
+  if (options.verbose) console.log('incremental: saved merged cache', { time: Date.now() - start, mem: process.memoryUsage() });
 
   return results;
 }

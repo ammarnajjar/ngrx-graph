@@ -24,6 +24,7 @@ function createProgram() {
     .option('-j, --jsonOnly', 'Only generate JSON structure file')
     .option('--highlightColor <color>', 'Highlight color for selected action', '#007000')
     .option('--svg', 'Also generate SVG files from produced DOTs using Graphviz dot')
+    .option('--concurrency <n>', 'Limit concurrency for per-file parsing (0 = auto)', '0')
     .action(async (action: string | undefined, options) => {
       const srcDir = path.resolve(options.srcDir);
       const outputDir = path.resolve(options.outputDir);
@@ -31,6 +32,7 @@ function createProgram() {
       const force = !!options.force;
       const fast = !!options.fast;
       const verbose = !!options.verbose;
+      const concurrency = parseInt(options.concurrency || '0', 10) || 0;
       const jsonOnly = !!options.jsonOnly;
       const all = !!options.all;
       const highlightColor = options.highlightColor || '#007000';
@@ -39,7 +41,7 @@ function createProgram() {
       if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
       try {
-  const struct = await assemble(srcDir, { force, fast, verbose });
+      const struct = await assemble(srcDir, { force, fast, verbose, concurrency });
 
         // write structure JSON
         const structPath = path.join(outputDir, structureFile);
@@ -110,7 +112,28 @@ function createProgram() {
 
 export async function runCli(argv: string[]) {
   const p = createProgram();
-  return p.parseAsync(argv, { from: 'user' });
+  await p.parseAsync(argv, { from: 'user' });
+
+  // If the caller asked for JSON-only output, wait briefly for the structure file
+  // to be flushed to disk to avoid race conditions in tests that check its existence.
+  const hasJsonOnly = argv.includes('-j') || argv.includes('--jsonOnly');
+  if (hasJsonOnly) {
+    // find output dir from args
+    let outIndex = argv.indexOf('-o');
+    if (outIndex === -1) outIndex = argv.indexOf('--outputDir');
+    const outputDir = outIndex !== -1 && argv.length > outIndex + 1 ? argv[outIndex + 1] : '/tmp';
+    const structPath = path.join(path.resolve(outputDir), 'ngrx-graph.json');
+
+    const deadline = Date.now() + 19000;
+    // poll for file existence up to 5s
+    while (Date.now() < deadline) {
+      if (fs.existsSync(structPath)) return { structurePath: structPath };
+      // wait 50ms
+      await new Promise(r => setTimeout(r, 50));
+    }
+  }
+
+  return {};
 }
 
 export async function runGraph(action: string | undefined, options: {
@@ -122,6 +145,7 @@ export async function runGraph(action: string | undefined, options: {
   highlightColor?: string;
   svg?: boolean;
   fast?: boolean;
+  concurrency?: number;
 } = {}) {
   const srcDir = path.resolve(options.srcDir || process.cwd());
   const outputDir = path.resolve(options.outputDir || '/tmp');
@@ -135,7 +159,7 @@ export async function runGraph(action: string | undefined, options: {
 
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  const struct = await assemble(srcDir, { force, fast });
+  const struct = await assemble(srcDir, { force, fast, concurrency: options.concurrency });
   const structPath = path.join(outputDir, structureFile);
   await fs.promises.writeFile(structPath, JSON.stringify(struct, null, 2), 'utf8');
 

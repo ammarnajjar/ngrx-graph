@@ -20,7 +20,7 @@ export type Structure = {
  * Assemble structure using parsers. If a structure file exists in parent of srcDir, load that instead
  * (mimic README behavior) unless force=true.
  */
-export async function assemble(srcDir: string, options: { force?: boolean; propagateLoadedActions?: boolean; fast?: boolean; verbose?: boolean } = {}): Promise<Structure> {
+export async function assemble(srcDir: string, options: { force?: boolean; propagateLoadedActions?: boolean; fast?: boolean; verbose?: boolean; concurrency?: number } = {}): Promise<Structure> {
   const parent = path.resolve(srcDir, '..');
   const structPath = path.join(parent, 'ngrx-graph.json');
   if (!options.force && fs.existsSync(structPath)) {
@@ -34,8 +34,10 @@ export async function assemble(srcDir: string, options: { force?: boolean; propa
   let reducers: Record<string, string[]> = {};
 
   if (options.fast) {
-    if (options.verbose) console.log('assemble: running incremental (fast) parse');
-    const r = await incrementalParse(srcDir, { force: options.force, verbose: options.verbose });
+    if (options.verbose) console.log('assemble: running incremental (fast) parse', { mem: process.memoryUsage(), t: Date.now() });
+    const t0 = Date.now();
+    const r = await incrementalParse(srcDir, { concurrency: options['concurrency'], force: options.force, verbose: options.verbose });
+    if (options.verbose) console.log('assemble: incremental parse finished', { mem: process.memoryUsage(), dt: Date.now() - t0 });
     actions = r.actions;
     components = r.components;
     effects = r.effects;
@@ -54,62 +56,71 @@ export async function assemble(srcDir: string, options: { force?: boolean; propa
 
   // Detect nested action payloads by scanning source files for calls to nested action creators
   const loadedActions: Array<{ name: string; payloadActions?: string[] }> = [];
-  const project = new Project({ tsConfigFilePath: undefined });
-  let sourceFiles = [] as import('ts-morph').SourceFile[];
-  if (options.fast) {
-    if (options.verbose) console.log('assemble: fast mode - prefiltering source files for nested action detection');
-    const patterns = [
-      '**/*.component.ts',
-      '**/*.effects.ts',
-      '**/*.reducer.ts',
-      '**/*.actions.ts',
-      '!**/*.d.ts',
-      '!**/node_modules/**',
-      '!**/dist/**',
-      '!**/out/**',
-    ];
-    const entries = await fg(patterns, { cwd: srcDir, absolute: true });
-    sourceFiles = project.addSourceFilesAtPaths(entries);
-  } else {
-    const globPath = path.join(srcDir, '**', '*.ts');
-    sourceFiles = project.addSourceFilesAtPaths(globPath);
-  }
-
   const nestedActionNames = new Set(actions.filter(x => x.nested).map(x => x.name));
 
-  for (const sf of sourceFiles) {
-    const calls = sf.getDescendantsOfKind(SyntaxKind.CallExpression);
-    for (const call of calls) {
-      const expr = call.getExpression();
-      if (!expr) continue;
-      const callee = expr.getText();
-      if (!nestedActionNames.has(callee)) continue;
+  // only create a ts-morph Project and load source files if we have nested actions to look for
+  if (nestedActionNames.size > 0) {
+    const project = new Project({ tsConfigFilePath: undefined });
+    let sourceFiles = [] as import('ts-morph').SourceFile[];
+    if (options.fast) {
+      if (options.verbose) console.log('assemble: fast mode - prefiltering source files for nested action detection', { mem: process.memoryUsage(), t: Date.now() });
+      const patterns = [
+        '**/*.component.ts',
+        '**/*.effects.ts',
+        '**/*.reducer.ts',
+        '**/*.actions.ts',
+        '!**/*.d.ts',
+        '!**/node_modules/**',
+        '!**/dist/**',
+        '!**/out/**',
+      ];
+      const entries = await fg(patterns, { cwd: srcDir, absolute: true });
+      const t1 = Date.now();
+      sourceFiles = project.addSourceFilesAtPaths(entries);
+      if (options.verbose) console.log('assemble: added source files to ts-morph project', { count: sourceFiles.length, dt: Date.now() - t1, mem: process.memoryUsage() });
+    } else {
+      const globPath = path.join(srcDir, '**', '*.ts');
+      const t1 = Date.now();
+      sourceFiles = project.addSourceFilesAtPaths(globPath);
+      if (options.verbose) console.log('assemble: added all source files to ts-morph project', { count: sourceFiles.length, dt: Date.now() - t1, mem: process.memoryUsage() });
+    }
 
-      const args = call.getArguments();
-      if (!args || args.length === 0) continue;
-      const first = args[0];
-      if (first.getKind && first.getKind() === SyntaxKind.ObjectLiteralExpression) {
-        const obj = first as import('ts-morph').ObjectLiteralExpression;
-        const props = obj.getProperties();
-        for (const p of props) {
-          if (p.getKind && p.getKind() === SyntaxKind.PropertyAssignment) {
-            const propAssign = p as import('ts-morph').PropertyAssignment;
-            const name = propAssign.getName();
-            if (name !== 'action') continue;
-            const init = propAssign.getInitializer && propAssign.getInitializer();
-            if (!init) continue;
-            if (init.getKind && init.getKind() === SyntaxKind.CallExpression) {
-              const inner = init as import('ts-morph').CallExpression;
-              const innerName = inner.getExpression().getText();
-              // only record payload actions that are known action creators
-              if (nestedActionNames.has(innerName) || actions.some(a => a.name === innerName)) {
-                loadedActions.push({ name: callee, payloadActions: [innerName] });
+    for (const sf of sourceFiles) {
+      const calls = sf.getDescendantsOfKind(SyntaxKind.CallExpression);
+      for (const call of calls) {
+        const expr = call.getExpression();
+        if (!expr) continue;
+        const callee = expr.getText();
+        if (!nestedActionNames.has(callee)) continue;
+
+        const args = call.getArguments();
+        if (!args || args.length === 0) continue;
+        const first = args[0];
+        if (first.getKind && first.getKind() === SyntaxKind.ObjectLiteralExpression) {
+          const obj = first as import('ts-morph').ObjectLiteralExpression;
+          const props = obj.getProperties();
+          for (const p of props) {
+            if (p.getKind && p.getKind() === SyntaxKind.PropertyAssignment) {
+              const propAssign = p as import('ts-morph').PropertyAssignment;
+              const name = propAssign.getName();
+              if (name !== 'action') continue;
+              const init = propAssign.getInitializer && propAssign.getInitializer();
+              if (!init) continue;
+              if (init.getKind && init.getKind() === SyntaxKind.CallExpression) {
+                const inner = init as import('ts-morph').CallExpression;
+                const innerName = inner.getExpression().getText();
+                // only record payload actions that are known action creators
+                if (nestedActionNames.has(innerName) || actions.some(a => a.name === innerName)) {
+                  loadedActions.push({ name: callee, payloadActions: [innerName] });
+                }
               }
             }
           }
         }
       }
     }
+  } else {
+    if (options.verbose) console.log('assemble: no nested actions found, skipping ts-morph nested-action scan', { mem: process.memoryUsage() });
   }
 
   return {

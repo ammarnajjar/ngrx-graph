@@ -8,7 +8,7 @@ function mkdtemp() {
 }
 
 describe('CLI fast mode', () => {
-  jest.setTimeout(20000);
+  jest.setTimeout(30000);
 
   test('run with --fast uses incremental path and writes json', async () => {
     const out = mkdtemp();

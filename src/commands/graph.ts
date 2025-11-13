@@ -10,6 +10,7 @@ export default class Graph extends Command {
     force: Flags.boolean({ char: 'f' }),
     fast: Flags.boolean({ description: 'Use fast incremental scan (prefilter + cache)' }),
     verbose: Flags.boolean({ description: 'Enable verbose logging' }),
+    concurrency: Flags.integer({ description: 'Limit concurrency for per-file parsing', default: 0 }),
     svg: Flags.boolean({ char: 'g', description: 'also emit SVG files using Graphviz dot' }),
     outputDir: Flags.string({ char: 'o' }),
     srcDir: Flags.string({ char: 'd' }),
@@ -31,6 +32,7 @@ export default class Graph extends Command {
       jsonOnly?: boolean;
       all?: boolean;
       verbose?: boolean;
+      concurrency?: number;
       highlightColor?: string;
       svg?: boolean;
       fast?: boolean;
@@ -44,6 +46,7 @@ export default class Graph extends Command {
       all: flags.all,
       highlightColor: flags.highlightColor,
       svg: flags.svg,
+      concurrency: flags.concurrency,
     };
 
     try {
