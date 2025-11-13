@@ -114,6 +114,66 @@ export async function runCli(argv: string[]) {
   return p.parseAsync(argv, { from: 'user' });
 }
 
+export async function runGraph(action: string | undefined, options: {
+  srcDir?: string;
+  outputDir?: string;
+  force?: boolean;
+  jsonOnly?: boolean;
+  all?: boolean;
+  highlightColor?: string;
+  svg?: boolean;
+} = {}) {
+  const srcDir = path.resolve(options.srcDir || process.cwd());
+  const outputDir = path.resolve(options.outputDir || '/tmp');
+  const structureFile = 'ngrx-graph.json';
+  const force = !!options.force;
+  const jsonOnly = !!options.jsonOnly;
+  const all = !!options.all;
+  const highlightColor = options.highlightColor || '#007000';
+  const emitSvg = !!options.svg;
+
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  const struct = await assemble(srcDir, { force });
+  const structPath = path.join(outputDir, structureFile);
+  await fs.promises.writeFile(structPath, JSON.stringify(struct, null, 2), 'utf8');
+
+  if (jsonOnly) return { structure: struct, outputs: [] };
+
+  const actionNames = struct.allActions.map(a => a.name as string);
+  const outputs: string[] = [];
+
+  if (all) {
+    for (const a of actionNames) {
+      const dot = generateDotFromJson(struct, a, { highlightAction: a, highlightColor });
+      const out = path.join(outputDir, `${a}.dot`);
+      await fs.promises.writeFile(out, dot, 'utf8');
+      outputs.push(out);
+      if (emitSvg) {
+        const svgPath = path.join(outputDir, `${a}.svg`);
+        spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
+        outputs.push(svgPath);
+      }
+    }
+    return { structure: struct, outputs };
+  }
+
+  const target = action || actionNames[0];
+  if (!target) return { structure: struct, outputs };
+
+  const dot = generateDotFromJson(struct, target, { highlightAction: action === target ? target : undefined, highlightColor });
+  const out = path.join(outputDir, `${target}.dot`);
+  await fs.promises.writeFile(out, dot, 'utf8');
+  outputs.push(out);
+  if (emitSvg) {
+    const svgPath = path.join(outputDir, `${target}.svg`);
+    spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
+    outputs.push(svgPath);
+  }
+
+  return { structure: struct, outputs };
+}
+
 // Backwards-compat default export: a program instance for direct require usage.
 const defaultProgram = createProgram();
 
