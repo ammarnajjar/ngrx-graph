@@ -18,7 +18,7 @@ for (const e of entries) {
   if (!e.isDirectory()) continue;
   const name = e.name;
   const src = path.join(examplesDir, name, 'src');
-  const out = path.join(examplesDir, name, 'dist');
+  const out = path.join(examplesDir, name, 'out');
   fs.mkdirSync(out, { recursive: true });
 
   console.log(`Generating DOTs for ${name}`);

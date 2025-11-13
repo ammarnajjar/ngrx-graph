@@ -146,38 +146,12 @@ If this file exists, source code will not be parsed for actions, the recorded st
 
 ### Input:
 
-```typescript
-// actions
-export const action1 = createAction('Action1');
-export const action2 = createAction('Action2');
-export const action3 = createAction('Action3');
+Input files (see the canonical example sources under `docs/examples/case1/src`):
 
-// component
-@Component()
-export class FirstComponent {
-  onEvent() {
-    this.store.dispatch(action1());
-  }
-}
-
-// effects
-@Injectable()
-export class ExampleEffects {
-  effect1$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(action1),
-      switchMap(() => [action2(), action3()]),
-    ),
-  );
-}
-
-// reducer
-const firstReducer = createReducer(
-  on(action3, () => {
-    // ...
-  }),
-);
-```
+- Actions: `docs/examples/case1/src/case1.actions.ts`
+- Component: `docs/examples/case1/src/case1.component.ts`
+- Effects: `docs/examples/case1/src/case1.effects.ts`
+- Reducer: `docs/examples/case1/src/case1.reducer.ts`
 
 ### Output:
 
@@ -185,78 +159,34 @@ const firstReducer = createReducer(
 npx ngrx-graph -j -f
 ```
 
-- [ngrx-graph.json](./docs/examples/case1/ngrx-graph.json)
+- [ngrx-graph.json](./docs/examples/case1/out/ngrx-graph.json)
 
 ```bash
 npx ngrx-graph action1
 ```
 
-- [dotFile](./docs/examples/case1/action1.dot)
+- [dotFile](./docs/examples/case1/out/action1.dot)
 - graph:  
-  ![graph](./docs/examples/case1/action1.svg)
+  ![graph](./docs/examples/case1/out/action1.svg)
 
 ```bash
 npx ngrx-graph action3
 ```
 
-- [dotFile](./docs/examples/case1/action3.dot)
+- [dotFile](./docs/examples/case1/out/action3.dot)
 - graph:  
-  ![graph](./docs/examples/case1/action3.svg)
+  ![graph](./docs/examples/case1/out/action3.svg)
 
 ### Case 2 (nested actions):
 
 ### Input:
 
-```typescript
-// actions
-export const nestedAction = createAction(
-  'NestedAction',
-  props<{ action: Action }>(),
-);
-export const action1 = createAction('Action1');
-export const action2 = createAction('Action2');
-export const action3 = createAction('Action3');
+Input files (see the canonical example sources under `docs/examples/case2/src`):
 
-// component
-@Component()
-export class FirstComponent {
-  onEvent() {
-    this.store.dispatch(nestedAction({ action: action1() }));
-  }
-}
-
-// effects
-@Injectable()
-export class ExampleEffects {
-  effect1$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(action1),
-      switchMap(() => [nestedAction1({ action: action2() }), action3()])),
-    ),
-  );
-
-  effect2$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(nestedAction1),
-      map(({ action }) => nestedAction2( { action: action()})),
-    ),
-  );
-
-  effect3$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(nestedAction2),
-      map(({ action }) => action())),
-    ),
-  );
-}
-
-// reducer
-const firstReducer = createReducer(
-  on(action3, () => {
-    // ...
-  }),
-)
-```
+- Actions: `docs/examples/case2/src/case2.actions.ts`
+- Component: `docs/examples/case2/src/case2.component.ts`
+- Effects: `docs/examples/case2/src/case2.effects.ts`
+- Reducer: `docs/examples/case2/src/case2.reducer.ts`
 
 ### Output:
 
@@ -264,23 +194,58 @@ const firstReducer = createReducer(
 npx ngrx-graph -j -f
 ```
 
-- [ngrx-graph.json](./docs/examples/case2/ngrx-graph.json)
+- [ngrx-graph.json](./docs/examples/case2/out/ngrx-graph.json)
 
 ```bash
 npx ngrx-graph action1
 ```
 
-- [dotFile](./docs/examples/case2/action1.dot)
+- [dotFile](./docs/examples/case2/out/action1.dot)
 - graph:  
-  ![graph](./docs/examples/case2/action1.svg)
+  ![graph](./docs/examples/case2/out/action1.svg)
 
 ```bash
 npx ngrx-graph action3
 ```
 
-- [dotFile](./docs/examples/case2/action3.dot)
+- [dotFile](./docs/examples/case2/out/action3.dot)
 - graph:  
-  ![graph](./docs/examples/case2/action3.svg)
+  ![graph](./docs/examples/case2/out/action3.svg)
+
+### Case 3 (reachability filtering):
+
+### Input:
+
+Input files (see the canonical example sources under `docs/examples/case3/src`):
+
+- Actions: `docs/examples/case3/src/case3.actions.ts`
+- Component: `docs/examples/case3/src/case3.component.ts`
+- Effects: `docs/examples/case3/src/case3.effects.ts`
+- Reducer: `docs/examples/case3/src/case3.reducer.ts`
+
+### Output:
+
+```bash
+npx ngrx-graph -j -f
+```
+
+- [ngrx-graph.json](./docs/examples/case3/out/ngrx-graph.json)
+
+```bash
+npx ngrx-graph action1
+```
+
+- [dotFile](./docs/examples/case3/out/action1.dot)
+- graph:  
+  ![graph](./docs/examples/case3/out/action1.svg)
+
+```bash
+npx ngrx-graph action3
+```
+
+- [dotFile](./docs/examples/case3/out/action3.dot)
+- graph:  
+  ![graph](./docs/examples/case3/out/action3.svg)
 
 </details>
 

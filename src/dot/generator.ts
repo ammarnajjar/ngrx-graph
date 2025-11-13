@@ -125,9 +125,6 @@ export function generateDotForAction(struct: Structure, actionName: string, opts
     }
   }
 
-  // Legacy handling for '__PAYLOAD__' outputs has been removed. The assembler now
-  // produces `struct.loadedActions` which are emitted below as payload edges.
-
   // Add reducers: action -> reducer
   for (const [reducer, actions] of Object.entries(struct.fromReducers)) {
     const redId = sanitizeId(reducer);

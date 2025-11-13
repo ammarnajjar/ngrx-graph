@@ -1,0 +1,5 @@
+digraph {
+action3 [color=green, fillcolor="#007000", fontcolor=white, style=filled]
+firstReducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
+action3 -> firstReducer
+}
