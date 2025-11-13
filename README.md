@@ -1,3 +1,37 @@
+# ngrx-graph (scaffold)
+
+This scaffold provides a CLI to parse an Angular NgRx project and generate a structure JSON and DOT graphs.
+
+Usage examples:
+
+Generate JSON and DOT for a single action:
+
+  node ./dist/cli.js graph action1 -d docs/examples/case1/src -o /tmp/ngrx
+
+JSON only:
+
+  node ./dist/cli.js graph -j -d docs/examples/case1/src -o /tmp/ngrx
+
+Generate all DOTs:
+
+  node ./dist/cli.js graph --all -d docs/examples/case1/src -o /tmp/ngrx
+# ngrx-graph
+
+CLI to scan an Angular NgRx codebase and generate DOT graphs and a structure JSON.
+
+Usage examples:
+
+Generate JSON and DOT for a single action:
+
+  npx ngrx-graph graph action1 -d docs/examples/case1/src -o /tmp/ngrx
+
+Generate JSON only:
+
+  npx ngrx-graph graph -j -d docs/examples/case1/src -o /tmp/ngrx
+
+Generate all action graphs:
+
+  npx ngrx-graph graph --all -d docs/examples/case1/src -o /tmp/ngrx
 # ngrx-graph (generated)
 
 A small CLI to analyze an Angular project using NgRx and produce DOT graphs of actions, effects, components, and reducers.
@@ -15,6 +49,18 @@ Generate all DOTs:
 ```bash
 npx ngrx-graph graph -a -d ./src -o ./out
 ```
+
+Generate SVGs directly instead of DOT files:
+
+```bash
+# Generate a single action's SVG
+npx ngrx-graph graph action1 -d ./src -o ./out --svg
+
+# Generate SVGs for all actions
+npx ngrx-graph graph -a -d ./src -o ./out --svg
+```
+
+Note: the `--svg` flag requires Graphviz's `dot` command to be available on your PATH (install via `brew install graphviz` on macOS).
 
 Only generate JSON structure:
 
@@ -68,6 +114,15 @@ Dot files can be then used to generate graphs using [Graphviz](https://www.graph
 ```bash
 for file in *.dot; do; dot -Tsvg $file -o "${file%.*}".svg; rm $file; done
 ```
+
+Alternatively a convenience script is provided to regenerate SVGs for the examples:
+
+```bash
+chmod +x scripts/gen-svgs.sh
+./scripts/gen-svgs.sh
+```
+
+This script requires the `dot` command from Graphviz to be installed (macOS: `brew install graphviz`).
 
 The first run will generate a json file (see `--structureFile` flag), which is used for the next runs if the flag `--force` was not set as cache.
 If this file exists, source code will not be parsed for actions, the recorded structure will be taken from that json file. This speeds up the process considerably.

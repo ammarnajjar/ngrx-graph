@@ -68,11 +68,13 @@
     "test:ci": "jest",
     "prepare": "husky",
     "lint": "eslint",
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "tsc -p tsconfig.json",
     "postpack": "shx rm -f oclif.manifest.json",
     "version": "oclif readme && git add README.md",
-    "test": "jest --collectCoverage --cache",
-    "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme"
+    "test": "jest --config jest.config.ts --runInBand",
+    "cli": "ts-node src/cli.ts",
+    "gen:examples": "ts-node ./scripts/gen-examples.ts",
+    "prepack": "npm run build && rm tsconfig.tsbuildinfo || true"
   },
   "engines": {
     "node": ">=16.0.0"

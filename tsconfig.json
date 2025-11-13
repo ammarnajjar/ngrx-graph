@@ -13,6 +13,7 @@
     "sourceMap": true,
     "lib": ["ES2020"]
   },
-  "include": ["src/**/*", "test/**/*"],
-  "exclude": ["node_modules", "dist", "test/fixtures/**"]
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
+

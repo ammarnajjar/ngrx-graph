@@ -8,6 +8,7 @@ export default [
   {
     ignores: [
       'eslint.config.mjs',
+      'docs/examples/**',
       '**/dist',
       '**/test/fixtures/**',
       '**/assets',
@@ -21,8 +22,6 @@ export default [
   },
   {
     files: ['tests/**/*'],
-    env: {
-      jest: true,
-    }
+    languageOptions: { globals: globals.jest }
   },
 ];
