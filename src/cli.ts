@@ -1,208 +1,89 @@
-#!/usr/bin/env ts-node
-import { spawnSync } from 'child_process';
+#!/usr/bin/env node
+import chalk from 'chalk';
 import { Command } from 'commander';
-import fs from 'fs';
+import fg from 'fast-glob';
+import os from 'os';
 import path from 'path';
-import assemble from './assembler';
-import generateDotFromJson, { generateDotAllFromJson } from './dot/fromJson';
+import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
 
-function createProgram() {
-  const program = new Command();
+const program = new Command();
 
-  program
-    .name('ngrx-graph')
-    .description('Generate NgRx actions graph')
-    .helpOption('-h, --help', 'Display help for ngrx-graph')
-    .argument('[action]', 'Action of interest')
-    .option('-a, --all', 'Generate DOTs for all actions')
-    .option('-d, --srcDir <dir>', 'Source directory to scan', process.cwd())
-    .option('-o, --outputDir <dir>', 'Output directory', '/tmp')
-    .option('-s, --structureFile <file>', 'Structure JSON filename', 'ngrx-graph.json')
-    .option('-f, --force', 'Force regenerating the structure')
-    .option('--fast', 'Use fast incremental scan (prefilter + cache)')
-    .option('--verbose', 'Enable verbose logging')
-    .option('-j, --jsonOnly', 'Only generate JSON structure file')
-    .option('--highlightColor <color>', 'Highlight color for selected action', '#007000')
-    .option('--svg', 'Also generate SVG files from produced DOTs using Graphviz dot')
-    .option('--concurrency <n>', 'Limit concurrency for per-file parsing (0 = auto)', '0')
-    .action(async (action: string | undefined, options) => {
-      const srcDir = path.resolve(options.srcDir);
-      const outputDir = path.resolve(options.outputDir);
-      const structureFile = options.structureFile || 'ngrx-graph.json';
-      const force = !!options.force;
-      const fast = !!options.fast;
-      const verbose = !!options.verbose;
-      const concurrency = parseInt(options.concurrency || '0', 10) || 0;
-      const jsonOnly = !!options.jsonOnly;
-      const all = !!options.all;
-      const highlightColor = options.highlightColor || '#007000';
-      const emitSvg = !!options.svg;
+program
+  .name('scan-actions')
+  .description('Scan a project for NgRx actions declarations')
+  .option('-d, --dir <dir>', 'Directory to scan', process.cwd())
+  .option('-p, --pattern <pattern>', 'glob pattern for action files', '**/*actions.ts')
+  .option('--json', 'output JSON')
+  .option('-o, --out <file>', 'output JSON file', undefined)
+  .option('-v, --verbose', 'enable verbose logging', false)
+  .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
+  .parse(process.argv);
 
-      if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+const opts = program.opts();
 
-      try {
-      const struct = await assemble(srcDir, { force, fast, verbose, concurrency });
-
-        // write structure JSON
-        const structPath = path.join(outputDir, structureFile);
-        await fs.promises.writeFile(structPath, JSON.stringify(struct, null, 2), 'utf8');
-        console.log(`Wrote structure to ${structPath}`);
-
-        if (jsonOnly) return;
-
-  // decide which actions to generate
-  const actionNames = struct.allActions.map(a => a.name as string);
-
-        if (all) {
-          // generate a single combined DOT for all actions
-          const dot = generateDotAllFromJson(struct, { highlightAction: action, highlightColor });
-          const outName = 'all.dot';
-          const out = path.join(outputDir, outName);
-          await fs.promises.writeFile(out, dot, 'utf8');
-          console.log(`Wrote combined DOT -> ${out}`);
-          if (emitSvg) {
-            const svgPath = path.join(outputDir, `all.svg`);
-            const res = spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-            if (res.error || res.status !== 0) console.error('Failed to generate SVG for all:', res.error || res.stderr?.toString());
-            else console.log(`Wrote combined SVG -> ${svgPath}`);
-          }
-          return;
-        }
-
-        const target = action || actionNames[0];
-        if (!target) {
-          console.log('No actions found to generate DOT for.');
-          return;
-        }
-
-        if (!actionNames.includes(target)) {
-          console.warn(`Action '${target}' not found in project actions. Available: ${actionNames.join(', ')}`);
-        }
-
-        const dot = generateDotFromJson(struct, target, { highlightAction: target === action ? target : undefined, highlightColor });
-        if (emitSvg) {
-          const svgPath = path.join(outputDir, `${target}.svg`);
-          const res = spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-          if (res.error || res.status !== 0) {
-            console.error(`Failed to generate SVG for ${target}:`, res.error || res.stderr?.toString());
-          } else {
-            console.log(`Wrote SVG for ${target} -> ${svgPath}`);
-          }
-        } else {
-          const out = path.join(outputDir, `${target}.dot`);
-          await fs.promises.writeFile(out, dot, 'utf8');
-          console.log(`Wrote DOT for ${target} -> ${out}`);
-        }
-      } catch (err) {
-        console.error('Failed:', err);
-        process.exitCode = 1;
-      }
-    });
-
-  program.addHelpText('after', `
-\nExamples:
-  $ npx ngrx-graph graph action1 -d ./src -o ./out
-  $ npx ngrx-graph graph --all -d ./src -o ./out --svg
-  $ npx ngrx-graph graph --jsonOnly -d ./src -o ./out
-`);
-
-  return program;
-}
-
-
-export async function runCli(argv: string[]) {
-  const p = createProgram();
-  await p.parseAsync(argv, { from: 'user' });
-
-  // If the caller asked for JSON-only output, wait briefly for the structure file
-  // to be flushed to disk to avoid race conditions in tests that check its existence.
-  const hasJsonOnly = argv.includes('-j') || argv.includes('--jsonOnly');
-  if (hasJsonOnly) {
-    // find output dir from args
-    let outIndex = argv.indexOf('-o');
-    if (outIndex === -1) outIndex = argv.indexOf('--outputDir');
-    const outputDir = outIndex !== -1 && argv.length > outIndex + 1 ? argv[outIndex + 1] : '/tmp';
-    const structPath = path.join(path.resolve(outputDir), 'ngrx-graph.json');
-
-    const deadline = Date.now() + 19000;
-    // poll for file existence up to 5s
-    while (Date.now() < deadline) {
-      if (fs.existsSync(structPath)) return { structurePath: structPath };
-      // wait 50ms
-      await new Promise(r => setTimeout(r, 50));
+async function run() {
+  const dir = path.resolve(opts.dir);
+  const concurrency = Math.max(1, parseInt(opts.concurrency, 10) || 8);
+  console.log(chalk.blue(`Scanning directory: ${dir}`));
+  console.log(chalk.blue(`Pattern: ${opts.pattern}  Concurrency: ${concurrency}  PID: ${process.pid}`));
+  if (opts.verbose) console.log(chalk.blue(`CPUS: ${os.cpus().length}`));
+  const startTime = Date.now();
+  // count files matching pattern for progress info
+  let filesCount = 0;
+  try {
+    const files = await fg(opts.pattern, { cwd: dir, onlyFiles: true });
+    filesCount = files.length;
+  } catch (err) {
+    console.log(chalk.yellow('Could not count files for pattern (continuing):'), err);
+  }
+  if (filesCount && opts.verbose) console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
+  const list = await scanActions({ dir, pattern: opts.pattern, concurrency });
+  const scanDuration = (Date.now() - startTime) / 1000;
+  console.log(chalk.green(`Scanning done: found ${list.length} actions in ${scanDuration.toFixed(2)}s`));
+  if (opts.verbose) {
+    console.log(chalk.gray('Actions:'));
+    for (const a of list) {
+      console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
     }
   }
-
-  return {};
-}
-
-export async function runGraph(action: string | undefined, options: {
-  srcDir?: string;
-  outputDir?: string;
-  force?: boolean;
-  jsonOnly?: boolean;
-  all?: boolean;
-  highlightColor?: string;
-  svg?: boolean;
-  fast?: boolean;
-  concurrency?: number;
-} = {}) {
-  const srcDir = path.resolve(options.srcDir || process.cwd());
-  const outputDir = path.resolve(options.outputDir || '/tmp');
-  const structureFile = 'ngrx-graph.json';
-  const force = !!options.force;
-  const jsonOnly = !!options.jsonOnly;
-  const all = !!options.all;
-  const highlightColor = options.highlightColor || '#007000';
-  const emitSvg = !!options.svg;
-  const fast = !!options.fast;
-
-  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-
-  const struct = await assemble(srcDir, { force, fast, concurrency: options.concurrency });
-  const structPath = path.join(outputDir, structureFile);
-  await fs.promises.writeFile(structPath, JSON.stringify(struct, null, 2), 'utf8');
-
-  if (jsonOnly) return { structure: struct, outputs: [] };
-
-  const actionNames = struct.allActions.map(a => a.name as string);
-  const outputs: string[] = [];
-
-  if (all) {
-    const dot = generateDotAllFromJson(struct, { highlightAction: action, highlightColor });
-    const outName = 'all.dot';
-    const out = path.join(outputDir, outName);
-    await fs.promises.writeFile(out, dot, 'utf8');
-    outputs.push(out);
-    if (emitSvg) {
-      const svgPath = path.join(outputDir, `all.svg`);
-      spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-      outputs.push(svgPath);
+  if (opts.json) {
+    // when --out is provided write to file, otherwise print
+    const outFile = opts.out ? path.resolve(opts.out) : path.join(dir, 'ngrx-graph.json');
+    const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
+    const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
+    const fromComponents = componentsResult.mapping ?? {};
+    const effectsResult = await scanEffects({ dir, pattern: '**/*.effects.ts', concurrency });
+    const fromEffects = effectsResult.mapping ?? {};
+    const reducersResult = await scanReducers({ dir, pattern: '**/*reducer*.ts', concurrency });
+    const fromReducers = reducersResult.mapping ?? {};
+    // merge loaded actions from components and effects
+    const loadedFromComponents = componentsResult.loaded ?? [];
+    const loadedFromEffects = effectsResult.loaded ?? [];
+    const loadedActions = [...loadedFromComponents, ...loadedFromEffects];
+    const payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions };
+    if (opts.out) {
+      await import('fs/promises').then(fs => fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8'));
+      console.log(chalk.green(`Wrote ${outFile}`));
+    } else {
+      console.log(JSON.stringify(payload, null, 2));
     }
-    return { structure: struct, outputs };
+    const totalDuration = (Date.now() - startTime) / 1000;
+    console.log(chalk.blue(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
+    return;
   }
 
-  const target = action || actionNames[0];
-  if (!target) return { structure: struct, outputs };
-
-  const dot = generateDotFromJson(struct, target, { highlightAction: action === target ? target : undefined, highlightColor });
-  const out = path.join(outputDir, `${target}.dot`);
-  await fs.promises.writeFile(out, dot, 'utf8');
-  outputs.push(out);
-  if (emitSvg) {
-    const svgPath = path.join(outputDir, `${target}.svg`);
-    spawnSync('dot', ['-Tsvg', '-o', svgPath], { input: dot, encoding: 'utf8' });
-    outputs.push(svgPath);
+  if (!list.length) {
+    console.log(chalk.yellow('No actions found.'));
+    return;
   }
 
-  return { structure: struct, outputs };
+  for (const a of list) {
+    console.log(chalk.cyan(a.file));
+    console.log(`  ${chalk.green(a.kind)} ${a.name ?? ''} ${a.type ? `-> ${a.type}` : ''}`);
+  }
 }
 
-// Backwards-compat default export: a program instance for direct require usage.
-const defaultProgram = createProgram();
-
-if (require.main === module) {
-  defaultProgram.parse(process.argv);
-}
-
-export default defaultProgram;
+run().catch(err => {
+  console.error(chalk.red('Error while scanning:'), err);
+  process.exit(2);
+});
