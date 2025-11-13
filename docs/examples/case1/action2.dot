@@ -1,9 +1,0 @@
-digraph {
-FirstComponent [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
-FirstComponent -> action1
-action2 [color=green, fillcolor=green, fontcolor=white, style=filled]
-action1 -> action2
-action1 -> action3
-firstReducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
-action3 -> firstReducer
-}
