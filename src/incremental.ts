@@ -122,7 +122,13 @@ export async function incrementalParse(root: string, options: { concurrency?: nu
   }
 
   // concurrency limiter
-  const concurrency = options.concurrency && options.concurrency > 0 ? options.concurrency : Math.max(1, os.cpus().length - 1);
+  // Determine concurrency: explicit option > env var > auto (CPU-1)
+  const envConcurrency = process.env.NGRX_GRAPH_CONCURRENCY ? parseInt(process.env.NGRX_GRAPH_CONCURRENCY, 10) : 0;
+  const concurrency = (options.concurrency && options.concurrency > 0)
+    ? options.concurrency
+    : (envConcurrency && envConcurrency > 0)
+      ? envConcurrency
+      : Math.max(1, os.cpus().length - 1);
   const limit = pLimit(concurrency);
 
   // If no cached full result, parse suspects per-file and assemble
