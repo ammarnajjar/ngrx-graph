@@ -5,7 +5,16 @@ const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
 
-const info = (msg) => console.log(chalk.hex('#4DA6FF')(msg));
+// chalk v5 exports default functions differently; support both shapes.
+const hexFn = (color) => {
+	try {
+		if (typeof chalk.hex === 'function') return (m) => chalk.hex(color)(m);
+		if (chalk && chalk.default && typeof chalk.default.hex === 'function') return (m) => chalk.default.hex(color)(m);
+	} catch (_) {}
+	// fallback: no-op
+	return (m) => m;
+};
+const info = (msg) => console.log(hexFn('#4DA6FF')(msg));
 
 const repoRoot = path.join(__dirname, '..');
 const rawArgs = process.argv.slice(2) || [];
