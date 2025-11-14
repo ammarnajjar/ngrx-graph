@@ -31,7 +31,7 @@ program
   .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
   .option('-a, --all', 'only generate the aggregated all.dot (no per-action files)', false)
   .option('-j, --json', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
-  .option('--no-cache', 'do not reuse existing ngrx-graph.json; always re-scan')
+  .option('--cache', 'reuse existing ngrx-graph.json if present (skip scanning)', false)
   .argument('[action]', 'action name to focus (positional; overrides --action and --all)')
   .addHelpText('after', `
 
@@ -50,22 +50,21 @@ Examples:
   # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
   $ ngrx-graph -d ./src --out ./out --json
 
-  # Re-scan even if an existing JSON payload is present
-  $ ngrx-graph -d ./src --out ./out --no-cache
+  # Reuse an existing JSON payload instead of re-scanning
+  $ ngrx-graph -d ./src --out ./out --cache
 
 Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--no-cache' to force a re-scan but still continue to generate DOT/SVG when combined with other flags.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON payload and skip scanning when present.
 `)
   .parse(process.argv);
 
 const opts = program.opts();
-// commander represents a negated option like `--no-cache` by creating a
-// positive property `cache` with a boolean value. Normalize to a single
-// `noCache` boolean for easier checks below.
-const noCache = Boolean(opts.noCache) || (typeof opts.cache === 'boolean' ? !opts.cache : false);
+// Normalize cache option: new default is no-cache; user can pass `--cache`
+// to enable reuse of existing JSON payload.
+const useCache = Boolean(opts.cache);
 // allow positional action argument to override flag and --all
 const positionalAction = program.args && program.args.length ? program.args[0] : undefined;
 if (positionalAction) {
@@ -88,8 +87,9 @@ async function run() {
   const startTime = Date.now();
 
   // If JSON already exists and --json not provided, reuse it and skip the scan
+  // only when the user explicitly requested `--cache`.
   let payload: Record<string, unknown> | undefined;
-  if (!noCache) {
+  if (useCache) {
     try {
       const stat = await fs.stat(outFile).catch(() => null);
       if (stat && stat.isFile()) {

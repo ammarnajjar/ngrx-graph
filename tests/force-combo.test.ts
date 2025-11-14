@@ -37,7 +37,7 @@ test('--json alone writes JSON and stops', async () => {
   expect(hasDot).toBe(false);
 });
 
-test('reuses existing JSON when --no-cache not provided', async () => {
+test('reuses existing JSON when --cache provided', async () => {
   const outDir = path.resolve('tmp/cache-case1');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
@@ -52,16 +52,16 @@ test('reuses existing JSON when --no-cache not provided', async () => {
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
   const before = await fs.readFile(outFile, 'utf8');
 
-  const args = ['-d', outDir, '--out', outDir];
+  const args = ['-d', outDir, '--out', outDir, '--cache'];
   const res = await runCli(args);
   expect(res.code).toBeGreaterThanOrEqual(0);
 
   const after = await fs.readFile(outFile, 'utf8');
-  // without --no-cache we should reuse the preexisting JSON (content unchanged)
+  // with --cache we should reuse the preexisting JSON (content unchanged)
   expect(after).toBe(before);
 });
 
-test('rewrites JSON when --no-cache provided', async () => {
+test('rewrites JSON when --cache not provided (default)', async () => {
   const outDir = path.resolve('tmp/cache-case2');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
@@ -75,7 +75,7 @@ test('rewrites JSON when --no-cache provided', async () => {
   const payload = { allActions: [{ name: 'preexisting', nested: false }] };
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
 
-  const args = ['-d', outDir, '--out', outDir, '--no-cache'];
+  const args = ['-d', outDir, '--out', outDir];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
 

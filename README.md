@@ -46,7 +46,13 @@ ngrx-graph -a -d ./src --out ./out --svg
 ngrx-graph -d ./src --out ./out --json
 ```
 
-Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`
+Reuse existing JSON instead of re-scanning:
+
+```bash
+ngrx-graph -d ./src --out ./out --cache
+```
+
+Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
 
 Notes
 -----
