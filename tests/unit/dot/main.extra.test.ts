@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { generateAllFromPayload } from '../../../src/dot/main';
+import type { GraphPayload } from '../../../src/dot/types';
 
 test('generateAllFromPayload writes all.dot with expected nodes and edges', async () => {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-test-'));
@@ -11,7 +12,7 @@ test('generateAllFromPayload writes all.dot with expected nodes and edges', asyn
     fromEffects: {},
     fromReducers: {},
     loadedActions: [],
-  } as any;
+  } as GraphPayload;
 
   const p = await generateAllFromPayload(payload, tmp);
   const txt = await fs.readFile(p, 'utf8');

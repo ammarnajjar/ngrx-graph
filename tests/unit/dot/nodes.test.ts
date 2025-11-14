@@ -1,4 +1,5 @@
 import { makeNodes } from '../../../src/dot/nodes';
+import type { GraphPayload } from '../../../src/dot/types';
 
 test('makeNodes produces focused, nested and reducer nodes', () => {
   const payload = {
@@ -9,7 +10,9 @@ test('makeNodes produces focused, nested and reducer nodes', () => {
     ],
     fromComponents: { CompA: ['act1'] },
     fromReducers: { myReducer: ['act1'] },
-  } as any;
+    fromEffects: {},
+    loadedActions: [],
+  } as GraphPayload;
 
   const lines = makeNodes(payload, 'focus');
   // should include component node
