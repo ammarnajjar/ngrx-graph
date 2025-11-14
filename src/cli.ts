@@ -92,9 +92,11 @@ async function run() {
       console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
     }
   }
-  // resolve output directory relative to selected dir unless an absolute path was provided
+  // resolve output directory. If the user provided a relative path for --out,
+  // interpret it relative to the current working directory (where the tool
+  // was invoked), not the scan directory. Absolute paths are left as-is.
   const outDir = opts.out
-    ? (path.isAbsolute(opts.out) ? path.resolve(opts.out) : path.resolve(dir, opts.out))
+    ? (path.isAbsolute(opts.out) ? path.resolve(opts.out) : path.resolve(process.cwd(), opts.out))
     : dir;
   const outFile = path.join(outDir, 'ngrx-graph.json');
   const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
@@ -111,7 +113,10 @@ async function run() {
   const payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions };
 
   // always write the JSON payload to disk (no printing)
-  await import('fs/promises').then(fs => fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8'));
+  await import('fs/promises').then(async fs => {
+    await fs.mkdir(outDir, { recursive: true });
+    await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
+  });
   console.log(chalk.green(`Wrote ${outFile}`));
 
   // --force: always regenerate the JSON file first. If --force is used alone

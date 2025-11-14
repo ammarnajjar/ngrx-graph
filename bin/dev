@@ -2,14 +2,56 @@
 
 const oclif = require('@oclif/core')
 
+const { spawnSync } = require('child_process');
 const path = require('path')
 const project = path.join(__dirname, '..', 'tsconfig.json')
 
 // In dev mode -> use ts-node and dev plugins
 process.env.NODE_ENV = 'development'
 
-require('ts-node').register({project})
+// If the user invoked flag-style args (e.g. `./bin/dev -d ./src --out ./out`)
+// or used the single-command form, forward directly to the TypeScript CLI
+// so flags are parsed by the commander-based CLI instead of oclif.
+const rawArgs = process.argv.slice(2) || [];
+const looksLikeFlags = rawArgs.length > 0 && rawArgs[0].startsWith('-');
+const looksLikeSingleCommand = rawArgs.length > 0 && rawArgs[0] === 'graph';
 
+if (looksLikeFlags || looksLikeSingleCommand) {
+	// Run the TS CLI directly with ts-node preloaded so dev behavior matches
+	// the TypeScript CLI. We do not call require('ts-node').register() in this
+	// process because we spawn a child that preloads ts-node for isolation.
+	const node = process.execPath || 'node';
+	// If the first token is 'graph', strip it so src/cli.ts receives the same args
+	let forwardArgs = looksLikeSingleCommand ? rawArgs.slice(1) : rawArgs.slice();
+
+	// Canonicalize common path flags so the TypeScript CLI doesn't end up
+	// resolving a relative --out against the scan dir (which causes nested
+	// incorrect paths). Resolve values relative to the current working dir.
+	const resolveIfPath = (val) => path.isAbsolute(val) ? val : path.resolve(process.cwd(), val);
+	for (let i = 0; i < forwardArgs.length; i++) {
+		const a = forwardArgs[i];
+		if (a === '-d' || a === '--dir' || a === '-o' || a === '--out') {
+			if (i + 1 < forwardArgs.length) {
+				forwardArgs[i + 1] = resolveIfPath(forwardArgs[i + 1]);
+				i++; // skip value
+			}
+		} else if (a.startsWith('--out=') || a.startsWith('--dir=')) {
+			const [k, v] = a.split('=');
+			forwardArgs[i] = `${k}=${resolveIfPath(v)}`;
+		}
+	}
+
+	const args = ['-r', 'ts-node/register', path.join(__dirname, '..', 'src', 'cli.ts'), ...forwardArgs];
+	// Always spawn the TypeScript CLI with the repository root as cwd so
+	// project-local modules and preloads (e.g. ts-node/register) resolve
+	// consistently, regardless of where the user invoked the wrapper.
+	const childCwd = path.join(__dirname, '..');
+	const res = spawnSync(node, args, { stdio: 'inherit', cwd: childCwd });
+	process.exit(res.status ?? 0);
+}
+
+// Otherwise run oclif as usual (e.g., when running built commands or help)
+require('ts-node').register({project})
 // In dev mode, always show stack traces
 oclif.settings.debug = true;
 

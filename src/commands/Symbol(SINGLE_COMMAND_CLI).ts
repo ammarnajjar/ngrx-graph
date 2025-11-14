@@ -4,7 +4,19 @@ import path from 'path';
 
 export default class Graph extends Command {
   async run(): Promise<void> {
-    const argv = process.argv.slice(2);
+    // process.argv here is the original CLI args. Oclif normally expects a
+    // subcommand token (e.g. `graph`), but we want to accept the single-command
+    // invocation style used by the TypeScript CLI. To make oclif route here
+    // whether the user invoked `./bin/dev graph ...` or `./bin/dev ...`, we
+    // normalize argv so the shim always receives the CLI-style args when
+    // delegating to `src/cli.ts`.
+    let rawArgv = process.argv.slice(2);
+    // If the first token is 'graph', strip it (user called `bin/dev graph ...`).
+    if (rawArgv.length && rawArgv[0] === 'graph') rawArgv = rawArgv.slice(1);
+    // If oclif parsed flags and treated them as command tokens, ensure we
+    // still forward the full original intended args to the TypeScript CLI.
+    // We'll reconstruct `argv` from the raw argv after normalization.
+    const argv = rawArgv;
     const hasHelp = argv.includes('--help') || argv.includes('-h');
     const hasCommand = argv.some(a => !a.startsWith('-'));
     const node = process.execPath || 'node';
