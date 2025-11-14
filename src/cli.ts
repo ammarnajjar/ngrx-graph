@@ -174,6 +174,13 @@ async function run() {
   // Use the resolved output directory for DOT/SVG when an explicit --out
   // directory was provided. Otherwise fall back to the scan directory.
   const dotOut = outDir || dir;
+  // Log resolved directories so users understand where DOT/SVG will be written
+  // and where cleanup will look for existing .dot files. Only print when
+  // verbose logging is enabled to avoid noisy output during normal runs.
+  if (opts.verbose) {
+    console.log(chalk.hex('#4DA6FF')(`Resolved scan dir: ${dir}`));
+    console.log(chalk.hex('#4DA6FF')(`Resolved output dir: ${dotOut}`));
+  }
   // Attempt to clean DOT files from both the resolved output directory
   // and the scan directory. This handles cases where DOTs were previously
   // generated under the scan dir (default) and the user later specifies
