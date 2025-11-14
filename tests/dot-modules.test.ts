@@ -4,7 +4,7 @@ import { generateDotForActionPayload } from '../src/dot/generator';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
 import { GraphPayload } from '../src/dot/types';
-import { createTempDir } from './_temp-helper';
+import { createTempDir } from './utils';
 
 test('makeNodes emits component and action node strings', () => {
   const payload: GraphPayload = {

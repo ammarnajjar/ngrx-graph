@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { GraphPayload } from '../src/dot/types';
-import { createTempDir } from './_temp-helper';
+import { createTempDir } from './utils';
 
 describe('focused DOT reachability', () => {
   test('case3 action1.dot does not include unreachable action3', async () => {

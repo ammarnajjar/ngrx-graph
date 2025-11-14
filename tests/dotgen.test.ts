@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { generateDotFilesFromJson } from '../src/dot-generator';
-import { createTempDir } from './_temp-helper';
+import { createTempDir } from './utils';
 
 test('generate all.dot matches example for case2', async () => {
   const jsonPath = path.resolve('docs/examples/case2/out/ngrx-graph.json');
