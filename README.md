@@ -10,7 +10,16 @@ This package tries to collect all actions/components/reducers participating in a
 
 It is also possible to see the whole net with all actions/components/reducers, but that is more important is to follow a particular action from the start to the end (the optional argument)
 
-## Quick start
+## Notes
+
+- The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
+- DOT and SVG files are written under the directory specified by `--dir`.
+- DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
+- Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (number of CPUs minus two, minimum 1). This keeps CPU available for other tasks while enabling parallel parsing. Override with `-c/--concurrency <n>`.
+- Prefer viz.js for SVG: pass `--viz` to prefer using viz.js (a WASM/JS renderer) for SVG generation. With `--viz` the CLI tries viz.js first and falls back to Graphviz `dot` if viz.js fails. Without `--viz` the CLI prefers the native `dot` executable and uses viz.js only as a fallback.
+
+<details>
+  <summary>Quick start</summary>
 
 Install globally (optional):
 
@@ -53,15 +62,7 @@ ngrx-graph -d ./src --out ./out --cache
 ```
 
 Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
-
-## Notes
-
-- The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
-- DOT and SVG files are written under the directory specified by `--dir`.
-- DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
-- Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (number of CPUs minus two, minimum 1). This keeps CPU available for other tasks while enabling parallel parsing. Override with `-c/--concurrency <n>`.
-- Prefer viz.js for SVG: pass `--viz` to prefer using viz.js (a WASM/JS renderer) for SVG generation. With `--viz` the CLI tries viz.js first and falls back to Graphviz `dot` if viz.js fails. Without `--viz` the CLI prefers the native `dot` executable and uses viz.js only as a fallback.
-
+</details>
 <details>
   <summary>Graph Keys</summary>
 
