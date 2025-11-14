@@ -5,5 +5,5 @@ export const initialState = {};
 
 export const case4Reducer = createReducer(
   initialState,
-  on(actionB, (state, _action) => ({ ...state }))
+  on(actionB, (state, _action) => ({ ...state })),
 );

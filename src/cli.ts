@@ -8,11 +8,7 @@ import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
 import cleanDotFilesIfNotRequested from './cli/cleanup';
-import scanActions, {
-  scanComponents,
-  scanEffects,
-  scanReducers,
-} from './scan-actions';
+import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
 async function renderDotWithViz(dotText: string) {
   try {
     // prefer the CJS helper which uses require and is simpler to type
@@ -26,41 +22,27 @@ async function renderDotWithViz(dotText: string) {
 
 const program = new Command();
 
+function getDefaultConcurrency(): number {
+  try {
+    return Math.max(1, os.cpus().length - 2);
+  } catch {
+    return 1;
+  }
+}
+
 program
   .name('ngrx-graph')
   .description('Scan a project for NgRx actions declarations')
   .option('-d, --dir <dir>', 'Directory to scan', process.cwd())
-  .option(
-    '-o, --out [dir]',
-    "output directory where 'ngrx-graph.json' will be written (defaults to scan dir)",
-  )
+  .option('-o, --out [dir]', "output directory where 'ngrx-graph.json' will be written (defaults to scan dir)")
   .option('-v, --verbose', 'enable verbose logging', false)
-  .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
-  .option(
-    '-s, --svg',
-    'also generate SVG files from DOT (requires Graphviz `dot` on PATH)',
-    false,
-  )
-  .option(
-    '-a, --all',
-    'only generate the aggregated all.dot (no per-action files)',
-    false,
-  )
+  .option('-c, --concurrency <n>', 'concurrency for file parsing', String(getDefaultConcurrency()))
+  .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
+  .option('-a, --all', 'only generate the aggregated all.dot (no per-action files)', false)
   .option('--dot', 'also generate DOT files (per-action and aggregated)', false)
-  .option(
-    '-j, --json',
-    'scan and write ngrx-graph.json only (no DOT/SVG)',
-    false,
-  )
-  .option(
-    '--cache',
-    'reuse existing ngrx-graph.json if present (skip scanning)',
-    false,
-  )
-  .argument(
-    '[action]',
-    'action name to focus (positional; overrides --action and --all)',
-  )
+  .option('-j, --json', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
+  .option('--cache', 'reuse existing ngrx-graph.json if present (skip scanning)', false)
+  .argument('[action]', 'action name to focus (positional; overrides --action and --all)')
   .addHelpText(
     'after',
     `
@@ -94,7 +76,7 @@ Notes:
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
   - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON payload and skip scanning when present.
-`
+`,
   )
   .parse(process.argv);
 
@@ -103,8 +85,7 @@ const opts = program.opts();
 // to enable reuse of existing JSON payload.
 const useCache = Boolean(opts.cache);
 // allow positional action argument to override flag and --all
-const positionalAction =
-  program.args && program.args.length ? program.args[0] : undefined;
+const positionalAction = program.args && program.args.length ? program.args[0] : undefined;
 if (positionalAction) {
   opts.action = positionalAction;
   // when an action is provided, we should not run the aggregated `--all` behavior
@@ -113,7 +94,15 @@ if (positionalAction) {
 
 async function run() {
   const dir = path.resolve(opts.dir);
-  const concurrency = Math.max(1, parseInt(opts.concurrency, 10) || 8);
+  function defaultConcurrency() {
+    try {
+      return Math.max(1, os.cpus().length - 2);
+    } catch {
+      return 1;
+    }
+  }
+  const parsed = parseInt(opts.concurrency, 10);
+  const concurrency = Math.max(1, Number.isFinite(parsed) && parsed > 0 ? parsed : defaultConcurrency());
   const pattern = '**/*actions.ts';
 
   // resolve output directory early so we can check for an existing JSON
@@ -138,12 +127,7 @@ async function run() {
           payload = JSON.parse(txt);
           console.log(chalk.green(`Using existing JSON payload at ${outFile}`));
         } catch (readErr) {
-          console.log(
-            chalk.yellow(
-              'Found existing JSON but failed to read/parse it; will re-scan:',
-            ),
-            String(readErr),
-          );
+          console.log(chalk.yellow('Found existing JSON but failed to read/parse it; will re-scan:'), String(readErr));
         }
       }
     } catch {
@@ -153,41 +137,24 @@ async function run() {
 
   if (!payload) {
     console.log(chalk.hex('#4DA6FF')(`Scanning directory: ${dir}`));
-    console.log(
-      chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`),
-    );
-    if (opts.verbose)
-      console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
+    console.log(chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`));
+    if (opts.verbose) console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
     // count files matching pattern for progress info
     let filesCount = 0;
     try {
       const files = await fg(pattern, { cwd: dir, onlyFiles: true });
       filesCount = files.length;
     } catch (err) {
-      console.log(
-        chalk.yellow('Could not count files for pattern (continuing):'),
-        err,
-      );
+      console.log(chalk.yellow('Could not count files for pattern (continuing):'), err);
     }
-    if (filesCount && opts.verbose)
-      console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
+    if (filesCount && opts.verbose) console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
     const list = await scanActions({ dir, pattern, concurrency });
     const scanDuration = (Date.now() - startTime) / 1000;
-    console.log(
-      chalk.green(
-        `Scanning done: found ${list.length} actions in ${scanDuration.toFixed(
-          2,
-        )}s`,
-      ),
-    );
+    console.log(chalk.green(`Scanning done: found ${list.length} actions in ${scanDuration.toFixed(2)}s`));
     if (opts.verbose) {
       console.log(chalk.gray('Actions:'));
       for (const a of list) {
-        console.log(
-          ` - ${a.name ?? '<anonymous>'} (${a.kind}) ${
-            a.nested ? '[nested]' : ''
-          } — ${a.file}`,
-        );
+        console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
       }
     }
 
@@ -247,9 +214,7 @@ async function run() {
   const dotRequested = dotExplicit || svgRequested;
   if (opts.json && !hasGenerationFlags) {
     const totalDuration = (Date.now() - startTime) / 1000;
-    console.log(
-      chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`),
-    );
+    console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
     return;
   }
 
@@ -290,48 +255,27 @@ async function run() {
           // DOT now that SVG exists to avoid leaving temporary DOT artifacts.
           if (!dotExplicit) {
             await fs.rm(p).catch(() => {});
-            if (opts.verbose)
-              console.log(
-                chalk.gray(`Removed DOT file ${p} after SVG generation`),
-              );
+            if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${p} after SVG generation`));
           }
         } catch (err) {
-          console.log(
-            chalk.yellow(
-              'Could not generate SVG with `dot` (falling back to viz.js):',
-            ),
-            String(err),
-          );
+          console.log(chalk.yellow('Could not generate SVG with `dot` (falling back to viz.js):'), String(err));
           try {
             const dotTxt = await fs.readFile(p, 'utf8');
             const svgPathFallback = path.join(dotOut, `${opts.action}.svg`);
             const svg = await renderDotWithViz(dotTxt);
             if (svg) {
               await fs.writeFile(svgPathFallback, svg, 'utf8');
-              console.log(
-                chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`),
-              );
+              console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
               if (!dotExplicit) {
                 await fs.rm(p).catch(() => {});
                 if (opts.verbose)
-                  console.log(
-                    chalk.gray(
-                      `Removed DOT file ${p} after SVG generation (viz.js fallback)`,
-                    ),
-                  );
+                  console.log(chalk.gray(`Removed DOT file ${p} after SVG generation (viz.js fallback)`));
               }
             } else {
-              console.log(
-                chalk.yellow(
-                  'Could not generate SVG via viz.js (install viz.js to enable fallback)',
-                ),
-              );
+              console.log(chalk.yellow('Could not generate SVG via viz.js (install viz.js to enable fallback)'));
             }
           } catch (readErr) {
-            console.log(
-              chalk.yellow('Could not read DOT file for viz.js fallback:'),
-              String(readErr),
-            );
+            console.log(chalk.yellow('Could not read DOT file for viz.js fallback:'), String(readErr));
           }
         }
       }
@@ -348,16 +292,11 @@ async function run() {
           console.log(chalk.green(`Wrote SVG file ${svgPath}`));
           if (!dotExplicit) {
             await fs.rm(p).catch(() => {});
-            if (opts.verbose)
-              console.log(
-                chalk.gray(`Removed DOT file ${p} after SVG generation`),
-              );
+            if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${p} after SVG generation`));
           }
         } catch (innerErr) {
           console.log(
-            chalk.yellow(
-              `Failed to convert all.dot -> svg with dot (falling back to viz.js):`,
-            ),
+            chalk.yellow(`Failed to convert all.dot -> svg with dot (falling back to viz.js):`),
             String(innerErr),
           );
           try {
@@ -366,30 +305,19 @@ async function run() {
             const svg = await renderDotWithViz(dotTxt);
             if (svg) {
               await fs.writeFile(svgPathFallback, svg, 'utf8');
-              console.log(
-                chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`),
-              );
+              console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
               if (!dotExplicit) {
                 await fs.rm(p).catch(() => {});
                 if (opts.verbose)
-                  console.log(
-                    chalk.gray(
-                      `Removed DOT file ${p} after SVG generation (viz.js fallback)`,
-                    ),
-                  );
+                  console.log(chalk.gray(`Removed DOT file ${p} after SVG generation (viz.js fallback)`));
               }
             } else {
               console.log(
-                chalk.yellow(
-                  `Could not generate SVG for ${p} via viz.js (install viz.js to enable fallback)`,
-                ),
+                chalk.yellow(`Could not generate SVG for ${p} via viz.js (install viz.js to enable fallback)`),
               );
             }
           } catch (readErr) {
-            console.log(
-              chalk.yellow(`Could not read DOT file ${p} for viz.js fallback:`),
-              String(readErr),
-            );
+            console.log(chalk.yellow(`Could not read DOT file ${p} for viz.js fallback:`), String(readErr));
           }
         }
       }
@@ -404,27 +332,17 @@ async function run() {
           const files = await fs.readdir(dotOut);
           for (const f of files.filter(x => x.endsWith('.dot'))) {
             const dotPath = path.join(dotOut, f);
-            const svgPath = path.join(
-              dotOut,
-              `${path.basename(f, '.dot')}.svg`,
-            );
+            const svgPath = path.join(dotOut, `${path.basename(f, '.dot')}.svg`);
             try {
               await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
               console.log(chalk.green(`Wrote SVG file ${svgPath}`));
               if (!dotExplicit) {
                 await fs.rm(dotPath).catch(() => {});
-                if (opts.verbose)
-                  console.log(
-                    chalk.gray(
-                      `Removed DOT file ${dotPath} after SVG generation`,
-                    ),
-                  );
+                if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation`));
               }
             } catch (innerErr) {
               console.log(
-                chalk.yellow(
-                  `Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`,
-                ),
+                chalk.yellow(`Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`),
                 String(innerErr),
               );
               try {
@@ -433,19 +351,11 @@ async function run() {
                 const svg = await renderDotWithViz(dotTxt);
                 if (svg) {
                   await fs.writeFile(svgPathFallback, svg, 'utf8');
-                  console.log(
-                    chalk.green(
-                      `Wrote SVG file ${svgPathFallback} (via viz.js)`,
-                    ),
-                  );
+                  console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
                   if (!dotExplicit) {
                     await fs.rm(dotPath).catch(() => {});
                     if (opts.verbose)
-                      console.log(
-                        chalk.gray(
-                          `Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`,
-                        ),
-                      );
+                      console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
                   }
                 } else {
                   console.log(
@@ -455,30 +365,18 @@ async function run() {
                   );
                 }
               } catch (readErr) {
-                console.log(
-                  chalk.yellow(
-                    `Could not read DOT file ${dotPath} for viz.js fallback:`,
-                  ),
-                  String(readErr),
-                );
+                console.log(chalk.yellow(`Could not read DOT file ${dotPath} for viz.js fallback:`), String(readErr));
               }
             }
           }
         } catch (err) {
-          console.log(
-            chalk.yellow(
-              'Could not generate SVGs (is Graphviz `dot` installed?):',
-            ),
-            String(err),
-          );
+          console.log(chalk.yellow('Could not generate SVGs (is Graphviz `dot` installed?):'), String(err));
         }
       }
     }
   }
   const totalDuration = (Date.now() - startTime) / 1000;
-  console.log(
-    chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`),
-  );
+  console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
   return;
 }
 

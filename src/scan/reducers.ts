@@ -11,7 +11,14 @@ export async function parseReducersFromText(text: string, file = 'file.ts') {
   ts.forEachChild(sf, node => {
     if (ts.isVariableStatement(node)) {
       for (const decl of node.declarationList.declarations) {
-        if (decl.name && ts.isIdentifier(decl.name) && decl.initializer && ts.isCallExpression(decl.initializer) && ts.isIdentifier(decl.initializer.expression) && decl.initializer.expression.text === 'createReducer') {
+        if (
+          decl.name &&
+          ts.isIdentifier(decl.name) &&
+          decl.initializer &&
+          ts.isCallExpression(decl.initializer) &&
+          ts.isIdentifier(decl.initializer.expression) &&
+          decl.initializer.expression.text === 'createReducer'
+        ) {
           const name = decl.name.text;
           const key = name;
           reducerNames.push(name);

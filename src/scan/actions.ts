@@ -57,7 +57,11 @@ function visitCreateActionGroup(call: ts.CallExpression, file: string): ActionIn
       const initializer = prop.initializer;
       let hasProps = false;
       let propsTypeText: string | undefined;
-      if (ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === 'props') {
+      if (
+        ts.isCallExpression(initializer) &&
+        ts.isIdentifier(initializer.expression) &&
+        initializer.expression.text === 'props'
+      ) {
         hasProps = true;
         const parts: string[] = [];
         if (initializer.typeArguments && initializer.typeArguments.length) {
@@ -129,7 +133,12 @@ export async function parseActionsFromText(text: string, file = 'file.ts'): Prom
         const name = node.name?.text;
         let actionType: string | undefined;
         for (const member of node.members) {
-          if (ts.isPropertyDeclaration(member) && member.name && member.name.getText() === 'type' && member.initializer) {
+          if (
+            ts.isPropertyDeclaration(member) &&
+            member.name &&
+            member.name.getText() === 'type' &&
+            member.initializer
+          ) {
             const t = getStringLiteralText(member.initializer);
             if (t) actionType = t;
           }

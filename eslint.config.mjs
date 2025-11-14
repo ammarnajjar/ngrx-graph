@@ -15,14 +15,14 @@ export default [
       '**/assets',
       '**/node_modules',
       '**/.eslintcache',
-    ]
+    ],
   },
   {
     files: ['**/*.ts'],
-    languageOptions: { globals: globals.browser }
+    languageOptions: { globals: globals.browser },
   },
   {
     files: ['tests/**/*'],
-    languageOptions: { globals: globals.jest }
+    languageOptions: { globals: globals.jest },
   },
 ];

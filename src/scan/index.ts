@@ -5,9 +5,18 @@ import { parseComponentsFromFile, parseComponentsFromText } from './components';
 import { parseEffectsFromFile, parseEffectsFromText } from './effects';
 import { parseReducersFromFile, parseReducersFromText } from './reducers';
 
-export { parseActionsFromFile, parseActionsFromText, parseComponentsFromFile, parseComponentsFromText, parseEffectsFromFile, parseEffectsFromText, parseReducersFromFile, parseReducersFromText };
+export {
+  parseActionsFromFile,
+  parseActionsFromText,
+  parseComponentsFromFile,
+  parseComponentsFromText,
+  parseEffectsFromFile,
+  parseEffectsFromText,
+  parseReducersFromFile,
+  parseReducersFromText,
+};
 
-export async function scanActions(options?: { dir?: string; pattern?: string; concurrency?: number; }) {
+export async function scanActions(options?: { dir?: string; pattern?: string; concurrency?: number }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*actions.ts';
   const concurrency = options?.concurrency ?? 8;
@@ -39,7 +48,7 @@ export async function scanActions(options?: { dir?: string; pattern?: string; co
   return flat;
 }
 
-export async function scanComponents(options?: { dir?: string; pattern?: string; concurrency?: number; }) {
+export async function scanComponents(options?: { dir?: string; pattern?: string; concurrency?: number }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*.component.ts';
   const entries = await fg(pattern, { cwd: dir, absolute: true, onlyFiles: true });
@@ -57,7 +66,7 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
   return { mapping: res, loaded };
 }
 
-export async function scanEffects(options?: { dir?: string; pattern?: string; concurrency?: number; }) {
+export async function scanEffects(options?: { dir?: string; pattern?: string; concurrency?: number }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*.effects.ts';
   const entries = await fg(pattern, { cwd: dir, absolute: true, onlyFiles: true });
@@ -75,21 +84,23 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
   return { mapping: res, loaded };
 }
 
-export async function scanReducers(options?: { dir?: string; pattern?: string; concurrency?: number; }) {
+export async function scanReducers(options?: { dir?: string; pattern?: string; concurrency?: number }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*reducer*.ts';
   const concurrency = options?.concurrency ?? 8;
   const entries = await fg(pattern, { cwd: dir, absolute: true, onlyFiles: true });
   const limit = pLimit(concurrency);
   const res: Record<string, string[]> = {};
-  const tasks = entries.map(p => limit(async () => {
-    try {
-      const r = await parseReducersFromFile(p);
-      Object.assign(res, r.mapping);
-    } catch {
-      // ignore
-    }
-  }));
+  const tasks = entries.map(p =>
+    limit(async () => {
+      try {
+        const r = await parseReducersFromFile(p);
+        Object.assign(res, r.mapping);
+      } catch {
+        // ignore
+      }
+    }),
+  );
   await Promise.all(tasks);
   return { mapping: res };
 }

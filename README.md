@@ -10,8 +10,7 @@ This package tries to collect all actions/components/reducers participating in a
 
 It is also possible to see the whole net with all actions/components/reducers, but that is more important is to follow a particular action from the start to the end (the optional argument)
 
-Quick start
------------
+## Quick start
 
 Install (optional):
 
@@ -54,13 +53,11 @@ ngrx-graph -d ./src --out ./out --cache
 
 Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
 
-Notes
------
+## Notes
 
 - The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
 - DOT and SVG files are written under the directory specified by `--dir`.
 - DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
-
 
 <details>
   <summary>Graph Keys</summary>
@@ -235,6 +232,7 @@ npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/o
   <summary>Usage</summary>
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
@@ -246,6 +244,7 @@ USAGE
   $ ngrx-graph COMMAND
 ...
 ```
+
 <!-- usagestop -->
 </details>
 
@@ -253,8 +252,9 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-* [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
-* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
+
+- [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+- [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -345,17 +345,18 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](<https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts>)_
+
 <!-- commandsstop -->
 </details>
 
 <details>
   <summary>Version Release Guide</summary>
 
-  - change version in [`package.json`](package.json)
-  - run `npm run version`
-  - commit and push/merge to main
-  - draft and release a release on [github](https://github.com/ammarnajjar/ngrx-graph/releases/new)
+- change version in [`package.json`](package.json)
+- run `npm run version`
+- commit and push/merge to main
+- draft and release a release on [github](https://github.com/ammarnajjar/ngrx-graph/releases/new)
 </details>
 
 # Status:

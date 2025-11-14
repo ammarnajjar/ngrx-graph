@@ -6,7 +6,7 @@ test('parse simple createAction', async () => {
   expect(res).toHaveLength(1);
   expect(res[0].name).toBe('loadThing');
   expect(res[0].kind).toBe('createAction');
-  expect(res[0].type).toBe("[Thing] Load");
+  expect(res[0].type).toBe('[Thing] Load');
 });
 
 test('parse createAction with props and detect propsTypeText', async () => {

@@ -13,7 +13,12 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
       if (!propName) return ts.forEachChild(node, visit);
 
       const initializer = (node as ts.PropertyDeclaration | ts.PropertyAssignment).initializer;
-      if (initializer && ts.isCallExpression(initializer) && ts.isIdentifier(initializer.expression) && initializer.expression.text === 'createEffect') {
+      if (
+        initializer &&
+        ts.isCallExpression(initializer) &&
+        ts.isIdentifier(initializer.expression) &&
+        initializer.expression.text === 'createEffect'
+      ) {
         const arg = initializer.arguments[0];
         const inputs = new Set<string>();
         const outputs = new Set<string>();
@@ -26,7 +31,11 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
-          if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && /^(map|mergeMap|switchMap|concatMap|exhaustMap)$/.test(n.expression.text)) {
+          if (
+            ts.isCallExpression(n) &&
+            ts.isIdentifier(n.expression) &&
+            /^(map|mergeMap|switchMap|concatMap|exhaustMap)$/.test(n.expression.text)
+          ) {
             for (const a of n.arguments) {
               if (ts.isArrowFunction(a) || ts.isFunctionExpression(a)) {
                 ts.forEachChild(a, sub => {
@@ -73,7 +82,11 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
-          if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'dispatch') {
+          if (
+            ts.isCallExpression(n) &&
+            ts.isPropertyAccessExpression(n.expression) &&
+            n.expression.name.text === 'dispatch'
+          ) {
             const args = n.arguments;
             if (args && args.length) {
               const first = args[0];
@@ -92,13 +105,21 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
                         else if (ts.isPropertyAccessExpression(cal)) payloads.push(cal.name.text);
                       }
                     }
-                    if (payloads.length) loaded.push({ name: (ts.isIdentifier(e) ? e.text : (ts.isPropertyAccessExpression(e) ? e.name.text : 'unknown')), payloadActions: payloads });
+                    if (payloads.length)
+                      loaded.push({
+                        name: ts.isIdentifier(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : 'unknown',
+                        payloadActions: payloads,
+                      });
                   }
                 }
               } else if (ts.isIdentifier(first)) outputs.add(first.text);
               else if (ts.isObjectLiteralExpression(first)) {
                 for (const prop of first.properties) {
-                  if (ts.isPropertyAssignment(prop) && prop.name && prop.name.getText().replace(/['"]/g, '') === 'type') {
+                  if (
+                    ts.isPropertyAssignment(prop) &&
+                    prop.name &&
+                    prop.name.getText().replace(/['"]/g, '') === 'type'
+                  ) {
                     const init = prop.initializer;
                     if (ts.isStringLiteral(init) || ts.isNoSubstitutionTemplateLiteral(init)) outputs.add(init.text);
                   }

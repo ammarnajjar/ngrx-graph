@@ -11,8 +11,8 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 15000) {
     const proc = spawn('node', ['-r', 'ts-node/register', bin, ...args], { cwd });
     let out = '';
     let err = '';
-    proc.stdout.on('data', d => out += d.toString());
-    proc.stderr.on('data', d => err += d.toString());
+    proc.stdout.on('data', d => (out += d.toString()));
+    proc.stderr.on('data', d => (err += d.toString()));
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('timeout'));
@@ -30,7 +30,11 @@ async function scaffoldManyActions(root: string, count = 30) {
   await fs.mkdir(src, { recursive: true });
   for (let i = 0; i < count; i++) {
     const fname = path.join(src, `a${i}.actions.ts`);
-    await fs.writeFile(fname, `import { createAction } from '@ngrx/store';\nexport const A${i} = createAction('[T] A${i}');\n`, 'utf8');
+    await fs.writeFile(
+      fname,
+      `import { createAction } from '@ngrx/store';\nexport const A${i} = createAction('[T] A${i}');\n`,
+      'utf8',
+    );
   }
 }
 

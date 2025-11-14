@@ -22,54 +22,33 @@
     }
   ],
   "fromComponents": {
-    "FirstComponent": [
-      "nestedAction1"
-    ]
+    "FirstComponent": ["nestedAction1"]
   },
   "fromEffects": {
     "effect1$": {
-      "input": [
-        "action1"
-      ],
-      "output": [
-        "nestedAction1",
-        "action3"
-      ]
+      "input": ["action1"],
+      "output": ["nestedAction1", "action3"]
     },
     "effect2$": {
-      "input": [
-        "nestedAction1"
-      ],
-      "output": [
-        "nestedAction2"
-      ]
+      "input": ["nestedAction1"],
+      "output": ["nestedAction2"]
     },
     "effect3$": {
-      "input": [
-        "nestedAction2"
-      ],
-      "output": [
-        "action"
-      ]
+      "input": ["nestedAction2"],
+      "output": ["action"]
     }
   },
   "fromReducers": {
-    "firstReducer": [
-      "action3"
-    ]
+    "firstReducer": ["action3"]
   },
   "loadedActions": [
     {
       "name": "nestedAction1",
-      "payloadActions": [
-        "action1"
-      ]
+      "payloadActions": ["action1"]
     },
     {
       "name": "nestedAction1",
-      "payloadActions": [
-        "action2"
-      ]
+      "payloadActions": ["action2"]
     }
   ]
 }

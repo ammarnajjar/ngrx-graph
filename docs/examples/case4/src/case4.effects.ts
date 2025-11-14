@@ -7,8 +7,10 @@ import { actionB, exportedActionA } from './index';
 export class Case4Effects {
   constructor(private actions$: Actions) {}
 
-  effect$ = createEffect(() => this.actions$.pipe(
-    ofType(exportedActionA),
-    map(() => actionB({ payload: 'x' }))
-  ));
+  effect$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(exportedActionA),
+      map(() => actionB({ payload: 'x' })),
+    ),
+  );
 }

@@ -11,8 +11,8 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 10000) {
     const proc = spawn('node', ['-r', 'ts-node/register', bin, ...args], { cwd });
     let out = '';
     let err = '';
-    proc.stdout.on('data', d => out += d.toString());
-    proc.stderr.on('data', d => err += d.toString());
+    proc.stdout.on('data', d => (out += d.toString()));
+    proc.stderr.on('data', d => (err += d.toString()));
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('timeout'));

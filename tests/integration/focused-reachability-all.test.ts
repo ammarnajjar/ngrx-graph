@@ -12,12 +12,13 @@ function computeReachableActions(payload: GraphPayload, actionName: string) {
   const actionToSuccessors: Record<string, Set<string>> = {};
 
   for (const io of Object.values(payload.fromEffects || {}) as { input: string[]; output: string[] }[]) {
-    for (const inp of io.input) for (const outAct of io.output) {
-      actionToSuccessors[inp] = actionToSuccessors[inp] ?? new Set();
-      actionToSuccessors[inp].add(outAct);
-      actionToPredecessors[outAct] = actionToPredecessors[outAct] ?? new Set();
-      actionToPredecessors[outAct].add(inp);
-    }
+    for (const inp of io.input)
+      for (const outAct of io.output) {
+        actionToSuccessors[inp] = actionToSuccessors[inp] ?? new Set();
+        actionToSuccessors[inp].add(outAct);
+        actionToPredecessors[outAct] = actionToPredecessors[outAct] ?? new Set();
+        actionToPredecessors[outAct].add(inp);
+      }
   }
 
   for (const l of (payload.loadedActions || []) as { name: string; payloadActions: string[] }[]) {
@@ -55,8 +56,14 @@ function computeReachableActions(payload: GraphPayload, actionName: string) {
     const preds = actionToPredecessors[cur];
     if (!preds) continue;
     for (const p of preds) {
-      if (Object.prototype.hasOwnProperty.call(compToActions, p)) { backwardComponents.add(p); continue; }
-      if (!backwardActions.has(p)) { backwardActions.add(p); bqueue.push(p); }
+      if (Object.prototype.hasOwnProperty.call(compToActions, p)) {
+        backwardComponents.add(p);
+        continue;
+      }
+      if (!backwardActions.has(p)) {
+        backwardActions.add(p);
+        bqueue.push(p);
+      }
     }
   }
 
@@ -70,7 +77,10 @@ function computeReachableActions(payload: GraphPayload, actionName: string) {
     if (!succ) continue;
     for (const s of succ) {
       if (!actionNames.has(s)) continue;
-      if (!forwardActions.has(s)) { forwardActions.add(s); fqueue.push(s); }
+      if (!forwardActions.has(s)) {
+        forwardActions.add(s);
+        fqueue.push(s);
+      }
     }
   }
 
@@ -99,7 +109,7 @@ describe('focused reachability across examples', () => {
   });
 
   test('every example: per-action DOTs include only reachable actions', async () => {
-    const exs = await examples as string[];
+    const exs = (await examples) as string[];
     for (const ex of exs) {
       const jsonPath = path.join(examplesDir, ex, 'out', 'ngrx-graph.json');
       const payload = JSON.parse(await fs.readFile(jsonPath, 'utf8')) as GraphPayload;

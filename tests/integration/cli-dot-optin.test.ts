@@ -11,8 +11,8 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 10000) {
     const proc = spawn('node', ['-r', 'ts-node/register', bin, ...args], { cwd });
     let out = '';
     let err = '';
-    proc.stdout.on('data', d => out += d.toString());
-    proc.stderr.on('data', d => err += d.toString());
+    proc.stdout.on('data', d => (out += d.toString()));
+    proc.stderr.on('data', d => (err += d.toString()));
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('timeout'));
@@ -29,7 +29,11 @@ test('CLI writes JSON and only writes DOT when --dot passed', async () => {
   // create a minimal actions source
   const src = path.join(outDir, 'src');
   await fs.mkdir(src, { recursive: true });
-  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+  await fs.writeFile(
+    path.join(src, 'sample.actions.ts'),
+    `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`,
+    'utf8',
+  );
 
   // run CLI without --dot
   let res = await runCli(['-d', outDir, '--out', outDir], process.cwd(), 15000);
@@ -49,7 +53,11 @@ test('CLI removes DOT files when run without --dot after generating them', async
   const outDir = await createTempDir('cli-optin-remove');
   const src = path.join(outDir, 'src');
   await fs.mkdir(src, { recursive: true });
-  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+  await fs.writeFile(
+    path.join(src, 'sample.actions.ts'),
+    `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`,
+    'utf8',
+  );
 
   // generate with --dot
   let res = await runCli(['-d', outDir, '--out', outDir, '--dot'], process.cwd(), 15000);

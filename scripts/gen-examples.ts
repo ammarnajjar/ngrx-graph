@@ -16,7 +16,8 @@ if (!fs.existsSync(examplesDir)) {
   process.exit(1);
 }
 
-const entries = fs.readdirSync(examplesDir, {withFileTypes: true})
+const entries = fs
+  .readdirSync(examplesDir, { withFileTypes: true })
   .filter(d => d.isDirectory())
   .map(d => path.join(examplesDir, d.name));
 
@@ -27,7 +28,7 @@ for (const dir of entries) {
     console.warn('Skipping', dir, '- no src directory');
     continue;
   }
-  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, {recursive: true});
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
   console.log('Generating for', dir);
   // Use the dev binary which now accepts flags directly. Resolve absolute
@@ -36,7 +37,7 @@ for (const dir of entries) {
   // Step 1: regenerate the JSON payload only
   const forceArgs = ['-d', srcDir, '--out', outDir, '--json'];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const opts = {cwd: repoRoot, stdio: 'inherit', env: process.env} as any;
+  const opts = { cwd: repoRoot, stdio: 'inherit', env: process.env } as any;
   const r1 = spawnSync(devBin, forceArgs, opts);
   if (r1.status !== 0) {
     console.error('JSON generation failed for', dir, 'exit code', r1.status);

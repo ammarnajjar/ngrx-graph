@@ -7,7 +7,8 @@ export function makeNodes(payload: GraphPayload, focusedAction?: string) {
   }
   for (const a of payload.allActions) {
     if (focusedAction) {
-      if (a.name === focusedAction) lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
+      if (a.name === focusedAction)
+        lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
       else if (a.nested) lines.push(`${a.name} [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]`);
       else lines.push(`${a.name} [fillcolor=linen, style=filled]`);
     } else {

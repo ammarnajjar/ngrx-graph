@@ -11,8 +11,8 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 15000) {
     const proc = spawn('node', ['-r', 'ts-node/register', bin, ...args], { cwd });
     let out = '';
     let err = '';
-    proc.stdout.on('data', d => out += d.toString());
-    proc.stderr.on('data', d => err += d.toString());
+    proc.stdout.on('data', d => (out += d.toString()));
+    proc.stderr.on('data', d => (err += d.toString()));
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('timeout'));
@@ -43,7 +43,11 @@ test('reuses existing JSON when --cache provided', async () => {
   const srcDir = path.join(outDir, 'src');
   await fs.mkdir(srcDir, { recursive: true });
   const actionFile = path.join(srcDir, 'sample.actions.ts');
-  await fs.writeFile(actionFile, `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`, 'utf8');
+  await fs.writeFile(
+    actionFile,
+    `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`,
+    'utf8',
+  );
 
   const payload = { allActions: [{ name: 'preexisting', nested: false }] };
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
@@ -65,7 +69,11 @@ test('rewrites JSON when --cache not provided (default)', async () => {
   const srcDir = path.join(outDir, 'src');
   await fs.mkdir(srcDir, { recursive: true });
   const actionFile = path.join(srcDir, 'sample.actions.ts');
-  await fs.writeFile(actionFile, `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`, 'utf8');
+  await fs.writeFile(
+    actionFile,
+    `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`,
+    'utf8',
+  );
 
   const payload = { allActions: [{ name: 'preexisting', nested: false }] };
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');

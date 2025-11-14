@@ -5,16 +5,14 @@ import { action1, action2, action3 } from './actions';
 
 @Injectable()
 export class FirstEffects {
-  effect1$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(action1),
-      switchMap(() => [action2()]),
-    ),
+  effect1$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(action1),
+        switchMap(() => [action2()]),
+      ),
 
-    this.actions$.pipe(
-      ofType(action3),
-      tap(console.log),
-    ),
+    this.actions$.pipe(ofType(action3), tap(console.log)),
   );
 
   constructor(private actions$: Actions) {}

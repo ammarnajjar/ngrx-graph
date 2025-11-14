@@ -9,11 +9,13 @@ function runCli(args: string[], cwd = process.cwd(), env = process.env, timeout 
   return new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
     const bin = path.resolve('src/cli.ts');
     const proc = spawn('node', ['-r', 'ts-node/register', bin, ...args], { cwd, env });
-    proc.on('error', err => { reject(err); });
+    proc.on('error', err => {
+      reject(err);
+    });
     let out = '';
     let err = '';
-    proc.stdout.on('data', d => out += d.toString());
-    proc.stderr.on('data', d => err += d.toString());
+    proc.stdout.on('data', d => (out += d.toString()));
+    proc.stderr.on('data', d => (err += d.toString()));
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
       reject(new Error('timeout'));
@@ -29,7 +31,11 @@ test('CLI falls back to viz.js when `dot` not on PATH', async () => {
   const outDir = await createTempDir('cli-svg-fallback');
   const src = path.join(outDir, 'src');
   await fs.mkdir(src, { recursive: true });
-  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+  await fs.writeFile(
+    path.join(src, 'sample.actions.ts'),
+    `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`,
+    'utf8',
+  );
 
   // Run CLI requesting SVG but with PATH limited to node's directory so `dot` won't be found
   const nodeDir = path.dirname(process.execPath);

@@ -20,6 +20,10 @@ export function makeEdges(payload: GraphPayload) {
 export function dedupeLines(lines: string[]) {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const l of lines) if (!seen.has(l)) { seen.add(l); out.push(l); }
+  for (const l of lines)
+    if (!seen.has(l)) {
+      seen.add(l);
+      out.push(l);
+    }
   return out;
 }

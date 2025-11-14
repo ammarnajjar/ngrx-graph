@@ -9,12 +9,13 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   const actionToSuccessors: Record<string, Set<string>> = {};
 
   for (const io of Object.values(payload.fromEffects || {})) {
-    for (const inp of io.input) for (const outAct of io.output) {
-      actionToSuccessors[inp] = actionToSuccessors[inp] ?? new Set();
-      actionToSuccessors[inp].add(outAct);
-      actionToPredecessors[outAct] = actionToPredecessors[outAct] ?? new Set();
-      actionToPredecessors[outAct].add(inp);
-    }
+    for (const inp of io.input)
+      for (const outAct of io.output) {
+        actionToSuccessors[inp] = actionToSuccessors[inp] ?? new Set();
+        actionToSuccessors[inp].add(outAct);
+        actionToPredecessors[outAct] = actionToPredecessors[outAct] ?? new Set();
+        actionToPredecessors[outAct].add(inp);
+      }
   }
 
   for (const l of payload.loadedActions || []) {
@@ -52,8 +53,14 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
     const preds = actionToPredecessors[cur];
     if (!preds) continue;
     for (const p of preds) {
-      if (Object.prototype.hasOwnProperty.call(compToActions, p)) { backwardComponents.add(p); continue; }
-      if (!backwardActions.has(p)) { backwardActions.add(p); bqueue.push(p); }
+      if (Object.prototype.hasOwnProperty.call(compToActions, p)) {
+        backwardComponents.add(p);
+        continue;
+      }
+      if (!backwardActions.has(p)) {
+        backwardActions.add(p);
+        bqueue.push(p);
+      }
     }
   }
 
@@ -67,7 +74,10 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
     if (!succ) continue;
     for (const s of succ) {
       if (!actionNames.has(s)) continue;
-      if (!forwardActions.has(s)) { forwardActions.add(s); fqueue.push(s); }
+      if (!forwardActions.has(s)) {
+        forwardActions.add(s);
+        fqueue.push(s);
+      }
     }
   }
 
@@ -76,18 +86,22 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
 
   const includedReducers = new Set<string>();
   for (const a of Array.from(includedActions)) {
-    const reds = actionToReducers[a]; if (reds) for (const r of reds) includedReducers.add(r);
+    const reds = actionToReducers[a];
+    if (reds) for (const r of reds) includedReducers.add(r);
   }
 
   const lines: string[] = ['digraph {'];
-  for (const c of includedComponents) lines.push(`${c} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]`);
+  for (const c of includedComponents)
+    lines.push(`${c} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]`);
   for (const a of payload.allActions) {
     if (!includedActions.has(a.name)) continue;
-    if (a.name === actionName) lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
+    if (a.name === actionName)
+      lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
     else if (a.nested) lines.push(`${a.name} [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]`);
     else lines.push(`${a.name} [fillcolor=linen, style=filled]`);
   }
-  for (const r of includedReducers) lines.push(`${r} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]`);
+  for (const r of includedReducers)
+    lines.push(`${r} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]`);
 
   for (const c of includedComponents) {
     const acts = compToActions[c] || [];
@@ -95,7 +109,8 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   }
 
   for (const a of Array.from(includedActions)) {
-    const succ = actionToSuccessors[a]; if (!succ) continue;
+    const succ = actionToSuccessors[a];
+    if (!succ) continue;
     for (const s of succ) {
       if (payload.loadedActions && payload.loadedActions.some(l => l.name === a && l.payloadActions.includes(s))) {
         lines.push(`${a} -> ${s} [arrowhead=dot]`);
@@ -108,7 +123,9 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   }
 
   for (const a of Array.from(includedActions)) {
-    const reds = actionToReducers[a]; if (!reds) continue; for (const r of reds) lines.push(`${a} -> ${r}`);
+    const reds = actionToReducers[a];
+    if (!reds) continue;
+    for (const r of reds) lines.push(`${a} -> ${r}`);
   }
 
   lines.push('}');

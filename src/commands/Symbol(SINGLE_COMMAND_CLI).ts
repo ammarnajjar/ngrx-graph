@@ -1,5 +1,6 @@
 import { Command, Flags } from '@oclif/core';
 import { spawnSync } from 'child_process';
+import os from 'os';
 import path from 'path';
 
 export default class Graph extends Command {
@@ -22,10 +23,10 @@ export default class Graph extends Command {
     const node = process.execPath || 'node';
     const cliPath = path.join(process.cwd(), 'src', 'cli.ts');
     if (hasHelp && !hasCommand) {
-      const res = spawnSync(node, ['-r', 'ts-node/register', cliPath, '--help'], {stdio: 'inherit'});
+      const res = spawnSync(node, ['-r', 'ts-node/register', cliPath, '--help'], { stdio: 'inherit' });
       process.exit(res.status ?? 0);
     }
-    const res = spawnSync(node, ['-r', 'ts-node/register', cliPath, ...argv], {stdio: 'inherit'});
+    const res = spawnSync(node, ['-r', 'ts-node/register', cliPath, ...argv], { stdio: 'inherit' });
     process.exit(res.status ?? 0);
   }
 }
@@ -75,17 +76,27 @@ Notes:
   - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON payload and skip scanning when present.`;
 /* SYNCHRONIZED_HELP_END */
 
-
 Graph.usage = '[ACTION]';
 
 Graph.flags = {
-  dir: Flags.string({char: 'd', description: 'Directory to scan', default: process.cwd()}),
-  out: Flags.string({char: 'o', description: 'output JSON file name (placed in --dir)', default: 'ngrx-graph.json'}),
-  verbose: Flags.boolean({char: 'v', description: 'enable verbose logging', default: false}),
-  concurrency: Flags.integer({char: 'c', description: 'concurrency for file parsing', default: 8}),
-  svg: Flags.boolean({char: 's', description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', default: false}),
-  all: Flags.boolean({char: 'a', description: 'only generate the aggregated all.dot (no per-action files)', default: false}),
-  json: Flags.boolean({char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false}),
+  dir: Flags.string({ char: 'd', description: 'Directory to scan', default: process.cwd() }),
+  out: Flags.string({ char: 'o', description: 'output JSON file name (placed in --dir)', default: 'ngrx-graph.json' }),
+  verbose: Flags.boolean({ char: 'v', description: 'enable verbose logging', default: false }),
+  concurrency: Flags.integer({
+    char: 'c',
+    description: 'concurrency for file parsing',
+    default: Math.max(1, (os.cpus() || []).length - 2),
+  }),
+  svg: Flags.boolean({
+    char: 's',
+    description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)',
+    default: false,
+  }),
+  all: Flags.boolean({
+    char: 'a',
+    description: 'only generate the aggregated all.dot (no per-action files)',
+    default: false,
+  }),
+  json: Flags.boolean({ char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false }),
 };
-export { };
-
+export {};
