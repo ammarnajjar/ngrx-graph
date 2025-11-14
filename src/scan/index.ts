@@ -6,14 +6,14 @@ import { parseEffectsFromFile, parseEffectsFromText } from './effects';
 import { parseReducersFromFile, parseReducersFromText } from './reducers';
 
 export {
-  parseActionsFromFile,
-  parseActionsFromText,
-  parseComponentsFromFile,
-  parseComponentsFromText,
-  parseEffectsFromFile,
-  parseEffectsFromText,
-  parseReducersFromFile,
-  parseReducersFromText
+    parseActionsFromFile,
+    parseActionsFromText,
+    parseComponentsFromFile,
+    parseComponentsFromText,
+    parseEffectsFromFile,
+    parseEffectsFromText,
+    parseReducersFromFile,
+    parseReducersFromText
 };
 
 export async function scanActions(options?: { dir?: string; pattern?: string; concurrency?: number }) {
@@ -82,6 +82,14 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
     }
   }
   return { mapping: res, loaded };
+}
+
+// helper to filter loaded payloadActions by global action names
+export function filterLoadedByAllActions(loaded: Array<{ name: string; payloadActions: string[] }>,
+  allActionNames: Set<string>) {
+  return loaded
+    .map(l => ({ name: l.name, payloadActions: l.payloadActions.filter(p => allActionNames.has(p)) }))
+    .filter(l => l.payloadActions && l.payloadActions.length);
 }
 
 export async function scanReducers(options?: { dir?: string; pattern?: string; concurrency?: number }) {

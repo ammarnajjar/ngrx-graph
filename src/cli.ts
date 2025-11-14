@@ -194,7 +194,14 @@ async function run() {
     // merge loaded actions from components and effects
     const loadedFromComponents = componentsResult.loaded ?? [];
     const loadedFromEffects = effectsResult.loaded ?? [];
-    const loadedActions = [...loadedFromComponents, ...loadedFromEffects];
+    // filter payloadActions: only keep payload action names that are present in allActions
+    const allActionNames = new Set(allActions.map(a => a.name));
+    // import helper locally to avoid circular import at top-level
+    const { filterLoadedByAllActions } = await import('./scan/index');
+    const loadedActions = [
+      ...filterLoadedByAllActions(loadedFromComponents, allActionNames),
+      ...filterLoadedByAllActions(loadedFromEffects, allActionNames),
+    ];
     payload = {
       allActions,
       fromComponents,

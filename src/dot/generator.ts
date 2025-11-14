@@ -101,12 +101,18 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   const lines: string[] = ['digraph {'];
   for (const c of includedComponents)
     lines.push(`${c} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]`);
+  const loadedActionNames = new Set((payload.loadedActions || []).map(l => l.name));
   for (const a of payload.allActions) {
     if (!includedActions.has(a.name)) continue;
-    if (a.name === actionName)
+    if (a.name === actionName) {
       lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
-    else if (a.nested) lines.push(`${a.name} [color=black, fillcolor=lightcyan, fontcolor=black, style=filled]`);
-    else lines.push(`${a.name} [fillcolor=linen, style=filled]`);
+    } else if (loadedActionNames.has(a.name)) {
+      // only loadedActions get a background fill
+      lines.push(`${a.name} [fillcolor=linen, style=filled]`);
+    } else {
+      // non-loaded actions: no background color (default styling)
+      lines.push(`${a.name}`);
+    }
   }
   for (const r of includedReducers)
     lines.push(`${r} [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]`);
