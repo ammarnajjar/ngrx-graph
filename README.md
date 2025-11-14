@@ -59,6 +59,8 @@ Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--j
 - DOT and SVG files are written under the directory specified by `--dir`.
 - DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
 
+- Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (i.e. number of CPUs minus two, with a minimum of 1). This keeps some CPU available for other tasks on the machine while still enabling parallel parsing. Override with `-c/--concurrency <n>` when you need more or less parallelism.
+
 <details>
   <summary>Graph Keys</summary>
 
