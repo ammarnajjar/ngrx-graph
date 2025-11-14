@@ -9,6 +9,7 @@ import path from 'path';
 import { promisify } from 'util';
 import cleanDotFilesIfNotRequested from './cli/cleanup';
 import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
+
 async function renderDotWithViz(dotText: string) {
   try {
     // prefer the CJS helper which uses require and is simpler to type
@@ -131,7 +132,7 @@ async function run() {
         }
       }
     } catch {
-      // ignore and fall back to scanning
+      // best-effort: if reading existing JSON fails, continue to scanning
     }
   }
 
@@ -218,20 +219,12 @@ async function run() {
     return;
   }
 
-  // Use the resolved output directory for DOT/SVG when an explicit --out
-  // directory was provided. Otherwise fall back to the scan directory.
   const dotOut = outDir || dir;
-  // Log resolved directories so users understand where DOT/SVG will be written
-  // and where cleanup will look for existing .dot files. Only print when
   // verbose logging is enabled to avoid noisy output during normal runs.
   if (opts.verbose) {
     console.log(chalk.hex('#4DA6FF')(`Resolved scan dir: ${dir}`));
     console.log(chalk.hex('#4DA6FF')(`Resolved output dir: ${dotOut}`));
   }
-  // Attempt to clean DOT files from both the resolved output directory
-  // and the scan directory. This handles cases where DOTs were previously
-  // generated under the scan dir (default) and the user later specifies
-  // an explicit --out directory — we should still remove leftover DOTs.
   // When cleaning pre-existing DOTs, only preserve them if the user
   // explicitly requested `--dot`. If DOTs are implied by `--svg` we
   // should still remove leftover DOT files from previous runs.

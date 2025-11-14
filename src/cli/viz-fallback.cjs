@@ -19,7 +19,6 @@ async function renderDotWithViz(dotText) {
       if (viz.renderString) return await viz.renderString(dotText);
     }
   } catch (_) {
-    // ignore
   }
   // Try lite.render.js
   try {
@@ -31,7 +30,6 @@ async function renderDotWithViz(dotText) {
       if (viz.renderString) return await viz.renderString(dotText);
     }
   } catch (_) {
-    // ignore
   }
   // Try plain Viz
   try {
@@ -42,7 +40,6 @@ async function renderDotWithViz(dotText) {
       if (viz.renderString) return await viz.renderString(dotText);
     }
   } catch (_) {
-    // ignore
   }
   return null;
 }

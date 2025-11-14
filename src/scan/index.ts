@@ -13,7 +13,7 @@ export {
   parseEffectsFromFile,
   parseEffectsFromText,
   parseReducersFromFile,
-  parseReducersFromText,
+  parseReducersFromText
 };
 
 export async function scanActions(options?: { dir?: string; pattern?: string; concurrency?: number }) {
@@ -60,7 +60,7 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // ignore
+      // best-effort: skip files that fail to parse
     }
   }
   return { mapping: res, loaded };
@@ -78,7 +78,7 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // ignore
+      // best-effort: skip files that fail to parse
     }
   }
   return { mapping: res, loaded };
@@ -97,7 +97,7 @@ export async function scanReducers(options?: { dir?: string; pattern?: string; c
         const r = await parseReducersFromFile(p);
         Object.assign(res, r.mapping);
       } catch {
-        // ignore
+        // best-effort: skip reducers that fail to parse
       }
     }),
   );

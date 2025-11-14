@@ -19,13 +19,13 @@ export async function cleanDotFilesIfNotRequested(outDir: string, dotRequested: 
             if (verbose) console.log(`Removed DOT file ${p} because --dot not requested`);
           }
         } catch {
-          // swallow errors for best-effort cleanup
+          // ignore errors during cleanup
         }
       }
     }
     await removeDotsRecursively(outDir);
   } catch {
-    // ignore cleanup errors
+    // best-effort: ignore cleanup errors
   }
 }
 

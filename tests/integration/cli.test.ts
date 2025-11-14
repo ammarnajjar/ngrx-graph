@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import { createTempDir } from '../helpers/utils';
+
 // allow longer timeout for CLI integration test
 jest.setTimeout(20000);
 
