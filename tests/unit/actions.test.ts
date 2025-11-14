@@ -1,4 +1,4 @@
-import { parseActionsFromText } from '../src/scan/actions';
+import { parseActionsFromText } from '../../src/scan/actions';
 
 test('parse simple createAction', async () => {
   const src = `export const loadThing = createAction('[Thing] Load');`;

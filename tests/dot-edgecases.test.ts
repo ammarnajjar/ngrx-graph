@@ -4,7 +4,7 @@ import { makeEdges } from '../src/dot/edges';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
 import { GraphPayload } from '../src/dot/types';
-import { createTempDir } from './utils';
+import { createTempDir } from './helpers/utils';
 
 test('cycle in effects does not infinite loop in focused generator', async () => {
   const payload: GraphPayload = {
