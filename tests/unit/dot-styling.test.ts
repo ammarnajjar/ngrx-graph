@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { generateDotForActionPayload } from '../../src/dot/generator';
+import { GraphPayload } from '../../src/dot/types';
 
 describe('dot generator styling', () => {
   it('only colors loadedActions and keeps focused action green', async () => {
@@ -22,7 +23,7 @@ describe('dot generator styling', () => {
         { name: 'nonLoaded', nested: false },
         { name: 'nonLoaded2', nested: false }
       ]
-    } as any;
+    } as unknown as GraphPayload;
 
     const dotPath = await generateDotForActionPayload(payload, 'focusAction', tmp);
     const dot = await fs.readFile(dotPath, 'utf8');
