@@ -1,4 +1,6 @@
 import fs from 'fs/promises';
+import os from 'os';
+import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { GraphPayload } from '../src/dot/types';
@@ -102,7 +104,9 @@ describe('focused reachability across examples', () => {
     for (const ex of exs) {
       const jsonPath = path.join(examplesDir, ex, 'out', 'ngrx-graph.json');
       const payload = JSON.parse(await fs.readFile(jsonPath, 'utf8')) as GraphPayload;
-      const out = path.resolve('tmp/test-focused-all', ex);
+      const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+      registerTempRoot(base);
+      const out = path.join(base, 'test-focused-all', ex);
       await fs.mkdir(out, { recursive: true });
       for (const a of payload.allActions) {
         await generateDotForActionPayload(payload, a.name, out);

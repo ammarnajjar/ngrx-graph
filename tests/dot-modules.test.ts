@@ -1,4 +1,6 @@
 import fs from 'fs/promises';
+import os from 'os';
+import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { generateDotFilesFromPayload } from '../src/dot/main';
@@ -23,7 +25,9 @@ test('makeNodes emits component and action node strings', () => {
 
 test('generateDotFilesFromPayload and generateDotForActionPayload produce files', async () => {
   const payload: GraphPayload = JSON.parse(await fs.readFile(path.resolve('docs/examples/case2/out/ngrx-graph.json'), 'utf8')) as GraphPayload;
-  const out = path.resolve('tmp/dot-modules');
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const out = path.join(base, 'dot-modules');
   await generateDotFilesFromPayload(payload, out);
   const all = await fs.readFile(path.join(out, 'all.dot'), 'utf8');
   expect(all).toContain('digraph {');

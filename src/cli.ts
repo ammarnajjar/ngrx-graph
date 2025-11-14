@@ -30,6 +30,7 @@ program
   .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
   .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
   .option('-a, --all', 'only generate the aggregated all.dot (no per-action files)', false)
+  .option('--dot', 'also generate DOT files (per-action and aggregated)', false)
   .option('-j, --json', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
   .option('--cache', 'reuse existing ngrx-graph.json if present (skip scanning)', false)
   .argument('[action]', 'action name to focus (positional; overrides --action and --all)')
@@ -52,6 +53,12 @@ Examples:
 
   # Reuse an existing JSON payload instead of re-scanning
   $ ngrx-graph -d ./src --out ./out --cache
+
+  # Generate DOT files only (per-action and aggregated)
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  # Generate SVGs (implies DOT generation)
+  $ ngrx-graph -d ./src --out ./out --svg
 
 Notes:
 
@@ -155,6 +162,8 @@ async function run() {
   // other flags (positional action, --all, or --svg), continue to generate
   // DOT/SVG after regenerating the JSON.
   const hasGenerationFlags = !!(opts.action || opts.all || opts.svg);
+  // DOT generation is opt-in via --dot; requesting SVG implies DOT generation
+  const dotRequested = Boolean(opts.dot) || Boolean(opts.svg);
   if (opts.json && !hasGenerationFlags) {
     const totalDuration = (Date.now() - startTime) / 1000;
     console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
@@ -164,7 +173,7 @@ async function run() {
   // Use the resolved output directory for DOT/SVG when an explicit --out
   // directory was provided. Otherwise fall back to the scan directory.
   const dotOut = outDir || dir;
-  if (dotOut) {
+  if (dotOut && dotRequested) {
     if (opts.action) {
       const gen = await import('./dot-generator');
       const p = await gen.generateDotForAction(outFile, opts.action, dotOut);

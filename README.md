@@ -31,13 +31,13 @@ ngrx-graph -d ./src --out ./out    # writes ./out/ngrx-graph.json
 - Generate an action-focused DOT (and optional SVG) for a specific action:
 
 ```bash
-ngrx-graph "MyAction" -d ./src --out ./out --svg
+ngrx-graph "MyAction" -d ./src --out ./out --dot --svg
 ```
 
 - Generate a single aggregated DOT for the whole project (writes `all.dot`):
 
 ```bash
-ngrx-graph -a -d ./src --out ./out --svg
+ngrx-graph -a -d ./src --out ./out --dot --svg
 ```
 
 -- Re-generate the JSON (use `--json` alone to stop after JSON):
@@ -59,7 +59,7 @@ Notes
 
 - The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
 - DOT and SVG files are written under the directory specified by `--dir`.
--- Use `--json` to re-generate the JSON first; combine with other flags to continue generating DOT/SVG.
+- DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
 
 
 <details>

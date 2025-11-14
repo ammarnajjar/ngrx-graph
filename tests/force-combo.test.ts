@@ -1,5 +1,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs/promises';
+import os from 'os';
+import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 
 jest.setTimeout(30000);
@@ -24,8 +26,9 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 15000) {
 }
 
 test('--json alone writes JSON and stops', async () => {
-  const outDir = path.resolve('tmp/force-case1');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'force-case1');
   await fs.mkdir(outDir, { recursive: true });
   const args = ['-d', outDir, '--out', outDir, '--json'];
   const res = await runCli(args);
@@ -38,8 +41,9 @@ test('--json alone writes JSON and stops', async () => {
 });
 
 test('reuses existing JSON when --cache provided', async () => {
-  const outDir = path.resolve('tmp/cache-case1');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'cache-case1');
   await fs.mkdir(outDir, { recursive: true });
   const outFile = path.join(outDir, 'ngrx-graph.json');
   // create a simple actions source so scanning will find a predictable action
@@ -62,8 +66,9 @@ test('reuses existing JSON when --cache provided', async () => {
 });
 
 test('rewrites JSON when --cache not provided (default)', async () => {
-  const outDir = path.resolve('tmp/cache-case2');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'cache-case2');
   await fs.mkdir(outDir, { recursive: true });
   const outFile = path.join(outDir, 'ngrx-graph.json');
   // create a simple actions source so scanning will find a predictable action
@@ -85,11 +90,12 @@ test('rewrites JSON when --cache not provided (default)', async () => {
 });
 
 test('--json combined with --all regenerates JSON and writes all.dot', async () => {
-  const outDir = path.resolve('tmp/force-case2');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'force-case2');
   await fs.mkdir(outDir, { recursive: true });
 
-  const args = ['-d', outDir, '--out', outDir, '--json', '--all'];
+  const args = ['-d', outDir, '--out', outDir, '--json', '--all', '--dot'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -100,13 +106,14 @@ test('--json combined with --all regenerates JSON and writes all.dot', async () 
 });
 
 test('--json combined with positional action regenerates JSON and writes focused dot', async () => {
-  const outDir = path.resolve('tmp/force-case3');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'force-case3');
   await fs.mkdir(outDir, { recursive: true });
 
   // use an action name known to exist in examples
   const actionName = 'Action1';
-  const args = ['-d', outDir, '--out', outDir, '--json', actionName];
+  const args = ['-d', outDir, '--out', outDir, '--json', '--dot', actionName];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -117,8 +124,9 @@ test('--json combined with positional action regenerates JSON and writes focused
 });
 
 test('--json combined with --svg regenerates JSON and attempts SVG generation', async () => {
-  const outDir = path.resolve('tmp/force-case4');
-  await fs.rm(outDir, { recursive: true, force: true });
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  registerTempRoot(base);
+  const outDir = path.join(base, 'force-case4');
   await fs.mkdir(outDir, { recursive: true });
 
   const args = ['-d', outDir, '--out', outDir, '--json', '--all', '--svg'];
