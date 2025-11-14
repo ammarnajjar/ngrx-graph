@@ -1,10 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { generateDotForActionPayload } from '../src/dot/generator';
-import { generateDotFilesFromPayload } from '../src/dot/main';
-import { makeNodes } from '../src/dot/nodes';
-import { GraphPayload } from '../src/dot/types';
-import { createTempDir } from './helpers/utils';
+import { generateDotForActionPayload } from '../../src/dot/generator';
+import { generateDotFilesFromPayload } from '../../src/dot/main';
+import { makeNodes } from '../../src/dot/nodes';
+import { GraphPayload } from '../../src/dot/types';
+import { createTempDir } from '../helpers/utils';
 
 test('makeNodes emits component and action node strings', () => {
   const payload: GraphPayload = {

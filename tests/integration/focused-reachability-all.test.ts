@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { generateDotForActionPayload } from '../src/dot/generator';
-import { GraphPayload } from '../src/dot/types';
-import { createTempDir } from './helpers/utils';
+import { generateDotForActionPayload } from '../../src/dot/generator';
+import { GraphPayload } from '../../src/dot/types';
+import { createTempDir } from '../helpers/utils';
 
 const examplesDir = path.resolve('docs/examples');
 

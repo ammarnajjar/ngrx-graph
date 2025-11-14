@@ -1,5 +1,5 @@
-import { dedupeLines, makeEdges } from '../src/dot/edges';
-import { GraphPayload } from '../src/dot/types';
+import { dedupeLines, makeEdges } from '../../src/dot/edges';
+import { GraphPayload } from '../../src/dot/types';
 
 test('dedupeLines removes duplicates and preserves order', () => {
   const lines = ['a', 'b', 'a', 'c', 'b'];

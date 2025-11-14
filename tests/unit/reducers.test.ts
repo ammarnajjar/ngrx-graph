@@ -1,4 +1,4 @@
-import { parseReducersFromText } from '../src/scan/reducers';
+import { parseReducersFromText } from '../../src/scan/reducers';
 
 test('parse createReducer with on()', async () => {
   const src = `export const r = createReducer(initialState, on(loadThing, (s,a)=>s));`;
