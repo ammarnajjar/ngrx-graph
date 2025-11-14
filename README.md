@@ -254,6 +254,7 @@ USAGE
 
 <!-- commands -->
 * [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -274,6 +275,77 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
+
+## `ngrx-graph [ACTION]`
+
+Generate NgRx actions graph
+
+```
+USAGE
+  $ ngrx-graph Symbol(SINGLE_COMMAND_CLI) [ACTION]
+
+FLAGS
+  -a, --all                  only generate the aggregated all.dot (no per-action files)
+  -c, --concurrency=<value>  [default: 8] concurrency for file parsing
+  -d, --dir=<value>          [default: /Users/anajjar/code/ngrx-graph] Directory to scan
+  -j, --json                 scan and write ngrx-graph.json only (no DOT/SVG)
+  -o, --out=<value>          [default: ngrx-graph.json] output JSON file name (placed in --dir)
+  -s, --svg                  also generate SVG files from DOT (requires Graphviz `dot` on PATH)
+  -v, --verbose              enable verbose logging
+
+DESCRIPTION
+  Generate NgRx actions graph
+
+  Examples:
+
+
+  # Scan a project and write JSON into the output directory (file: ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out
+
+  # Generate aggregated DOT and SVG (all.dot / all.svg) under the output directory
+  $ ngrx-graph -d ./src --out ./out --all --svg
+
+  # Generate focused DOT/SVG for a specific action (positional argument)
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
+
+  # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --json
+
+  # Reuse an existing JSON payload instead of re-scanning
+  $ ngrx-graph -d ./src --out ./out --cache
+
+  # Generate DOT files only (per-action and aggregated)
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  # Generate SVGs (implies DOT generation)
+  $ ngrx-graph -d ./src --out ./out --svg
+
+  Notes:
+
+  - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out'
+  (defaults to the scan directory).
+  - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write
+  them under '--out'.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON
+  payload and skip scanning when present.
+
+EXAMPLES
+  $ ngrx-graph -d ./src --out ./out
+
+  $ ngrx-graph -d ./src --out ./out --all --svg
+
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
+
+  $ ngrx-graph -d ./src --out ./out --json
+
+  $ ngrx-graph -d ./src --out ./out --cache
+
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  $ ngrx-graph -d ./src --out ./out --svg
+```
+
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
 <!-- commandsstop -->
 </details>
 
