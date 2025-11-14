@@ -1,9 +1,6 @@
 digraph {
-Case4Component [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
 actionA [fillcolor=linen, style=filled]
 actionB [fillcolor=linen, style=filled]
 case4Reducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
-Case4Component -> exportedActionA
-exportedActionA -> actionB
 actionB -> case4Reducer
 }

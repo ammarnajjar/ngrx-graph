@@ -17,7 +17,7 @@
 <!-- nestedAction1 -->
 <g id="node2" class="node">
 <title>nestedAction1</title>
-<ellipse fill="lightcyan" stroke="black" cx="65.21" cy="-234" rx="64.15" ry="18"/>
+<ellipse fill="none" stroke="black" cx="65.21" cy="-234" rx="64.15" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="65.21" y="-228.95" font-family="Times,serif" font-size="14.00">nestedAction1</text>
 </g>
 <!-- FirstComponent&#45;&gt;nestedAction1 -->
@@ -29,7 +29,7 @@
 <!-- action1 -->
 <g id="node3" class="node">
 <title>action1</title>
-<ellipse fill="linen" stroke="black" cx="65.21" cy="-162" rx="38.04" ry="18"/>
+<ellipse fill="#f5e9d6" stroke="black" cx="65.21" cy="-162" rx="38.04" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="65.21" y="-156.95" font-family="Times,serif" font-size="14.00">action1</text>
 </g>
 <!-- nestedAction1&#45;&gt;action1 -->

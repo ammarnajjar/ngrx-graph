@@ -29,7 +29,7 @@
 <!-- action2 -->
 <g id="node3" class="node">
 <title>action2</title>
-<ellipse fill="linen" stroke="black" cx="38.04" cy="-90" rx="38.04" ry="18"/>
+<ellipse fill="none" stroke="black" cx="38.04" cy="-90" rx="38.04" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="38.04" y="-84.95" font-family="Times,serif" font-size="14.00">action2</text>
 </g>
 <!-- action1&#45;&gt;action2 -->
@@ -41,7 +41,7 @@
 <!-- action3 -->
 <g id="node4" class="node">
 <title>action3</title>
-<ellipse fill="linen" stroke="black" cx="132.04" cy="-90" rx="38.04" ry="18"/>
+<ellipse fill="none" stroke="black" cx="132.04" cy="-90" rx="38.04" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="132.04" y="-84.95" font-family="Times,serif" font-size="14.00">action3</text>
 </g>
 <!-- action1&#45;&gt;action3 -->

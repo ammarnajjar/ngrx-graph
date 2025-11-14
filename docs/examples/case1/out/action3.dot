@@ -1,6 +1,6 @@
 digraph {
 FirstComponent [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]
-action1 [fillcolor=linen, style=filled]
+action1
 action3 [color=green, fillcolor="#007000", fontcolor=white, style=filled]
 firstReducer [shape="hexagon", color=purple, fillcolor=purple, fontcolor=white, style=filled]
 FirstComponent -> action1

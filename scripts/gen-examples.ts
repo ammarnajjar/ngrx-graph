@@ -45,7 +45,7 @@ for (const dir of entries) {
   }
 
   // Step 2: generate per-action DOT files and SVGs next to the JSON
-  const genArgs = ['-d', srcDir, '--out', outDir, '--svg'];
+  const genArgs = ['-d', srcDir, '--out', outDir, '--svg', '--dot'];
   const r2 = spawnSync(devBin, genArgs, opts);
   if (r2.status !== 0) {
     console.error('DOT/SVG generation failed for', dir, 'exit code', r2.status);

@@ -14,16 +14,24 @@
     }
   ],
   "fromComponents": {
-    "FirstComponent": ["action1"]
+    "FirstComponent": [
+      "action1"
+    ]
   },
   "fromEffects": {
     "effect1$": {
-      "input": ["action1"],
-      "output": ["action2"]
+      "input": [
+        "action1"
+      ],
+      "output": [
+        "action2"
+      ]
     }
   },
   "fromReducers": {
-    "firstReducer": ["action3"]
+    "firstReducer": [
+      "action3"
+    ]
   },
   "loadedActions": []
 }

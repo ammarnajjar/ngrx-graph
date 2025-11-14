@@ -17,7 +17,7 @@
 <!-- action1 -->
 <g id="node2" class="node">
 <title>action1</title>
-<ellipse fill="linen" stroke="black" cx="65.21" cy="-162" rx="38.04" ry="18"/>
+<ellipse fill="none" stroke="black" cx="65.21" cy="-162" rx="38.04" ry="18"/>
 <text xml:space="preserve" text-anchor="middle" x="65.21" y="-156.95" font-family="Times,serif" font-size="14.00">action1</text>
 </g>
 <!-- FirstComponent&#45;&gt;action1 -->

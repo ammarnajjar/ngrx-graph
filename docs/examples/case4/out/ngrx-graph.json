@@ -9,17 +9,19 @@
       "nested": false
     }
   ],
-  "fromComponents": {
-    "Case4Component": ["exportedActionA"]
-  },
+  "fromComponents": {},
   "fromEffects": {
     "effect$": {
-      "input": ["exportedActionA"],
-      "output": ["actionB"]
+      "input": [],
+      "output": [
+        "actionB"
+      ]
     }
   },
   "fromReducers": {
-    "case4Reducer": ["actionB"]
+    "case4Reducer": [
+      "actionB"
+    ]
   },
   "loadedActions": []
 }
