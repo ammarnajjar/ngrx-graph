@@ -174,7 +174,14 @@ async function run() {
   // Use the resolved output directory for DOT/SVG when an explicit --out
   // directory was provided. Otherwise fall back to the scan directory.
   const dotOut = outDir || dir;
+  // Attempt to clean DOT files from both the resolved output directory
+  // and the scan directory. This handles cases where DOTs were previously
+  // generated under the scan dir (default) and the user later specifies
+  // an explicit --out directory — we should still remove leftover DOTs.
   await cleanDotFilesIfNotRequested(dotOut, dotRequested, opts.verbose);
+  if (dotOut !== dir) {
+    await cleanDotFilesIfNotRequested(dir, dotRequested, opts.verbose);
+  }
   if (dotOut && dotRequested) {
     if (opts.action) {
       const gen = await import('./dot-generator');
