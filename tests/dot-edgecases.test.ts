@@ -1,11 +1,11 @@
 import fs from 'fs/promises';
 import os from 'os';
-import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { makeEdges } from '../src/dot/edges';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
 import { GraphPayload } from '../src/dot/types';
+import { registerTempRoot } from './_temp-helper';
 
 test('cycle in effects does not infinite loop in focused generator', async () => {
   const payload: GraphPayload = {

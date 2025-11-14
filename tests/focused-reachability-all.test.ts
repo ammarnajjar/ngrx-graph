@@ -1,9 +1,9 @@
 import fs from 'fs/promises';
 import os from 'os';
-import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { GraphPayload } from '../src/dot/types';
+import { registerTempRoot } from './_temp-helper';
 
 const examplesDir = path.resolve('docs/examples');
 

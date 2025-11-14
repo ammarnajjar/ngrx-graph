@@ -1,11 +1,11 @@
 import fs from 'fs/promises';
 import os from 'os';
-import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
 import { GraphPayload } from '../src/dot/types';
+import { registerTempRoot } from './_temp-helper';
 
 test('makeNodes emits component and action node strings', () => {
   const payload: GraphPayload = {

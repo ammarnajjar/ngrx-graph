@@ -1,8 +1,8 @@
 import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
-import { registerTempRoot } from './_temp-helper';
 import path from 'path';
+import { registerTempRoot } from './_temp-helper';
 
 jest.setTimeout(30000);
 

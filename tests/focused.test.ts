@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import os from 'os';
-import { registerTempRoot } from './_temp-helper';
 import path from 'path';
 import { generateDotForAction } from '../src/dot-generator';
+import { registerTempRoot } from './_temp-helper';
 
 test('focused generator emits payload arrowhead edges', async () => {
   const jsonPath = path.resolve('docs/examples/case2/out/ngrx-graph.json');
