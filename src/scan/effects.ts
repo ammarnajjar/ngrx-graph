@@ -46,6 +46,26 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
                       const called = fnNode.expression;
                       if (ts.isIdentifier(called)) outputs.add(called.text);
                       else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
+                      // extract payload actions if the call has an object literal as first arg
+                      if (fnNode.arguments && fnNode.arguments.length) {
+                        const firstArg = fnNode.arguments[0];
+                        if (ts.isObjectLiteralExpression(firstArg)) {
+                          const payloads: string[] = [];
+                          for (const p of firstArg.properties) {
+                            if (ts.isPropertyAssignment(p) && ts.isCallExpression(p.initializer)) {
+                              const pc = p.initializer.expression;
+                              if (ts.isIdentifier(pc)) payloads.push(pc.text);
+                              else if (ts.isPropertyAccessExpression(pc)) payloads.push(pc.name.text);
+                            }
+                          }
+                          if (payloads.length) {
+                            let calledName = 'unknown';
+                            if (ts.isIdentifier(called)) calledName = called.text;
+                            else if (ts.isPropertyAccessExpression(called)) calledName = called.name.text;
+                            loaded.push({ name: calledName, payloadActions: payloads });
+                          }
+                        }
+                      }
                     }
                     if (ts.isReturnStatement(fnNode) && fnNode.expression) {
                       const re = fnNode.expression;
