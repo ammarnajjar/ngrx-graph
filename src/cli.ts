@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
+import cleanDotFilesIfNotRequested from './cli/cleanup';
 import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
 async function renderDotWithViz(dotText: string) {
   try {
@@ -173,6 +174,7 @@ async function run() {
   // Use the resolved output directory for DOT/SVG when an explicit --out
   // directory was provided. Otherwise fall back to the scan directory.
   const dotOut = outDir || dir;
+  await cleanDotFilesIfNotRequested(dotOut, dotRequested, opts.verbose);
   if (dotOut && dotRequested) {
     if (opts.action) {
       const gen = await import('./dot-generator');

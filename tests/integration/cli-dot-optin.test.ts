@@ -44,3 +44,23 @@ test('CLI writes JSON and only writes DOT when --dot passed', async () => {
   files = await fs.readdir(outDir);
   expect(files.some(f => f.endsWith('.dot'))).toBe(true);
 });
+
+test('CLI removes DOT files when run without --dot after generating them', async () => {
+  const outDir = await createTempDir('cli-optin-remove');
+  const src = path.join(outDir, 'src');
+  await fs.mkdir(src, { recursive: true });
+  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+
+  // generate with --dot
+  let res = await runCli(['-d', outDir, '--out', outDir, '--dot'], process.cwd(), 15000);
+  expect(res.code).toBeGreaterThanOrEqual(0);
+  let files = await fs.readdir(outDir);
+  const dotFiles = files.filter(f => f.endsWith('.dot'));
+  expect(dotFiles.length).toBeGreaterThan(0);
+
+  // run again without --dot; DOT files should be removed
+  res = await runCli(['-d', outDir, '--out', outDir], process.cwd(), 15000);
+  expect(res.code).toBeGreaterThanOrEqual(0);
+  files = await fs.readdir(outDir);
+  expect(files.some(f => f.endsWith('.dot'))).toBe(false);
+});
