@@ -8,18 +8,8 @@ import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
 import cleanDotFilesIfNotRequested from './cli/cleanup';
+import { renderDotWithViz, tryDotToSvg } from './cli/svg';
 import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
-
-async function renderDotWithViz(dotText: string) {
-  try {
-    // prefer the CJS helper which uses require and is simpler to type
-    // @ts-expect-error - dynamic CJS helper, declaration may be missing in some toolchains
-    const helper = await import('./cli/viz-fallback.cjs');
-    return await helper.renderDotWithViz(dotText);
-  } catch {
-    return null;
-  }
-}
 
 const program = new Command();
 
@@ -116,15 +106,7 @@ async function run() {
 
   const startTime = Date.now();
 
-  async function tryDotToSvg(dotPath: string, svgPath: string) {
-    try {
-      const execFileP = promisify(execFile);
-      await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
-      return true;
-    } catch {
-      return false;
-    }
-  }
+  // SVG conversion helpers imported from ./cli/svg
 
   // If JSON already exists and --json not provided, reuse it and skip the scan
   // only when the user explicitly requested `--cache`.
