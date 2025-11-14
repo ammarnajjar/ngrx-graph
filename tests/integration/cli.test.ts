@@ -36,8 +36,10 @@ test('CLI generates DOT and attempts SVG (graceful if dot missing)', async () =>
   const files = await fs.readdir(outDir);
   const hasDot = files.some(f => f.endsWith('.dot'));
   const hasSvg = files.some(f => f.endsWith('.svg'));
-  expect(hasDot).toBe(true);
-  // SVG may or may not exist depending on environment
+  // CLI may remove DOTs after successful SVG generation when --dot was
+  // not explicitly requested. Accept either DOT or SVG presence, and if
+  // no SVG was produced, CLI should have printed a warning about SVG.
+  expect(hasDot || hasSvg).toBe(true);
   if (!hasSvg) {
     expect(res.stdout + res.stderr).toMatch(/Could not generate SVGs|Could not generate SVG/);
   }

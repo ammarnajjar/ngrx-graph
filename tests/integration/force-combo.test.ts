@@ -115,10 +115,11 @@ test('--json combined with --svg regenerates JSON and attempts SVG generation', 
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
   expect(files).toContain('ngrx-graph.json');
-  // all.dot should exist
-  expect(files.some(f => f === 'all.dot')).toBe(true);
-  // either svg exists or CLI printed a warning about SVG generation
+  // all.dot may be removed after successful SVG generation when --dot was
+  // not explicitly requested. Accept either all.dot or all.svg presence.
+  const hasAllDot = files.some(f => f === 'all.dot');
   const hasSvg = files.some(f => f.endsWith('.svg'));
+  expect(hasAllDot || hasSvg).toBe(true);
   if (!hasSvg) {
     expect(res.stdout + res.stderr).toMatch(/Could not generate SVGs|Could not generate SVG/);
   }
