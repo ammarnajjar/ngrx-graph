@@ -6,6 +6,11 @@ import path from 'path';
 const repoRoot = path.resolve(__dirname, '..');
 const examplesDir = path.join(repoRoot, 'docs', 'examples');
 
+// Ensure ts-node uses this repo's tsconfig when the script spawns children
+if (!process.env.TS_NODE_PROJECT) {
+  process.env.TS_NODE_PROJECT = path.join(repoRoot, 'tsconfig.json');
+}
+
 if (!fs.existsSync(examplesDir)) {
   console.error('No examples directory at', examplesDir);
   process.exit(1);
@@ -28,14 +33,22 @@ for (const dir of entries) {
   // Use the dev binary which now accepts flags directly. Resolve absolute
   // paths to avoid nested-path issues and run from repo root.
   const devBin = path.join(repoRoot, 'bin', 'dev');
-  // Use --force + --svg (no --all) to generate per-action DOT and SVG files
-  const args = ['-d', srcDir, '--out', outDir, '--force', '--svg'];
+  // Step 1: force regeneration of the JSON payload only
+  const forceArgs = ['-d', srcDir, '--out', outDir, '--force'];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const opts = {cwd: repoRoot, stdio: 'inherit'} as any;
-  const res = spawnSync(devBin, args, opts);
-  if (res.status !== 0) {
-    console.error('Command failed for', dir, 'exit code', res.status);
-    process.exit(res.status ?? 1);
+  const opts = {cwd: repoRoot, stdio: 'inherit', env: process.env} as any;
+  const r1 = spawnSync(devBin, forceArgs, opts);
+  if (r1.status !== 0) {
+    console.error('JSON generation failed for', dir, 'exit code', r1.status);
+    process.exit(r1.status ?? 1);
+  }
+
+  // Step 2: generate per-action DOT files and SVGs next to the JSON
+  const genArgs = ['-d', srcDir, '--out', outDir, '--svg'];
+  const r2 = spawnSync(devBin, genArgs, opts);
+  if (r2.status !== 0) {
+    console.error('DOT/SVG generation failed for', dir, 'exit code', r2.status);
+    process.exit(r2.status ?? 1);
   }
 }
 

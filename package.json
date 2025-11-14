@@ -78,8 +78,7 @@
     "version": "oclif readme && git add README.md",
     "test": "jest",
     "cli": "ts-node src/cli.ts",
-    "gen:examples": "cross-env TS_NODE_PROJECT=./tsconfig.json ts-node ./scripts/gen-examples.ts",
-    "gen:examples:run": "cross-env TS_NODE_PROJECT=./tsconfig.json node -r ./node_modules/ts-node/register ./scripts/gen-examples.ts",
+    "gen:examples": "node -r ./node_modules/ts-node/register ./scripts/gen-examples.ts",
     "prepack": "npm run build"
   },
   "engines": {
