@@ -8,13 +8,28 @@ const cmdPath = path.join(root, 'src', 'commands', 'Symbol(SINGLE_COMMAND_CLI).t
 const cli = fs.readFileSync(cliPath, 'utf8');
 let cmd = fs.readFileSync(cmdPath, 'utf8');
 
-// extract the addHelpText('after', `...`) block from cli.ts
-const helpMatch = cli.match(/addHelpText\('after',\s*`([\s\S]*?)`\)\s*\.parse/);
-if (!helpMatch) {
+// extract the addHelpText('after', `...`) block from cli.ts in a tolerant way
+// be tolerant of whitespace/newlines between the function name and args
+const startRegex = /addHelpText\s*\(\s*'after'\s*,/m;
+const startMatch = cli.match(startRegex);
+if (!startMatch) {
   console.error('could not find help block in src/cli.ts');
   process.exit(2);
 }
-const helpBlock = helpMatch[1].trim();
+const startIdx = startMatch.index || 0;
+// find the first backtick after the start marker
+const backtickStart = cli.indexOf('`', startIdx);
+if (backtickStart === -1) {
+  console.error('could not find help block (opening backtick) in src/cli.ts');
+  process.exit(2);
+}
+// find the closing backtick after the opening one
+const backtickEnd = cli.indexOf('`', backtickStart + 1);
+if (backtickEnd === -1) {
+  console.error('could not find help block (closing backtick) in src/cli.ts');
+  process.exit(2);
+}
+const helpBlock = cli.slice(backtickStart + 1, backtickEnd).trim();
 
 // extract Examples section lines that start with $ (shell examples)
 const examplesSectionMatch = helpBlock.match(/Examples:\n\n([\s\S]*?)\n\nNotes:/);
