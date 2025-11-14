@@ -69,10 +69,10 @@ if (positionalAction) {
 async function run() {
   const dir = path.resolve(opts.dir);
   const concurrency = Math.max(1, parseInt(opts.concurrency, 10) || 8);
-  console.log(chalk.blue(`Scanning directory: ${dir}`));
+  console.log(chalk.hex('#4DA6FF')(`Scanning directory: ${dir}`));
   const pattern = '**/*actions.ts';
-  console.log(chalk.blue(`Concurrency: ${concurrency}  PID: ${process.pid}`));
-  if (opts.verbose) console.log(chalk.blue(`CPUS: ${os.cpus().length}`));
+  console.log(chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`));
+  if (opts.verbose) console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
   const startTime = Date.now();
   // count files matching pattern for progress info
   let filesCount = 0;
@@ -126,7 +126,7 @@ async function run() {
   const hasGenerationFlags = !!(opts.action || opts.all || opts.svg);
   if (opts.force && !hasGenerationFlags) {
     const totalDuration = (Date.now() - startTime) / 1000;
-    console.log(chalk.blue(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
+    console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
     return;
   }
 
@@ -229,7 +229,7 @@ async function run() {
     }
   }
   const totalDuration = (Date.now() - startTime) / 1000;
-  console.log(chalk.blue(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
+  console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
   return;
 
 }
