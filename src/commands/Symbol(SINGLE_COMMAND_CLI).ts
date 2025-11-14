@@ -36,7 +36,10 @@ Graph.examples = [
   '$ ngrx-graph -d ./src --out ./out',
   '$ ngrx-graph -d ./src --out ./out --all --svg',
   '$ ngrx-graph "MyAction" -d ./src --out ./out --svg',
-  '$ ngrx-graph -d ./src --out ./out --json'
+  '$ ngrx-graph -d ./src --out ./out --json',
+  '$ ngrx-graph -d ./src --out ./out --cache',
+  '$ ngrx-graph -d ./src --out ./out --dot',
+  '$ ngrx-graph -d ./src --out ./out --svg'
 ];
 
 Graph.description += `
@@ -56,11 +59,20 @@ Examples:
   # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
   $ ngrx-graph -d ./src --out ./out --json
 
+  # Reuse an existing JSON payload instead of re-scanning
+  $ ngrx-graph -d ./src --out ./out --cache
+
+  # Generate DOT files only (per-action and aggregated)
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  # Generate SVGs (implies DOT generation)
+  $ ngrx-graph -d ./src --out ./out --svg
+
 Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--json' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.`;
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON payload and skip scanning when present.`;
 /* SYNCHRONIZED_HELP_END */
 
 
