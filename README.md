@@ -12,22 +12,23 @@ It is also possible to see the whole net with all actions/components/reducers, b
 
 ## Quick start
 
-Install (optional):
+Install globally (optional):
 
 ```bash
 npm install -g ngrx-graph
-# or use npx: npx ngrx-graph ...
+# or run with npx: npx ngrx-graph ...
 ```
 
-Basic usage examples:
+Quick examples
 
 - Generate the structure JSON (always written to `--out`, default `ngrx-graph.json`):
 
 ```bash
-ngrx-graph -d ./src --out ./out    # writes ./out/ngrx-graph.json
+ngrx-graph -d ./src --out ./out
+# writes: ./out/ngrx-graph.json
 ```
 
-- Generate an action-focused DOT (and optional SVG) for a specific action:
+- Generate an action-focused DOT (and optional SVG):
 
 ```bash
 ngrx-graph "MyAction" -d ./src --out ./out --dot --svg
@@ -39,29 +40,27 @@ ngrx-graph "MyAction" -d ./src --out ./out --dot --svg
 ngrx-graph -a -d ./src --out ./out --dot --svg
 ```
 
--- Re-generate the JSON (use `--json` alone to stop after JSON):
+- Re-generate the JSON only (stop after JSON):
 
 ```bash
 ngrx-graph -d ./src --out ./out --json
 ```
 
-Reuse existing JSON instead of re-scanning:
+- Reuse existing JSON instead of re-scanning:
 
 ```bash
 ngrx-graph -d ./src --out ./out --cache
 ```
 
-Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
+Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
 
 ## Notes
 
 - The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
 - DOT and SVG files are written under the directory specified by `--dir`.
 - DOT files are generated only when `--dot` or `--svg` is passed. Use `--json` to re-generate the JSON first; combine with `--dot`/`--svg` to continue generating DOT/SVG.
-
-- Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (i.e. number of CPUs minus two, with a minimum of 1). This keeps some CPU available for other tasks on the machine while still enabling parallel parsing. Override with `-c/--concurrency <n>` when you need more or less parallelism.
-
-- Prefer viz.js for SVG: pass `--viz` to prefer using viz.js (a WASM/JS renderer) for SVG generation. When provided the CLI will try viz.js first and fall back to Graphviz `dot` if viz.js fails. Without `--viz` the CLI will attempt the native `dot` executable first and use viz.js as a fallback.
+- Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (number of CPUs minus two, minimum 1). This keeps CPU available for other tasks while enabling parallel parsing. Override with `-c/--concurrency <n>`.
+- Prefer viz.js for SVG: pass `--viz` to prefer using viz.js (a WASM/JS renderer) for SVG generation. With `--viz` the CLI tries viz.js first and falls back to Graphviz `dot` if viz.js fails. Without `--viz` the CLI prefers the native `dot` executable and uses viz.js only as a fallback.
 
 <details>
   <summary>Graph Keys</summary>
@@ -93,7 +92,7 @@ Input files (see the canonical example sources under `docs/examples/case1/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -f
+npx ngrx-graph -j
 ```
 
 - [ngrx-graph.json](./docs/examples/case1/out/ngrx-graph.json)
@@ -128,7 +127,7 @@ Input files (see the canonical example sources under `docs/examples/case2/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -f
+npx ngrx-graph -j
 ```
 
 - [ngrx-graph.json](./docs/examples/case2/out/ngrx-graph.json)
@@ -163,7 +162,7 @@ Input files (see the canonical example sources under `docs/examples/case3/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -f
+npx ngrx-graph -j
 ```
 
 - [ngrx-graph.json](./docs/examples/case3/out/ngrx-graph.json)
@@ -207,7 +206,7 @@ Input files (see the canonical example sources under `docs/examples/case4/src`):
 ### Output:
 
 ```bash
-npx ngrx-graph -f
+npx ngrx-graph -j
 ```
 
 - [ngrx-graph.json](./docs/examples/case4/out/ngrx-graph.json)
@@ -236,7 +235,6 @@ npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/o
   <summary>Usage</summary>
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
@@ -248,7 +246,6 @@ USAGE
   $ ngrx-graph COMMAND
 ...
 ```
-
 <!-- usagestop -->
 </details>
 
@@ -256,9 +253,8 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-
-- [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
-- [`ngrx-graph [ACTION]`](#ngrx-graph-action)
+* [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -296,6 +292,7 @@ FLAGS
   -o, --out=<value>          [default: ngrx-graph.json] output JSON file name (placed in --dir)
   -s, --svg                  also generate SVG files from DOT (requires Graphviz `dot` on PATH)
   -v, --verbose              enable verbose logging
+      --viz                  prefer viz.js for SVG generation (useful when dot is unavailable)
 
 DESCRIPTION
   Generate NgRx actions graph
@@ -349,8 +346,7 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](<https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts>)_
-
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
 <!-- commandsstop -->
 </details>
 
