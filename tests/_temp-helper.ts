@@ -1,9 +1,19 @@
 import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
 
 const roots: string[] = [];
 
 export function registerTempRoot(dir: string) {
   roots.push(dir);
+}
+
+export async function createTempDir(suffix = ''): Promise<string> {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
+  const dir = suffix ? path.join(base, suffix) : base;
+  await fs.mkdir(dir, { recursive: true });
+  registerTempRoot(base);
+  return dir;
 }
 
 export async function cleanupTempRoots() {

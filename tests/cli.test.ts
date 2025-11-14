@@ -1,8 +1,7 @@
 import { spawn } from 'child_process';
 import fs from 'fs/promises';
-import os from 'os';
 import path from 'path';
-import { registerTempRoot } from './_temp-helper';
+import { createTempDir } from './_temp-helper';
 // allow longer timeout for CLI integration test
 jest.setTimeout(20000);
 
@@ -26,9 +25,7 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 10000) {
 }
 
 test('CLI generates DOT and attempts SVG (graceful if dot missing)', async () => {
-  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
-  registerTempRoot(base);
-  const outDir = path.join(base, 'cli-case2');
+  const outDir = await createTempDir('cli-case2');
   // CLI now takes --out as an output directory; JSON will be written to --out/ngrx-graph.json
   const args = ['-d', outDir, '--out', outDir, '--svg'];
   // ensure outDir exists

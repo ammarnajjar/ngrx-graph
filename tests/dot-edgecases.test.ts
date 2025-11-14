@@ -1,11 +1,10 @@
 import fs from 'fs/promises';
-import os from 'os';
 import path from 'path';
 import { makeEdges } from '../src/dot/edges';
 import { generateDotFilesFromPayload } from '../src/dot/main';
 import { makeNodes } from '../src/dot/nodes';
 import { GraphPayload } from '../src/dot/types';
-import { registerTempRoot } from './_temp-helper';
+import { createTempDir } from './_temp-helper';
 
 test('cycle in effects does not infinite loop in focused generator', async () => {
   const payload: GraphPayload = {
@@ -15,9 +14,7 @@ test('cycle in effects does not infinite loop in focused generator', async () =>
     fromReducers: {},
     loadedActions: [],
   };
-  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
-  registerTempRoot(base);
-  const out = path.join(base, 'dot-edgecase-cycle');
+  const out = await createTempDir('dot-edgecase-cycle');
   await generateDotFilesFromPayload(payload, out);
   const focused = await fs.readFile(path.join(out, 'a.dot'), 'utf8');
   expect(focused).toContain('a -> b');
@@ -45,9 +42,7 @@ test('empty payloads produce only digraph wrapper', async () => {
     fromReducers: {},
     loadedActions: [],
   };
-  const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
-  registerTempRoot(base);
-  const out = path.join(base, 'dot-edgecase-empty');
+  const out = await createTempDir('dot-edgecase-empty');
   await generateDotFilesFromPayload(payload, out);
   const all = await fs.readFile(path.join(out, 'all.dot'), 'utf8');
   expect(all.trim()).toMatch(/^digraph \{[\s\S]*\}$/);

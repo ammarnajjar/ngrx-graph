@@ -1,17 +1,13 @@
 import fs from 'fs/promises';
-import os from 'os';
 import path from 'path';
 import { generateDotForActionPayload } from '../src/dot/generator';
 import { GraphPayload } from '../src/dot/types';
-import { registerTempRoot } from './_temp-helper';
+import { createTempDir } from './_temp-helper';
 
 describe('focused DOT reachability', () => {
   test('case3 action1.dot does not include unreachable action3', async () => {
     const payload: GraphPayload = JSON.parse(await fs.readFile(path.resolve('docs/examples/case3/out/ngrx-graph.json'), 'utf8'));
-    const base = await fs.mkdtemp(path.join(os.tmpdir(), 'ngrx-graph-'));
-    registerTempRoot(base);
-    const out = path.join(base, 'test-focused');
-    await fs.mkdir(out, { recursive: true });
+    const out = await createTempDir('test-focused');
     await generateDotForActionPayload(payload, 'action1', out);
     const dot = await fs.readFile(path.join(out, 'action1.dot'), 'utf8');
     expect(dot).toContain('action1');
