@@ -30,7 +30,8 @@ program
   .option('-c, --concurrency <n>', 'concurrency for file parsing', String(8))
   .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
   .option('-a, --all', 'only generate the aggregated all.dot (no per-action files)', false)
-  .option('-f, --force', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
+  .option('-j, --json', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
+  .option('--no-cache', 'do not reuse existing ngrx-graph.json; always re-scan')
   .argument('[action]', 'action name to focus (positional; overrides --action and --all)')
   .addHelpText('after', `
 
@@ -46,18 +47,25 @@ Examples:
   # Generate focused DOT/SVG for a specific action (positional argument)
   $ ngrx-graph "MyAction" -d ./src --out ./out --svg
 
-  # Force re-generate JSON and stop (writes ./out/ngrx-graph.json)
-  $ ngrx-graph -d ./src --out ./out --force
+  # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --json
+
+  # Re-scan even if an existing JSON payload is present
+  $ ngrx-graph -d ./src --out ./out --no-cache
 
 Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--force' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--no-cache' to force a re-scan but still continue to generate DOT/SVG when combined with other flags.
 `)
   .parse(process.argv);
 
 const opts = program.opts();
+// commander represents a negated option like `--no-cache` by creating a
+// positive property `cache` with a boolean value. Normalize to a single
+// `noCache` boolean for easier checks below.
+const noCache = Boolean(opts.noCache) || (typeof opts.cache === 'boolean' ? !opts.cache : false);
 // allow positional action argument to override flag and --all
 const positionalAction = program.args && program.args.length ? program.args[0] : undefined;
 if (positionalAction) {
@@ -69,62 +77,85 @@ if (positionalAction) {
 async function run() {
   const dir = path.resolve(opts.dir);
   const concurrency = Math.max(1, parseInt(opts.concurrency, 10) || 8);
-  console.log(chalk.hex('#4DA6FF')(`Scanning directory: ${dir}`));
   const pattern = '**/*actions.ts';
-  console.log(chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`));
-  if (opts.verbose) console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
-  const startTime = Date.now();
-  // count files matching pattern for progress info
-  let filesCount = 0;
-  try {
-    const files = await fg(pattern, { cwd: dir, onlyFiles: true });
-    filesCount = files.length;
-  } catch (err) {
-    console.log(chalk.yellow('Could not count files for pattern (continuing):'), err);
-  }
-  if (filesCount && opts.verbose) console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
-  const list = await scanActions({ dir, pattern, concurrency });
-  const scanDuration = (Date.now() - startTime) / 1000;
-  console.log(chalk.green(`Scanning done: found ${list.length} actions in ${scanDuration.toFixed(2)}s`));
-  if (opts.verbose) {
-    console.log(chalk.gray('Actions:'));
-    for (const a of list) {
-      console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
-    }
-  }
-  // resolve output directory. If the user provided a relative path for --out,
-  // interpret it relative to the current working directory (where the tool
-  // was invoked), not the scan directory. Absolute paths are left as-is.
+
+  // resolve output directory early so we can check for an existing JSON
   const outDir = opts.out
     ? (path.isAbsolute(opts.out) ? path.resolve(opts.out) : path.resolve(process.cwd(), opts.out))
     : dir;
   const outFile = path.join(outDir, 'ngrx-graph.json');
-  const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
-  const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
-  const fromComponents = componentsResult.mapping ?? {};
-  const effectsResult = await scanEffects({ dir, pattern: '**/*.effects.ts', concurrency });
-  const fromEffects = effectsResult.mapping ?? {};
-  const reducersResult = await scanReducers({ dir, pattern: '**/*reducer*.ts', concurrency });
-  const fromReducers = reducersResult.mapping ?? {};
-  // merge loaded actions from components and effects
-  const loadedFromComponents = componentsResult.loaded ?? [];
-  const loadedFromEffects = effectsResult.loaded ?? [];
-  const loadedActions = [...loadedFromComponents, ...loadedFromEffects];
-  const payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions };
 
-  // always write the JSON payload to disk (no printing)
-  await import('fs/promises').then(async fs => {
-    await fs.mkdir(outDir, { recursive: true });
-    await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
-  });
-  console.log(chalk.green(`Wrote ${outFile}`));
+  const startTime = Date.now();
 
-  // --force: always regenerate the JSON file first. If --force is used alone
+  // If JSON already exists and --json not provided, reuse it and skip the scan
+  let payload: Record<string, unknown> | undefined;
+  if (!noCache) {
+    try {
+      const stat = await fs.stat(outFile).catch(() => null);
+      if (stat && stat.isFile()) {
+        try {
+          const txt = await fs.readFile(outFile, 'utf8');
+          payload = JSON.parse(txt);
+          console.log(chalk.green(`Using existing JSON payload at ${outFile}`));
+        } catch (readErr) {
+          console.log(chalk.yellow('Found existing JSON but failed to read/parse it; will re-scan:'), String(readErr));
+        }
+      }
+    } catch {
+      // ignore and fall back to scanning
+    }
+  }
+
+  if (!payload) {
+    console.log(chalk.hex('#4DA6FF')(`Scanning directory: ${dir}`));
+    console.log(chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`));
+    if (opts.verbose) console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
+    // count files matching pattern for progress info
+    let filesCount = 0;
+    try {
+      const files = await fg(pattern, { cwd: dir, onlyFiles: true });
+      filesCount = files.length;
+    } catch (err) {
+      console.log(chalk.yellow('Could not count files for pattern (continuing):'), err);
+    }
+    if (filesCount && opts.verbose) console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
+    const list = await scanActions({ dir, pattern, concurrency });
+    const scanDuration = (Date.now() - startTime) / 1000;
+    console.log(chalk.green(`Scanning done: found ${list.length} actions in ${scanDuration.toFixed(2)}s`));
+    if (opts.verbose) {
+      console.log(chalk.gray('Actions:'));
+      for (const a of list) {
+        console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
+      }
+    }
+
+    const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
+    const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
+    const fromComponents = componentsResult.mapping ?? {};
+    const effectsResult = await scanEffects({ dir, pattern: '**/*.effects.ts', concurrency });
+    const fromEffects = effectsResult.mapping ?? {};
+    const reducersResult = await scanReducers({ dir, pattern: '**/*reducer*.ts', concurrency });
+    const fromReducers = reducersResult.mapping ?? {};
+    // merge loaded actions from components and effects
+    const loadedFromComponents = componentsResult.loaded ?? [];
+    const loadedFromEffects = effectsResult.loaded ?? [];
+    const loadedActions = [...loadedFromComponents, ...loadedFromEffects];
+    payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions };
+
+    // always write the JSON payload to disk
+    await import('fs/promises').then(async fsx => {
+      await fsx.mkdir(outDir, { recursive: true });
+      await fsx.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
+    });
+    console.log(chalk.green(`Wrote ${outFile}`));
+  }
+
+  // --json: always regenerate the JSON file first. If --json is used alone
   // (no other generation flags), stop after writing JSON. If combined with
   // other flags (positional action, --all, or --svg), continue to generate
   // DOT/SVG after regenerating the JSON.
   const hasGenerationFlags = !!(opts.action || opts.all || opts.svg);
-  if (opts.force && !hasGenerationFlags) {
+  if (opts.json && !hasGenerationFlags) {
     const totalDuration = (Date.now() - startTime) / 1000;
     console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
     return;

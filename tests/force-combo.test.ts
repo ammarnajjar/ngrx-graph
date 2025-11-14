@@ -23,11 +23,11 @@ function runCli(args: string[], cwd = process.cwd(), timeout = 15000) {
   });
 }
 
-test('--force alone writes JSON and stops', async () => {
+test('--json alone writes JSON and stops', async () => {
   const outDir = path.resolve('tmp/force-case1');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
-  const args = ['-d', outDir, '--out', outDir, '--force'];
+  const args = ['-d', outDir, '--out', outDir, '--json'];
   const res = await runCli(args);
   expect(res.code).toBeGreaterThanOrEqual(0);
   // JSON must exist; there should be no .dot files
@@ -37,12 +37,59 @@ test('--force alone writes JSON and stops', async () => {
   expect(hasDot).toBe(false);
 });
 
-test('--force combined with --all regenerates JSON and writes all.dot', async () => {
+test('reuses existing JSON when --no-cache not provided', async () => {
+  const outDir = path.resolve('tmp/cache-case1');
+  await fs.rm(outDir, { recursive: true, force: true });
+  await fs.mkdir(outDir, { recursive: true });
+  const outFile = path.join(outDir, 'ngrx-graph.json');
+  // create a simple actions source so scanning will find a predictable action
+  const srcDir = path.join(outDir, 'src');
+  await fs.mkdir(srcDir, { recursive: true });
+  const actionFile = path.join(srcDir, 'sample.actions.ts');
+  await fs.writeFile(actionFile, `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`, 'utf8');
+
+  const payload = { allActions: [{ name: 'preexisting', nested: false }] };
+  await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
+  const before = await fs.readFile(outFile, 'utf8');
+
+  const args = ['-d', outDir, '--out', outDir];
+  const res = await runCli(args);
+  expect(res.code).toBeGreaterThanOrEqual(0);
+
+  const after = await fs.readFile(outFile, 'utf8');
+  // without --no-cache we should reuse the preexisting JSON (content unchanged)
+  expect(after).toBe(before);
+});
+
+test('rewrites JSON when --no-cache provided', async () => {
+  const outDir = path.resolve('tmp/cache-case2');
+  await fs.rm(outDir, { recursive: true, force: true });
+  await fs.mkdir(outDir, { recursive: true });
+  const outFile = path.join(outDir, 'ngrx-graph.json');
+  // create a simple actions source so scanning will find a predictable action
+  const srcDir = path.join(outDir, 'src');
+  await fs.mkdir(srcDir, { recursive: true });
+  const actionFile = path.join(srcDir, 'sample.actions.ts');
+  await fs.writeFile(actionFile, `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`, 'utf8');
+
+  const payload = { allActions: [{ name: 'preexisting', nested: false }] };
+  await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
+
+  const args = ['-d', outDir, '--out', outDir, '--no-cache'];
+  const res = await runCli(args, process.cwd(), 20000);
+  expect(res.code).toBeGreaterThanOrEqual(0);
+
+  const after = await fs.readFile(outFile, 'utf8');
+  // the rewritten payload should contain the scanned action name
+  expect(after).toMatch(/Scanned/);
+});
+
+test('--json combined with --all regenerates JSON and writes all.dot', async () => {
   const outDir = path.resolve('tmp/force-case2');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
-  const args = ['-d', outDir, '--out', outDir, '--force', '--all'];
+  const args = ['-d', outDir, '--out', outDir, '--json', '--all'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -52,14 +99,14 @@ test('--force combined with --all regenerates JSON and writes all.dot', async ()
   expect(hasAllDot).toBe(true);
 });
 
-test('--force combined with positional action regenerates JSON and writes focused dot', async () => {
+test('--json combined with positional action regenerates JSON and writes focused dot', async () => {
   const outDir = path.resolve('tmp/force-case3');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
   // use an action name known to exist in examples
   const actionName = 'Action1';
-  const args = ['-d', outDir, '--out', outDir, '--force', actionName];
+  const args = ['-d', outDir, '--out', outDir, '--json', actionName];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
@@ -69,12 +116,12 @@ test('--force combined with positional action regenerates JSON and writes focuse
   expect(hasFocused).toBe(true);
 });
 
-test('--force combined with --svg regenerates JSON and attempts SVG generation', async () => {
+test('--json combined with --svg regenerates JSON and attempts SVG generation', async () => {
   const outDir = path.resolve('tmp/force-case4');
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
 
-  const args = ['-d', outDir, '--out', outDir, '--force', '--all', '--svg'];
+  const args = ['-d', outDir, '--out', outDir, '--json', '--all', '--svg'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);

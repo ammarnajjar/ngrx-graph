@@ -3,6 +3,9 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const chalk = require('chalk');
+
+const info = (msg) => console.log(chalk.hex('#4DA6FF')(msg));
 
 const repoRoot = path.join(__dirname, '..');
 const rawArgs = process.argv.slice(2) || [];
@@ -38,13 +41,15 @@ const helpRequested = args.includes('--help') || args.includes('-h');
 const childCwd = helpRequested ? repoRoot : process.cwd();
 
 if (fs.existsSync(compiledCli)) {
-    const node = process.execPath || 'node';
-    const res = spawnSync(node, [compiledCli, ...args], { stdio: 'inherit', cwd: childCwd });
-    process.exit(res.status ?? 0);
+	info(`Using compiled CLI: ${compiledCli}`);
+	const node = process.execPath || 'node';
+	const res = spawnSync(node, [compiledCli, ...args], { stdio: 'inherit', cwd: childCwd });
+	process.exit(res.status ?? 0);
 } else {
-    // Fallback: run TypeScript CLI via ts-node/register
-    const node = process.execPath || 'node';
-    const tsPath = path.join(repoRoot, 'src', 'cli.ts');
-    const res = spawnSync(node, ['-r', 'ts-node/register', tsPath, ...args], { stdio: 'inherit', cwd: childCwd });
-    process.exit(res.status ?? 0);
+	// Fallback: run TypeScript CLI via ts-node/register
+	info('Falling back to ts-node/register (running TypeScript CLI)');
+	const node = process.execPath || 'node';
+	const tsPath = path.join(repoRoot, 'src', 'cli.ts');
+	const res = spawnSync(node, ['-r', 'ts-node/register', tsPath, ...args], { stdio: 'inherit', cwd: childCwd });
+	process.exit(res.status ?? 0);
 }

@@ -36,7 +36,7 @@ Graph.examples = [
   '$ ngrx-graph -d ./src --out ./out',
   '$ ngrx-graph -d ./src --out ./out --all --svg',
   '$ ngrx-graph "MyAction" -d ./src --out ./out --svg',
-  '$ ngrx-graph -d ./src --out ./out --force'
+  '$ ngrx-graph -d ./src --out ./out --json'
 ];
 
 Graph.description += `
@@ -53,14 +53,14 @@ Examples:
   # Generate focused DOT/SVG for a specific action (positional argument)
   $ ngrx-graph "MyAction" -d ./src --out ./out --svg
 
-  # Force re-generate JSON and stop (writes ./out/ngrx-graph.json)
-  $ ngrx-graph -d ./src --out ./out --force
+  # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --json
 
 Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--force' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.`;
+  - Use '--json' to re-generate the JSON first; combine it with other flags to continue generating DOT/SVG.`;
 /* SYNCHRONIZED_HELP_END */
 
 
@@ -73,7 +73,7 @@ Graph.flags = {
   concurrency: Flags.integer({char: 'c', description: 'concurrency for file parsing', default: 8}),
   svg: Flags.boolean({char: 's', description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', default: false}),
   all: Flags.boolean({char: 'a', description: 'only generate the aggregated all.dot (no per-action files)', default: false}),
-  force: Flags.boolean({char: 'f', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false}),
+  json: Flags.boolean({char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false}),
 };
 export { };
 

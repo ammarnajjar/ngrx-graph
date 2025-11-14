@@ -40,20 +40,20 @@ ngrx-graph "MyAction" -d ./src --out ./out --svg
 ngrx-graph -a -d ./src --out ./out --svg
 ```
 
-- Force re-generate the JSON (use `--force` alone to stop after JSON):
+-- Re-generate the JSON (use `--json` alone to stop after JSON):
 
 ```bash
-ngrx-graph -d ./src --out ./out --force
+ngrx-graph -d ./src --out ./out --json
 ```
 
-Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-f/--force`, `-v/--verbose`, `-c/--concurrency`
+Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`
 
 Notes
 -----
 
 - The CLI always writes the JSON payload to the file specified by `--out` (default: `ngrx-graph.json`).
 - DOT and SVG files are written under the directory specified by `--dir`.
-- Use `--force` to re-generate the JSON first; combine with other flags to continue generating DOT/SVG.
+-- Use `--json` to re-generate the JSON first; combine with other flags to continue generating DOT/SVG.
 
 
 <details>

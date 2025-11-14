@@ -33,8 +33,8 @@ for (const dir of entries) {
   // Use the dev binary which now accepts flags directly. Resolve absolute
   // paths to avoid nested-path issues and run from repo root.
   const devBin = path.join(repoRoot, 'bin', 'dev');
-  // Step 1: force regeneration of the JSON payload only
-  const forceArgs = ['-d', srcDir, '--out', outDir, '--force'];
+  // Step 1: regenerate the JSON payload only
+  const forceArgs = ['-d', srcDir, '--out', outDir, '--json'];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const opts = {cwd: repoRoot, stdio: 'inherit', env: process.env} as any;
   const r1 = spawnSync(devBin, forceArgs, opts);
