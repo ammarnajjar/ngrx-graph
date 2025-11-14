@@ -8,12 +8,19 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   const actionToPredecessors: Record<string, Set<string>> = {};
   const actionToSuccessors: Record<string, Set<string>> = {};
 
+  function ensureSet(val: unknown): Set<string> {
+    if (val instanceof Set) return val as Set<string>;
+    if (Array.isArray(val)) return new Set(val as string[]);
+    return new Set<string>();
+  }
+
   for (const io of Object.values(payload.fromEffects || {})) {
     for (const inp of io.input)
       for (const outAct of io.output) {
-        actionToSuccessors[inp] = actionToSuccessors[inp] ?? new Set();
+        actionToSuccessors[inp] = ensureSet(actionToSuccessors[inp]);
         actionToSuccessors[inp].add(outAct);
-        actionToPredecessors[outAct] = actionToPredecessors[outAct] ?? new Set();
+
+        actionToPredecessors[outAct] = ensureSet(actionToPredecessors[outAct]);
         actionToPredecessors[outAct].add(inp);
       }
   }
@@ -22,6 +29,7 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
     for (const p of l.payloadActions) {
       actionToSuccessors[l.name] = actionToSuccessors[l.name] ?? new Set();
       actionToSuccessors[l.name].add(p);
+
       actionToPredecessors[p] = actionToPredecessors[p] ?? new Set();
       actionToPredecessors[p].add(l.name);
     }

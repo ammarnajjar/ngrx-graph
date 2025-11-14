@@ -24,6 +24,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
         const outputs = new Set<string>();
 
         function walkEffectBody(n: ts.Node) {
+          // ofType(...) inputs
           if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'ofType') {
             for (const a of n.arguments) {
               if (ts.isIdentifier(a)) inputs.add(a.text);
@@ -31,6 +32,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
+          // map/mergeMap/... handlers: inspect returned calls inside the function body
           if (
             ts.isCallExpression(n) &&
             ts.isIdentifier(n.expression) &&
@@ -57,6 +59,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
+          // Array literal of actions
           if (ts.isArrayLiteralExpression(n)) {
             for (const el of n.elements) {
               if (ts.isCallExpression(el)) {
@@ -82,6 +85,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
+          // store.dispatch(action(...)) and similar patterns
           if (
             ts.isCallExpression(n) &&
             ts.isPropertyAccessExpression(n.expression) &&
@@ -128,6 +132,32 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
+          // General case: catch action creator calls passed as arguments to other calls
+          // e.g. orderItemHandle(..., vouchersAdded({ amount: ... }))
+          if (ts.isCallExpression(n)) {
+            for (const arg of n.arguments) {
+              if (ts.isCallExpression(arg)) {
+                const cal = arg.expression;
+                if (ts.isIdentifier(cal) || ts.isPropertyAccessExpression(cal)) {
+                  const name = ts.isIdentifier(cal) ? cal.text : cal.name.text;
+                  outputs.add(name);
+                  const firstInner = arg.arguments && arg.arguments.length ? arg.arguments[0] : undefined;
+                  if (firstInner && ts.isObjectLiteralExpression(firstInner)) {
+                    const payloads: string[] = [];
+                    for (const p of firstInner.properties) {
+                      if (ts.isPropertyAssignment(p) && ts.isCallExpression(p.initializer)) {
+                        const pc = p.initializer.expression;
+                        if (ts.isIdentifier(pc)) payloads.push(pc.text);
+                        else if (ts.isPropertyAccessExpression(pc)) payloads.push(pc.name.text);
+                      }
+                    }
+                    if (payloads.length) loaded.push({ name, payloadActions: payloads });
+                  }
+                }
+              }
+            }
+          }
+
           ts.forEachChild(n, walkEffectBody);
         }
 
@@ -138,6 +168,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
         res[propName].output.push(...Array.from(outputs));
         return;
       }
+
     }
 
     ts.forEachChild(node, visit);
@@ -151,3 +182,4 @@ export async function parseEffectsFromFile(file: string) {
   const text = await fs.readFile(file, 'utf8');
   return parseEffectsFromText(text, file);
 }
+
