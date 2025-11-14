@@ -39,6 +39,7 @@ program
   .option('-v, --verbose', 'enable verbose logging', false)
   .option('-c, --concurrency <n>', 'concurrency for file parsing', String(getDefaultConcurrency()))
   .option('-s, --svg', 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)', false)
+  .option('--viz', 'prefer viz.js for SVG generation (useful when dot is unavailable)', false)
   .option('-a, --all', 'only generate the aggregated all.dot (no per-action files)', false)
   .option('--dot', 'also generate DOT files (per-action and aggregated)', false)
   .option('-j, --json', 'scan and write ngrx-graph.json only (no DOT/SVG)', false)
@@ -80,7 +81,6 @@ Notes:
 `,
   )
   .parse(process.argv);
-
 const opts = program.opts();
 // Normalize cache option: new default is no-cache; user can pass `--cache`
 // to enable reuse of existing JSON payload.
@@ -115,6 +115,16 @@ async function run() {
   const outFile = path.join(outDir, 'ngrx-graph.json');
 
   const startTime = Date.now();
+
+  async function tryDotToSvg(dotPath: string, svgPath: string) {
+    try {
+      const execFileP = promisify(execFile);
+      await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   // If JSON already exists and --json not provided, reuse it and skip the scan
   // only when the user explicitly requested `--cache`.
@@ -238,37 +248,47 @@ async function run() {
       const p = await gen.generateDotForAction(outFile, opts.action, dotOut);
       console.log(chalk.green(`Wrote focused DOT file ${p}`));
       if (opts.svg) {
-        // try to convert the focused dot to svg
-        try {
-          const svgPath = path.join(dotOut, `${opts.action}.svg`);
-          const execFileP = promisify(execFile);
-          await execFileP('dot', ['-Tsvg', p, '-o', svgPath]);
-          console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-          // If the user didn't explicitly request DOTs, remove the generated
-          // DOT now that SVG exists to avoid leaving temporary DOT artifacts.
-          if (!dotExplicit) {
-            await fs.rm(p).catch(() => {});
-            if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${p} after SVG generation`));
-          }
-        } catch (err) {
-          console.log(chalk.yellow('Could not generate SVG with `dot` (falling back to viz.js):'), String(err));
+        const svgPath = path.join(dotOut, `${opts.action}.svg`);
+        if (opts.viz) {
           try {
             const dotTxt = await fs.readFile(p, 'utf8');
-            const svgPathFallback = path.join(dotOut, `${opts.action}.svg`);
             const svg = await renderDotWithViz(dotTxt);
             if (svg) {
-              await fs.writeFile(svgPathFallback, svg, 'utf8');
-              console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
-              if (!dotExplicit) {
-                await fs.rm(p).catch(() => {});
-                if (opts.verbose)
-                  console.log(chalk.gray(`Removed DOT file ${p} after SVG generation (viz.js fallback)`));
-              }
+              await fs.writeFile(svgPath, svg, 'utf8');
+              console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
+              if (!dotExplicit) await fs.rm(p).catch(() => {});
+              if (!svg) throw new Error('viz failed');
             } else {
-              console.log(chalk.yellow('Could not generate SVG via viz.js (install viz.js to enable fallback)'));
+              // fallback to dot
+              const ok = await tryDotToSvg(p, svgPath);
+              if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
             }
-          } catch (readErr) {
-            console.log(chalk.yellow('Could not read DOT file for viz.js fallback:'), String(readErr));
+          } catch (err) {
+            console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
+            const ok = await tryDotToSvg(p, svgPath);
+            if (!ok) console.log(chalk.yellow('Could not generate SVG with `dot` either'));
+            if (!dotExplicit) await fs.rm(p).catch(() => {});
+          }
+        } else {
+          const ok = await tryDotToSvg(p, svgPath);
+          if (ok) {
+            console.log(chalk.green(`Wrote SVG file ${svgPath}`));
+            if (!dotExplicit) await fs.rm(p).catch(() => {});
+          } else {
+            console.log(chalk.yellow('Could not generate SVG with `dot` (falling back to viz.js):'));
+            try {
+              const dotTxt = await fs.readFile(p, 'utf8');
+              const svg = await renderDotWithViz(dotTxt);
+              if (svg) {
+                await fs.writeFile(svgPath, svg, 'utf8');
+                console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
+                if (!dotExplicit) await fs.rm(p).catch(() => {});
+              } else {
+                console.log(chalk.yellow('Could not generate SVG via viz.js (install viz.js to enable fallback)'));
+              }
+            } catch (readErr) {
+              console.log(chalk.yellow('Could not read DOT file for viz.js fallback:'), String(readErr));
+            }
           }
         }
       }
@@ -277,40 +297,44 @@ async function run() {
       const p = await main.generateAllFromJson(outFile, dotOut);
       console.log(chalk.green(`Wrote aggregated DOT file ${p}`));
       if (opts.svg) {
-        // convert only the all.dot to svg
-        try {
-          const execFileP = promisify(execFile);
-          const svgPath = path.join(dotOut, 'all.svg');
-          await execFileP('dot', ['-Tsvg', p, '-o', svgPath]);
-          console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-          if (!dotExplicit) {
-            await fs.rm(p).catch(() => {});
-            if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${p} after SVG generation`));
-          }
-        } catch (innerErr) {
-          console.log(
-            chalk.yellow(`Failed to convert all.dot -> svg with dot (falling back to viz.js):`),
-            String(innerErr),
-          );
+        const svgPath = path.join(dotOut, 'all.svg');
+          if (opts.viz) {
           try {
             const dotTxt = await fs.readFile(p, 'utf8');
-            const svgPathFallback = path.join(dotOut, 'all.svg');
             const svg = await renderDotWithViz(dotTxt);
             if (svg) {
-              await fs.writeFile(svgPathFallback, svg, 'utf8');
-              console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
-              if (!dotExplicit) {
-                await fs.rm(p).catch(() => {});
-                if (opts.verbose)
-                  console.log(chalk.gray(`Removed DOT file ${p} after SVG generation (viz.js fallback)`));
-              }
+              await fs.writeFile(svgPath, svg, 'utf8');
+              console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
+              if (!dotExplicit) await fs.rm(p).catch(() => {});
             } else {
-              console.log(
-                chalk.yellow(`Could not generate SVG for ${p} via viz.js (install viz.js to enable fallback)`),
-              );
+              const ok = await tryDotToSvg(p, svgPath);
+              if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
             }
-          } catch (readErr) {
-            console.log(chalk.yellow(`Could not read DOT file ${p} for viz.js fallback:`), String(readErr));
+          } catch (err) {
+            console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
+            const ok = await tryDotToSvg(p, svgPath);
+            if (!ok) console.log(chalk.yellow('Could not generate SVG with `dot` either'));
+            if (!dotExplicit) await fs.rm(p).catch(() => {});
+          }
+        } else {
+          const ok = await tryDotToSvg(p, svgPath);
+          if (ok) {
+            console.log(chalk.green(`Wrote SVG file ${svgPath}`));
+            if (!dotExplicit) await fs.rm(p).catch(() => {});
+          } else {
+            try {
+              const dotTxt = await fs.readFile(p, 'utf8');
+              const svg = await renderDotWithViz(dotTxt);
+              if (svg) {
+                await fs.writeFile(svgPath, svg, 'utf8');
+                console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
+                if (!dotExplicit) await fs.rm(p).catch(() => {});
+              } else {
+                console.log(chalk.yellow(`Could not generate SVG for ${p} via viz.js (install viz.js to enable fallback)`));
+              }
+            } catch (readErr) {
+              console.log(chalk.yellow(`Could not read DOT file ${p} for viz.js fallback:`), String(readErr));
+            }
           }
         }
       }
@@ -326,39 +350,59 @@ async function run() {
           for (const f of files.filter(x => x.endsWith('.dot'))) {
             const dotPath = path.join(dotOut, f);
             const svgPath = path.join(dotOut, `${path.basename(f, '.dot')}.svg`);
-            try {
-              await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
-              console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-              if (!dotExplicit) {
-                await fs.rm(dotPath).catch(() => {});
-                if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation`));
-              }
-            } catch (innerErr) {
-              console.log(
-                chalk.yellow(`Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`),
-                String(innerErr),
-              );
+            if (opts.viz) {
               try {
                 const dotTxt = await fs.readFile(dotPath, 'utf8');
-                const svgPathFallback = svgPath;
                 const svg = await renderDotWithViz(dotTxt);
                 if (svg) {
-                  await fs.writeFile(svgPathFallback, svg, 'utf8');
-                  console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
-                  if (!dotExplicit) {
-                    await fs.rm(dotPath).catch(() => {});
-                    if (opts.verbose)
-                      console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
-                  }
+                  await fs.writeFile(svgPath, svg, 'utf8');
+                  console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
+                  if (!dotExplicit) await fs.rm(dotPath).catch(() => {});
                 } else {
-                  console.log(
-                    chalk.yellow(
-                      `Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`,
-                    ),
-                  );
+                  const ok = await tryDotToSvg(dotPath, svgPath);
+                  if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
                 }
-              } catch (readErr) {
-                console.log(chalk.yellow(`Could not read DOT file ${dotPath} for viz.js fallback:`), String(readErr));
+              } catch (err) {
+                console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
+                const ok = await tryDotToSvg(dotPath, svgPath);
+                if (!ok) console.log(chalk.yellow(`Could not generate SVG for ${dotPath} with dot either`));
+                if (!dotExplicit) await fs.rm(dotPath).catch(() => {});
+              }
+            } else {
+              try {
+                await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
+                console.log(chalk.green(`Wrote SVG file ${svgPath}`));
+                if (!dotExplicit) {
+                  await fs.rm(dotPath).catch(() => {});
+                  if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation`));
+                }
+              } catch (innerErr) {
+                console.log(
+                  chalk.yellow(`Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`),
+                  String(innerErr),
+                );
+                try {
+                  const dotTxt = await fs.readFile(dotPath, 'utf8');
+                  const svgPathFallback = svgPath;
+                  const svg = await renderDotWithViz(dotTxt);
+                  if (svg) {
+                    await fs.writeFile(svgPathFallback, svg, 'utf8');
+                    console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
+                    if (!dotExplicit) {
+                      await fs.rm(dotPath).catch(() => {});
+                      if (opts.verbose)
+                        console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
+                    }
+                  } else {
+                    console.log(
+                      chalk.yellow(
+                        `Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`,
+                      ),
+                    );
+                  }
+                } catch (readErr) {
+                  console.log(chalk.yellow(`Could not read DOT file ${dotPath} for viz.js fallback:`), String(readErr));
+                }
               }
             }
           }

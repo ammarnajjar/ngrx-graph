@@ -92,6 +92,7 @@ Graph.flags = {
     description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)',
     default: false,
   }),
+  viz: Flags.boolean({ description: 'prefer viz.js for SVG generation (useful when dot is unavailable)', default: false }),
   all: Flags.boolean({
     char: 'a',
     description: 'only generate the aggregated all.dot (no per-action files)',
@@ -99,4 +100,5 @@ Graph.flags = {
   }),
   json: Flags.boolean({ char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false }),
 };
-export {};
+export { };
+

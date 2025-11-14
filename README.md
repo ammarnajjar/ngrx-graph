@@ -61,6 +61,8 @@ Short flags: `-d/--dir`, `-o/--out (directory)`, `-a/--all`, `-s/--svg`, `-j/--j
 
 - Default concurrency: the CLI computes a sensible default of `max(1, CPU_COUNT - 2)` (i.e. number of CPUs minus two, with a minimum of 1). This keeps some CPU available for other tasks on the machine while still enabling parallel parsing. Override with `-c/--concurrency <n>` when you need more or less parallelism.
 
+- Prefer viz.js for SVG: pass `--viz` to prefer using viz.js (a WASM/JS renderer) for SVG generation. When provided the CLI will try viz.js first and fall back to Graphviz `dot` if viz.js fails. Without `--viz` the CLI will attempt the native `dot` executable first and use viz.js as a fallback.
+
 <details>
   <summary>Graph Keys</summary>
 
