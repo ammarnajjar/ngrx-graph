@@ -9,6 +9,13 @@ const project = path.join(__dirname, '..', 'tsconfig.json');
 // In dev mode -> use ts-node and dev plugins
 process.env.NODE_ENV = 'development';
 
+// Save the directory where the user invoked the wrapper so we can forward
+// it as `--dir` when no explicit `-d/--dir` was provided. This preserves the
+// common expectation that running `./bin/dev` from a project scans that
+// project even though we spawn the TypeScript CLI with the repository root
+// as the child process cwd for predictable module resolution.
+const invocationCwd = process.cwd();
+
 // If the user invoked flag-style args (e.g. `./bin/dev -d ./src --out ./out`),
 // used the single-command form (`graph <action>`), or invoked a positional
 // action first (e.g. `./bin/dev loadProductions ...`), forward directly to the
@@ -50,6 +57,14 @@ if (looksLikeFlags || looksLikeSingleCommand) {
       const [k, v] = a.split('=');
       forwardArgs[i] = `${k}=${resolveIfPath(v)}`;
     }
+  }
+
+  // If the user did not provide a scan directory, forward the original
+  // invocation cwd as `--dir` so the TypeScript CLI scans the directory the
+  // user executed the wrapper from (typical developer expectation).
+  const hasDirFlag = forwardArgs.some(a => a === '-d' || a === '--dir' || String(a).startsWith('--dir='));
+  if (!hasDirFlag) {
+    forwardArgs.push(`--dir=${resolveIfPath(invocationCwd)}`);
   }
 
   const args = ['-r', 'ts-node/register', path.join(__dirname, '..', 'src', 'cli.ts'), ...forwardArgs];
