@@ -202,6 +202,31 @@ async function run() {
       ...filterLoadedByAllActions(loadedFromComponents, allActionNames),
       ...filterLoadedByAllActions(loadedFromEffects, allActionNames),
     ];
+
+    // Filter mappings so that only known action names (from allActions) are present.
+    // For effects we only keep actual action names in both inputs and outputs.
+    // This avoids treating operator tokens (e.g. `map`) as actions.
+    // filter fromComponents: keep only actions that exist
+    for (const [comp, acts] of Object.entries(fromComponents)) {
+      const kept = (acts || []).filter(a => allActionNames.has(a));
+      if (kept.length) fromComponents[comp] = kept;
+      else delete fromComponents[comp];
+    }
+
+    // filter fromReducers
+    for (const [r, acts] of Object.entries(fromReducers)) {
+      const kept = (acts || []).filter(a => allActionNames.has(a));
+      if (kept.length) fromReducers[r] = kept;
+      else delete fromReducers[r];
+    }
+
+    // filter fromEffects: inputs and outputs must be real actions
+    for (const [k, v] of Object.entries(fromEffects)) {
+      const inp = (v.input || []).filter(x => allActionNames.has(x));
+      const out = (v.output || []).filter(x => allActionNames.has(x));
+      if (inp.length || out.length) fromEffects[k] = { input: inp, output: out };
+      else delete fromEffects[k];
+    }
     payload = {
       allActions,
       fromComponents,

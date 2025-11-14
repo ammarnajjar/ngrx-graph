@@ -102,13 +102,21 @@ export async function generateDotForActionPayload(payload: GraphPayload, actionN
   for (const c of includedComponents)
     lines.push(`${c} [shape="box", color=blue, fillcolor=blue, fontcolor=white, style=filled]`);
   const loadedActionNames = new Set((payload.loadedActions || []).map(l => l.name));
+  // collect all payload action names so we can style payload nodes specially
+  const payloadActionNames = new Set<string>();
+  for (const l of payload.loadedActions || []) {
+    for (const p of l.payloadActions) payloadActionNames.add(p);
+  }
   for (const a of payload.allActions) {
     if (!includedActions.has(a.name)) continue;
     if (a.name === actionName) {
       lines.push(`${a.name} [color=green, fillcolor="#007000", fontcolor=white, style=filled]`);
+    } else if (payloadActionNames.has(a.name)) {
+      // payloadActions get a warm creme background fill to stand out in SVGs
+      lines.push(`${a.name} [fillcolor="#f5e9d6", style=filled]`);
     } else if (loadedActionNames.has(a.name)) {
-      // only loadedActions get a background fill
-      lines.push(`${a.name} [fillcolor=linen, style=filled]`);
+      // loaded action nodes (loaders) keep default styling unless they are payloads
+      lines.push(`${a.name}`);
     } else {
       // non-loaded actions: no background color (default styling)
       lines.push(`${a.name}`);

@@ -14,12 +14,14 @@ describe('dot generator styling', () => {
         eff1: { input: ['focusAction'], output: ['loadedOne', 'nonLoaded2'] }
       },
       loadedActions: [
-        { name: 'loadedOne', payloadActions: ['pA'] }
+        { name: 'loadedOne', payloadActions: ['pA', 'orderCompletedDelivery'] }
       ],
       fromReducers: {},
       allActions: [
         { name: 'focusAction', nested: false },
         { name: 'loadedOne', nested: false },
+        { name: 'pA', nested: false },
+        { name: 'orderCompletedDelivery', nested: false },
         { name: 'nonLoaded', nested: false },
         { name: 'nonLoaded2', nested: false }
       ]
@@ -31,8 +33,10 @@ describe('dot generator styling', () => {
     // focused action should be green with specific fillcolor
     expect(dot).toMatch(/focusAction\s*\[.*fillcolor="#007000"/);
 
-    // loaded action should have a fillcolor (linen)
-    expect(dot).toMatch(/loadedOne\s*\[.*fillcolor=linen/);
+    // payload action should have a warm creme fill and the loader should not
+    expect(dot).toMatch(/pA\s*\[.*fillcolor="#f5e9d6"/);
+    expect(dot).toMatch(/orderCompletedDelivery\s*\[.*fillcolor="#f5e9d6"/);
+    expect(dot).not.toMatch(/loadedOne\s*\[.*fillcolor=/);
 
     // non-loaded actions should NOT have a fillcolor attribute
     expect(dot).not.toMatch(/nonLoaded\s*\[.*fillcolor=/);

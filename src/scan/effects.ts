@@ -39,24 +39,27 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             /^(map|mergeMap|switchMap|concatMap|exhaustMap)$/.test(n.expression.text)
           ) {
             for (const a of n.arguments) {
-              if (ts.isArrowFunction(a) || ts.isFunctionExpression(a)) {
-                ts.forEachChild(a, sub => {
-                  if (ts.isCallExpression(sub)) {
-                    const called = sub.expression;
-                    if (ts.isIdentifier(called)) outputs.add(called.text);
-                    else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
-                  }
-                  if (ts.isReturnStatement(sub) && sub.expression) {
-                    const re = sub.expression;
-                    if (ts.isCallExpression(re)) {
-                      const called = re.expression;
+                if (ts.isArrowFunction(a) || ts.isFunctionExpression(a)) {
+                  // recursively walk the function body to find nested call expressions
+                  function walkInside(fnNode: ts.Node) {
+                    if (ts.isCallExpression(fnNode)) {
+                      const called = fnNode.expression;
                       if (ts.isIdentifier(called)) outputs.add(called.text);
                       else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
-                    } else if (ts.isIdentifier(re)) outputs.add(re.text);
+                    }
+                    if (ts.isReturnStatement(fnNode) && fnNode.expression) {
+                      const re = fnNode.expression;
+                      if (ts.isCallExpression(re)) {
+                        const called = re.expression;
+                        if (ts.isIdentifier(called)) outputs.add(called.text);
+                        else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
+                      } else if (ts.isIdentifier(re)) outputs.add(re.text);
+                    }
+                    ts.forEachChild(fnNode, walkInside);
                   }
-                });
+                  walkInside(a);
+                }
               }
-            }
           }
 
           // Array literal of actions
