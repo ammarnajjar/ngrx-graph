@@ -1,15 +1,10 @@
 #!/usr/bin/env node
 import chalk from 'chalk';
-import { execFile } from 'child_process';
 import { Command } from 'commander';
-import fg from 'fast-glob';
-import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import { promisify } from 'util';
 import cleanDotFilesIfNotRequested from './cli/cleanup';
-import { renderDotWithViz, tryDotToSvg } from './cli/svg';
-import scanActions, { scanComponents, scanEffects, scanReducers } from './scan-actions';
+import { generatePayloadIfNeeded, processDotSvgGeneration } from './cli/helpers';
 
 const program = new Command();
 
@@ -108,122 +103,18 @@ async function run() {
 
   // SVG conversion helpers imported from ./cli/svg
 
-  // If JSON already exists and --json not provided, reuse it and skip the scan
-  // only when the user explicitly requested `--cache`.
-  let payload: Record<string, unknown> | undefined;
-  if (useCache) {
-    try {
-      const stat = await fs.stat(outFile).catch(() => null);
-      if (stat && stat.isFile()) {
-        try {
-          const txt = await fs.readFile(outFile, 'utf8');
-          payload = JSON.parse(txt);
-          console.log(chalk.green(`Using existing JSON payload at ${outFile}`));
-        } catch (readErr) {
-          console.log(chalk.yellow('Found existing JSON but failed to read/parse it; will re-scan:'), String(readErr));
-        }
-      }
-    } catch {
-      // best-effort: if reading existing JSON fails, continue to scanning
-    }
-  }
+  // JSON payload generation delegated to helpers
 
-  if (!payload) {
-    console.log(chalk.hex('#4DA6FF')(`Scanning directory: ${dir}`));
-    console.log(chalk.hex('#4DA6FF')(`Concurrency: ${concurrency}  PID: ${process.pid}`));
-    if (opts.verbose) console.log(chalk.hex('#4DA6FF')(`CPUS: ${os.cpus().length}`));
-    // count files matching pattern for progress info
-    let filesCount = 0;
-    try {
-      const files = await fg(pattern, { cwd: dir, onlyFiles: true });
-      filesCount = files.length;
-    } catch (err) {
-      console.log(chalk.yellow('Could not count files for pattern (continuing):'), err);
-    }
-    if (filesCount && opts.verbose) console.log(chalk.gray(`Found ${filesCount} files matching pattern`));
-    const list = await scanActions({ dir, pattern, concurrency });
-    const scanDuration = (Date.now() - startTime) / 1000;
-    console.log(chalk.green(`Scanning done: found ${list.length} actions in ${scanDuration.toFixed(2)}s`));
-    if (opts.verbose) {
-      console.log(chalk.gray('Actions:'));
-      for (const a of list) {
-        console.log(` - ${a.name ?? '<anonymous>'} (${a.kind}) ${a.nested ? '[nested]' : ''} — ${a.file}`);
-      }
-    }
-
-    const allActions = list.map(a => ({
-      name: a.name ?? '',
-      nested: !!a.nested,
-    }));
-    const componentsResult = await scanComponents({
-      dir,
-      pattern: '**/*.component.ts',
-      concurrency,
-    });
-    const fromComponents = componentsResult.mapping ?? {};
-    const effectsResult = await scanEffects({
-      dir,
-      pattern: '**/*.effects.ts',
-      concurrency,
-    });
-    const fromEffects = effectsResult.mapping ?? {};
-    const reducersResult = await scanReducers({
-      dir,
-      pattern: '**/*reducer*.ts',
-      concurrency,
-    });
-    const fromReducers = reducersResult.mapping ?? {};
-    // merge loaded actions from components and effects
-    const loadedFromComponents = componentsResult.loaded ?? [];
-    const loadedFromEffects = effectsResult.loaded ?? [];
-    // filter payloadActions: only keep payload action names that are present in allActions
-    const allActionNames = new Set(allActions.map(a => a.name));
-    // import helper locally to avoid circular import at top-level
-    const { filterLoadedByAllActions } = await import('./scan/index');
-    const loadedActions = [
-      ...filterLoadedByAllActions(loadedFromComponents, allActionNames),
-      ...filterLoadedByAllActions(loadedFromEffects, allActionNames),
-    ];
-
-    // Filter mappings so that only known action names (from allActions) are present.
-    // For effects we only keep actual action names in both inputs and outputs.
-    // This avoids treating operator tokens (e.g. `map`) as actions.
-    // filter fromComponents: keep only actions that exist
-    for (const [comp, acts] of Object.entries(fromComponents)) {
-      const kept = (acts || []).filter(a => allActionNames.has(a));
-      if (kept.length) fromComponents[comp] = kept;
-      else delete fromComponents[comp];
-    }
-
-    // filter fromReducers
-    for (const [r, acts] of Object.entries(fromReducers)) {
-      const kept = (acts || []).filter(a => allActionNames.has(a));
-      if (kept.length) fromReducers[r] = kept;
-      else delete fromReducers[r];
-    }
-
-    // filter fromEffects: inputs and outputs must be real actions
-    for (const [k, v] of Object.entries(fromEffects)) {
-      const inp = (v.input || []).filter(x => allActionNames.has(x));
-      const out = (v.output || []).filter(x => allActionNames.has(x));
-      if (inp.length || out.length) fromEffects[k] = { input: inp, output: out };
-      else delete fromEffects[k];
-    }
-    payload = {
-      allActions,
-      fromComponents,
-      fromEffects,
-      fromReducers,
-      loadedActions,
-    };
-
-    // always write the JSON payload to disk
-    await import('fs/promises').then(async fsx => {
-      await fsx.mkdir(outDir, { recursive: true });
-      await fsx.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
-    });
-    console.log(chalk.green(`Wrote ${outFile}`));
-  }
+  await generatePayloadIfNeeded({
+    useCache,
+    outFile,
+    outDir,
+    dir,
+    concurrency,
+    pattern,
+    startTime,
+    verbose: opts.verbose,
+  });
 
   // --json: always regenerate the JSON file first. If --json is used alone
   // (no other generation flags), stop after writing JSON. If combined with
@@ -257,174 +148,7 @@ async function run() {
     await cleanDotFilesIfNotRequested(dir, dotExplicit, opts.verbose);
   }
   if (dotOut && dotRequested) {
-    if (opts.action) {
-      const gen = await import('./dot-generator');
-      const p = await gen.generateDotForAction(outFile, opts.action, dotOut);
-      console.log(chalk.green(`Wrote focused DOT file ${p}`));
-      if (opts.svg) {
-        const svgPath = path.join(dotOut, `${opts.action}.svg`);
-        if (opts.viz) {
-          try {
-            const dotTxt = await fs.readFile(p, 'utf8');
-            const svg = await renderDotWithViz(dotTxt);
-            if (svg) {
-              await fs.writeFile(svgPath, svg, 'utf8');
-              console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
-              if (!dotExplicit) await fs.rm(p).catch(() => {});
-              if (!svg) throw new Error('viz failed');
-            } else {
-              // fallback to dot
-              const ok = await tryDotToSvg(p, svgPath);
-              if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-            }
-          } catch (err) {
-            console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
-            const ok = await tryDotToSvg(p, svgPath);
-            if (!ok) console.log(chalk.yellow('Could not generate SVG with `dot` either'));
-            if (!dotExplicit) await fs.rm(p).catch(() => {});
-          }
-        } else {
-          const ok = await tryDotToSvg(p, svgPath);
-          if (ok) {
-            console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-            if (!dotExplicit) await fs.rm(p).catch(() => {});
-          } else {
-            console.log(chalk.yellow('Could not generate SVG with `dot` (falling back to viz.js):'));
-            try {
-              const dotTxt = await fs.readFile(p, 'utf8');
-              const svg = await renderDotWithViz(dotTxt);
-              if (svg) {
-                await fs.writeFile(svgPath, svg, 'utf8');
-                console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
-                if (!dotExplicit) await fs.rm(p).catch(() => {});
-              } else {
-                console.log(chalk.yellow('Could not generate SVG via viz.js (install viz.js to enable fallback)'));
-              }
-            } catch (readErr) {
-              console.log(chalk.yellow('Could not read DOT file for viz.js fallback:'), String(readErr));
-            }
-          }
-        }
-      }
-    } else if (opts.all) {
-      const main = await import('./dot/main');
-      const p = await main.generateAllFromJson(outFile, dotOut);
-      console.log(chalk.green(`Wrote aggregated DOT file ${p}`));
-      if (opts.svg) {
-        const svgPath = path.join(dotOut, 'all.svg');
-          if (opts.viz) {
-          try {
-            const dotTxt = await fs.readFile(p, 'utf8');
-            const svg = await renderDotWithViz(dotTxt);
-            if (svg) {
-              await fs.writeFile(svgPath, svg, 'utf8');
-              console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
-              if (!dotExplicit) await fs.rm(p).catch(() => {});
-            } else {
-              const ok = await tryDotToSvg(p, svgPath);
-              if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-            }
-          } catch (err) {
-            console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
-            const ok = await tryDotToSvg(p, svgPath);
-            if (!ok) console.log(chalk.yellow('Could not generate SVG with `dot` either'));
-            if (!dotExplicit) await fs.rm(p).catch(() => {});
-          }
-        } else {
-          const ok = await tryDotToSvg(p, svgPath);
-          if (ok) {
-            console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-            if (!dotExplicit) await fs.rm(p).catch(() => {});
-          } else {
-            try {
-              const dotTxt = await fs.readFile(p, 'utf8');
-              const svg = await renderDotWithViz(dotTxt);
-              if (svg) {
-                await fs.writeFile(svgPath, svg, 'utf8');
-                console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
-                if (!dotExplicit) await fs.rm(p).catch(() => {});
-              } else {
-                console.log(chalk.yellow(`Could not generate SVG for ${p} via viz.js (install viz.js to enable fallback)`));
-              }
-            } catch (readErr) {
-              console.log(chalk.yellow(`Could not read DOT file ${p} for viz.js fallback:`), String(readErr));
-            }
-          }
-        }
-      }
-    } else {
-      const gen = await import('./dot-generator');
-      await gen.generateDotFilesFromJson(outFile, dotOut);
-      console.log(chalk.green(`Wrote DOT files to ${dotOut}`));
-      if (opts.svg) {
-        // convert all .dot files in the output dir to .svg
-        try {
-          const execFileP = promisify(execFile);
-          const files = await fs.readdir(dotOut);
-          for (const f of files.filter(x => x.endsWith('.dot'))) {
-            const dotPath = path.join(dotOut, f);
-            const svgPath = path.join(dotOut, `${path.basename(f, '.dot')}.svg`);
-            if (opts.viz) {
-              try {
-                const dotTxt = await fs.readFile(dotPath, 'utf8');
-                const svg = await renderDotWithViz(dotTxt);
-                if (svg) {
-                  await fs.writeFile(svgPath, svg, 'utf8');
-                  console.log(chalk.green(`Wrote SVG file ${svgPath} (via viz.js)`));
-                  if (!dotExplicit) await fs.rm(dotPath).catch(() => {});
-                } else {
-                  const ok = await tryDotToSvg(dotPath, svgPath);
-                  if (ok) console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-                }
-              } catch (err) {
-                console.log(chalk.yellow('Could not generate SVG via viz.js (falling back to dot):'), String(err));
-                const ok = await tryDotToSvg(dotPath, svgPath);
-                if (!ok) console.log(chalk.yellow(`Could not generate SVG for ${dotPath} with dot either`));
-                if (!dotExplicit) await fs.rm(dotPath).catch(() => {});
-              }
-            } else {
-              try {
-                await execFileP('dot', ['-Tsvg', dotPath, '-o', svgPath]);
-                console.log(chalk.green(`Wrote SVG file ${svgPath}`));
-                if (!dotExplicit) {
-                  await fs.rm(dotPath).catch(() => {});
-                  if (opts.verbose) console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation`));
-                }
-              } catch (innerErr) {
-                console.log(
-                  chalk.yellow(`Failed to convert ${dotPath} -> svg with dot (falling back to viz.js):`),
-                  String(innerErr),
-                );
-                try {
-                  const dotTxt = await fs.readFile(dotPath, 'utf8');
-                  const svgPathFallback = svgPath;
-                  const svg = await renderDotWithViz(dotTxt);
-                  if (svg) {
-                    await fs.writeFile(svgPathFallback, svg, 'utf8');
-                    console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
-                    if (!dotExplicit) {
-                      await fs.rm(dotPath).catch(() => {});
-                      if (opts.verbose)
-                        console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
-                    }
-                  } else {
-                    console.log(
-                      chalk.yellow(
-                        `Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`,
-                      ),
-                    );
-                  }
-                } catch (readErr) {
-                  console.log(chalk.yellow(`Could not read DOT file ${dotPath} for viz.js fallback:`), String(readErr));
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.log(chalk.yellow('Could not generate SVGs (is Graphviz `dot` installed?):'), String(err));
-        }
-      }
-    }
+    await processDotSvgGeneration({ opts, outFile, dotOut, dotExplicit, verbose: opts.verbose });
   }
   const totalDuration = (Date.now() - startTime) / 1000;
   console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
