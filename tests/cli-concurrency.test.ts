@@ -1,7 +1,7 @@
+import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import { createTempDir } from './utils';
-import { spawn } from 'child_process';
 
 jest.setTimeout(30000);
 

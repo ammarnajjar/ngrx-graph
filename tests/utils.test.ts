@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
-import path from 'path';
-import { createTempDir, cleanupTempRoots } from './utils';
+import { cleanupTempRoots, createTempDir } from './utils';
 
 jest.setTimeout(10000);
 
