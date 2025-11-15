@@ -1,5 +1,71 @@
 #!/usr/bin/env node
 
-const oclif = require('@oclif/core')
+const { spawnSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+const chalk = require('chalk');
 
-oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'))
+// chalk v5 exports default functions differently; support both shapes.
+const hexFn = color => {
+  try {
+    if (typeof chalk.hex === 'function') return m => chalk.hex(color)(m);
+    if (chalk && chalk.default && typeof chalk.default.hex === 'function') return m => chalk.default.hex(color)(m);
+  } catch (_) {}
+  // fallback: no-op
+  return m => m;
+};
+const info = msg => console.log(hexFn('#4DA6FF')(msg));
+
+const repoRoot = path.join(__dirname, '..');
+const rawArgs = process.argv.slice(2) || [];
+
+// Helper: resolve relative paths to absolute to avoid nested-out-path bugs
+const resolveIfPath = val => {
+  try {
+    return path.isAbsolute(val) ? val : path.resolve(process.cwd(), val);
+  } catch {
+    return val;
+  }
+};
+
+// Canonicalize --dir/-d and --out/-o when provided as separate args or --key=val
+const normalizeArgs = args => {
+  const out = args.slice();
+  for (let i = 0; i < out.length; i++) {
+    const a = out[i];
+    if (a === '-d' || a === '--dir' || a === '-o' || a === '--out') {
+      if (i + 1 < out.length) {
+        out[i + 1] = resolveIfPath(out[i + 1]);
+        i++;
+      }
+    } else if (a.startsWith('--out=') || a.startsWith('--dir=')) {
+      const [k, v] = a.split('=');
+      out[i] = `${k}=${resolveIfPath(v)}`;
+    }
+  }
+  return out;
+};
+
+const args = normalizeArgs(rawArgs);
+
+// Prefer a compiled CLI in dist when available, otherwise fall back to ts-node
+const compiledCli = path.join(repoRoot, 'dist', 'src', 'cli.js');
+// If the user requested help, run the child with the repository root as cwd
+// so project-local preloads (like ts-node) resolve correctly when invoked
+// from other directories.
+const helpRequested = args.includes('--help') || args.includes('-h');
+const childCwd = helpRequested ? repoRoot : process.cwd();
+
+if (fs.existsSync(compiledCli)) {
+  info(`Using compiled CLI: ${compiledCli}`);
+  const node = process.execPath || 'node';
+  const res = spawnSync(node, [compiledCli, ...args], { stdio: 'inherit', cwd: childCwd });
+  process.exit(res.status ?? 0);
+} else {
+  // Fallback: run TypeScript CLI via ts-node/register
+  info('Falling back to ts-node/register (running TypeScript CLI)');
+  const node = process.execPath || 'node';
+  const tsPath = path.join(repoRoot, 'src', 'cli.ts');
+  const res = spawnSync(node, ['-r', 'ts-node/register', tsPath, ...args], { stdio: 'inherit', cwd: childCwd });
+  process.exit(res.status ?? 0);
+}

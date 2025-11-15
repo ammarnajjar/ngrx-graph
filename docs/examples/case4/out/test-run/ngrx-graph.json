@@ -1,0 +1,33 @@
+{
+  "allActions": [
+    {
+      "name": "actionA",
+      "nested": false
+    },
+    {
+      "name": "actionB",
+      "nested": false
+    }
+  ],
+  "fromComponents": {
+    "Case4Component": [
+      "actionA"
+    ]
+  },
+  "fromEffects": {
+    "effect$": {
+      "input": [
+        "actionA"
+      ],
+      "output": [
+        "actionB"
+      ]
+    }
+  },
+  "fromReducers": {
+    "case4Reducer": [
+      "actionB"
+    ]
+  },
+  "loadedActions": []
+}

@@ -8,20 +8,21 @@ export default [
   {
     ignores: [
       'eslint.config.mjs',
+      '**/docs/examples',
       '**/dist',
+      '**/tmp',
+      '**/test/fixtures/**',
       '**/assets',
       '**/node_modules',
       '**/.eslintcache',
-    ]
+    ],
   },
   {
     files: ['**/*.ts'],
-    languageOptions: { globals: globals.browser }
+    languageOptions: { globals: globals.browser },
   },
   {
     files: ['tests/**/*'],
-    env: {
-      jest: true,
-    }
+    languageOptions: { globals: globals.jest },
   },
 ];

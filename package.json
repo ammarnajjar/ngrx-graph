@@ -9,7 +9,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "version": "0.0.13",
+  "version": "1.0.0",
   "name": "ngrx-graph",
   "author": "Ammar Najjar",
   "repository": "ammarnajjar/ngrx-graph",
@@ -20,32 +20,38 @@
   "main": "dist/index.js",
   "homepage": "https://github.com/ammarnajjar/ngrx-graph",
   "dependencies": {
-    "fast-glob": "^3.3.2",
-    "@oclif/core": "^4.0.31",
-    "@oclif/plugin-help": "^6.2.16",
-    "lodash": "^4.17.21"
+    "chalk": "^5.3.0",
+    "fast-glob": "^3.3.3",
+    "typescript": "^5.9.3",
+    "p-limit": "^4.0.0",
+    "@oclif/core": "^4.8.0",
+    "@oclif/plugin-help": "^6.2.35",
+    "lodash": "^4.17.21",
+    "ts-morph": "^27.0.2",
+    "commander": "^14.0.2",
+    "viz.js": "^2.1.2"
   },
   "devDependencies": {
-    "@oclif/test": "^4.1.0",
-    "eslint-config-oclif": "^5.2.1",
-    "husky": "^9.1.6",
-    "shx": "^0.3.4",
+    "@oclif/test": "^4.1.14",
+    "eslint-config-oclif": "^6.0.116",
+    "husky": "^9.1.7",
+    "shx": "^0.4.0",
     "tslib": "^2.8.1",
-    "typescript": "^5.6.3",
-    "@eslint/js": "^9.14.0",
-    "@jest/globals": "^29.7.0",
-    "@types/node": "^22.9.0",
-    "@typescript-eslint/eslint-plugin": "^8.13.0",
-    "eslint": "^9.14.0",
-    "eslint-config-oclif-typescript": "^3.1.12",
-    "jest": "^29.7.0",
-    "oclif": "^4.15.20",
-    "ts-jest": "^29.2.5",
+    "typescript": "^5.9.3",
+    "@eslint/js": "^9.39.1",
+    "@jest/globals": "^30.2.0",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "eslint": "^9.39.1",
+    "eslint-config-oclif-typescript": "^3.1.14",
+    "jest": "^30.2.0",
+    "oclif": "^4.22.44",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.13.0",
-    "@types/jest": "^29.5.14",
-    "@types/lodash": "^4.17.13",
-    "globals": "^15.12.0"
+    "typescript-eslint": "^8.46.4",
+    "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.17.20",
+    "globals": "^16.5.0"
   },
   "oclif": {
     "plugins": [
@@ -55,7 +61,10 @@
     "default": "graph",
     "bin": "ngrx-graph",
     "dirname": "ngrx-graph",
-    "commands": "./dist/commands",
+    "commands": "./dist/src/commands",
+    "hooks": {
+      "init": "./dist/src/hooks/init.js"
+    },
     "topics": {
       "graph": {
         "description": "Generate NgRx actions graph"
@@ -63,17 +72,19 @@
     }
   },
   "scripts": {
-    "test:ci": "jest",
     "prepare": "husky",
     "lint": "eslint",
-    "build": "shx rm -rf dist && tsc -b",
+    "prebuild": "ts-node ./scripts/sync-help.ts",
+    "build": "tsc -p tsconfig.json",
     "postpack": "shx rm -f oclif.manifest.json",
     "version": "oclif readme && git add README.md",
-    "test": "jest --watch --collectCoverage --cache",
-    "prepack": "npm run build && rm tsconfig.tsbuildinfo && oclif manifest && oclif readme"
+    "test": "jest",
+    "cli": "ts-node src/cli.ts",
+    "gen:examples": "node -r ./node_modules/ts-node/register ./scripts/gen-examples.ts",
+    "prepack": "npm run build"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "types": "dist/index.d.ts",
   "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues"
