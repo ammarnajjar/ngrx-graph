@@ -18,8 +18,7 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz({ render: Full.render, Module: Full.Module });
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (_) {
-  }
+  } catch (_) {}
   // Try lite.render.js
   try {
     const VizModule = tryRequire('viz.js');
@@ -29,8 +28,7 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz({ render: Lite.render, Module: Lite.Module });
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (_) {
-  }
+  } catch (_) {}
   // Try plain Viz
   try {
     const VizModule = tryRequire('viz.js');
@@ -39,8 +37,7 @@ async function renderDotWithViz(dotText) {
       const viz = new Viz();
       if (viz.renderString) return await viz.renderString(dotText);
     }
-  } catch (_) {
-  }
+  } catch (_) {}
   return null;
 }
 

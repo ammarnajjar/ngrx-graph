@@ -24,7 +24,6 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
         const outputs = new Set<string>();
 
         function walkEffectBody(n: ts.Node) {
-          // ofType(...) inputs
           if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'ofType') {
             for (const a of n.arguments) {
               if (ts.isIdentifier(a)) inputs.add(a.text);
@@ -32,57 +31,55 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
-          // map/mergeMap/... handlers: inspect returned calls inside the function body
+
           if (
             ts.isCallExpression(n) &&
             ts.isIdentifier(n.expression) &&
             /^(map|mergeMap|switchMap|concatMap|exhaustMap)$/.test(n.expression.text)
           ) {
             for (const a of n.arguments) {
-                if (ts.isArrowFunction(a) || ts.isFunctionExpression(a)) {
-                  // recursively walk the function body to find nested call expressions
-                  function walkInside(fnNode: ts.Node) {
-                    if (ts.isCallExpression(fnNode)) {
-                      const called = fnNode.expression;
-                      if (ts.isIdentifier(called)) outputs.add(called.text);
-                      else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
-                      // extract payload actions if the call has an object literal as first arg
-                      if (fnNode.arguments && fnNode.arguments.length) {
-                        const firstArg = fnNode.arguments[0];
-                        if (ts.isObjectLiteralExpression(firstArg)) {
-                          const payloads: string[] = [];
-                          for (const p of firstArg.properties) {
-                            if (ts.isPropertyAssignment(p) && ts.isCallExpression(p.initializer)) {
-                              const pc = p.initializer.expression;
-                              if (ts.isIdentifier(pc)) payloads.push(pc.text);
-                              else if (ts.isPropertyAccessExpression(pc)) payloads.push(pc.name.text);
-                            }
-                          }
-                          if (payloads.length) {
-                            let calledName = 'unknown';
-                            if (ts.isIdentifier(called)) calledName = called.text;
-                            else if (ts.isPropertyAccessExpression(called)) calledName = called.name.text;
-                            loaded.push({ name: calledName, payloadActions: payloads });
+              if (ts.isArrowFunction(a) || ts.isFunctionExpression(a)) {
+                function walkInside(fnNode: ts.Node) {
+                  if (ts.isCallExpression(fnNode)) {
+                    const called = fnNode.expression;
+                    if (ts.isIdentifier(called)) outputs.add(called.text);
+                    else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
+                    if (fnNode.arguments && fnNode.arguments.length) {
+                      const firstArg = fnNode.arguments[0];
+                      if (ts.isObjectLiteralExpression(firstArg)) {
+                        const payloads: string[] = [];
+                        for (const p of firstArg.properties) {
+                          if (ts.isPropertyAssignment(p) && ts.isCallExpression(p.initializer)) {
+                            const pc = p.initializer.expression;
+                            if (ts.isIdentifier(pc)) payloads.push(pc.text);
+                            else if (ts.isPropertyAccessExpression(pc)) payloads.push(pc.name.text);
                           }
                         }
-                      }
+                        if (payloads.length) {
+                          let calledName = 'unknown';
+                          if (ts.isIdentifier(called)) calledName = called.text;
+                          else if (ts.isPropertyAccessExpression(called)) calledName = called.name.text;
+                          loaded.push({ name: calledName, payloadActions: payloads });
+                          }
+                        }
                     }
-                    if (ts.isReturnStatement(fnNode) && fnNode.expression) {
-                      const re = fnNode.expression;
-                      if (ts.isCallExpression(re)) {
-                        const called = re.expression;
-                        if (ts.isIdentifier(called)) outputs.add(called.text);
-                        else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
-                      } else if (ts.isIdentifier(re)) outputs.add(re.text);
-                    }
-                    ts.forEachChild(fnNode, walkInside);
                   }
-                  walkInside(a);
+                  if (ts.isReturnStatement(fnNode) && fnNode.expression) {
+                    const re = fnNode.expression;
+                    if (ts.isCallExpression(re)) {
+                      const called = re.expression;
+                      if (ts.isIdentifier(called)) outputs.add(called.text);
+                      else if (ts.isPropertyAccessExpression(called)) outputs.add(called.name.text);
+                    } else if (ts.isIdentifier(re)) outputs.add(re.text);
+                  }
+                  ts.forEachChild(fnNode, walkInside);
                 }
+                walkInside(a);
               }
+            }
           }
 
-          // Array literal of actions
+
           if (ts.isArrayLiteralExpression(n)) {
             for (const el of n.elements) {
               if (ts.isCallExpression(el)) {
@@ -108,7 +105,6 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
-          // store.dispatch(action(...)) and similar patterns
           if (
             ts.isCallExpression(n) &&
             ts.isPropertyAccessExpression(n.expression) &&
@@ -121,7 +117,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
                 const e = first.expression;
                 if (ts.isIdentifier(e)) outputs.add(e.text);
                 else if (ts.isPropertyAccessExpression(e)) outputs.add(e.name.text);
-                if (first.arguments && first.arguments.length) {
+                  if (first.arguments && first.arguments.length) {
                   const a0 = first.arguments[0];
                   if (ts.isObjectLiteralExpression(a0)) {
                     const payloads: string[] = [];
@@ -155,7 +151,6 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
             }
           }
 
-          // General case: catch action creator calls passed as arguments to other calls
           if (ts.isCallExpression(n)) {
             for (const arg of n.arguments) {
               if (ts.isCallExpression(arg)) {
@@ -190,7 +185,6 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
         res[propName].output.push(...Array.from(outputs));
         return;
       }
-
     }
 
     ts.forEachChild(node, visit);
@@ -204,4 +198,3 @@ export async function parseEffectsFromFile(file: string) {
   const text = await fs.readFile(file, 'utf8');
   return parseEffectsFromText(text, file);
 }
-

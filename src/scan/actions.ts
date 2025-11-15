@@ -80,7 +80,11 @@ function visitCreateActionGroup(call: ts.CallExpression, file: string): ActionIn
   return res;
 }
 
-export async function parseActionsFromText(text: string, file = 'file.ts', visited = new Set<string>()): Promise<ActionInfo[]> {
+export async function parseActionsFromText(
+  text: string,
+  file = 'file.ts',
+  visited = new Set<string>(),
+): Promise<ActionInfo[]> {
   const sf = createSource(text, file);
   const results: ActionInfo[] = [];
   const resolvedFile = path.resolve(file);
@@ -159,11 +163,11 @@ export async function parseActionsFromText(text: string, file = 'file.ts', visit
 
   visit(sf);
 
-  // Handle named re-exports from local modules
+
   for (const stmt of sf.statements) {
     if (!ts.isExportDeclaration(stmt) || !stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
     const spec = stmt.moduleSpecifier.text;
-    if (!spec.startsWith('.')) continue; // only local modules
+    if (!spec.startsWith('.')) continue;
     const exportClause = stmt.exportClause;
     if (!exportClause || !ts.isNamedExports(exportClause)) continue;
 

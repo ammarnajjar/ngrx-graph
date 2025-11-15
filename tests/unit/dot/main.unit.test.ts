@@ -1,4 +1,3 @@
-
 jest.mock('fs/promises', () => {
   const actual = jest.requireActual('fs/promises');
   return {
@@ -28,7 +27,9 @@ import type { GraphPayload } from '../../../src/dot/types';
 
 test('generateAllFromJson reads json and writes all.dot', async () => {
   const fakePath = '/tmp/fake.json';
-  (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify({ allActions: [], fromComponents: {}, fromEffects: {}, fromReducers: {} }));
+  (fs.readFile as jest.Mock).mockResolvedValue(
+    JSON.stringify({ allActions: [], fromComponents: {}, fromEffects: {}, fromReducers: {} }),
+  );
   const out = await generateAllFromJson(fakePath, '/tmp/outdir2');
   expect(typeof out).toBe('string');
   expect((fs.mkdir as jest.Mock).mock.calls.length).toBeGreaterThan(0);

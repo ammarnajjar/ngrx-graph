@@ -11,11 +11,9 @@ describe('dot generator styling', () => {
     const payload = {
       fromComponents: { CompA: ['focusAction', 'nonLoaded'] },
       fromEffects: {
-        eff1: { input: ['focusAction'], output: ['loadedOne', 'nonLoaded2'] }
+        eff1: { input: ['focusAction'], output: ['loadedOne', 'nonLoaded2'] },
       },
-      loadedActions: [
-        { name: 'loadedOne', payloadActions: ['pA', 'orderCompletedDelivery'] }
-      ],
+      loadedActions: [{ name: 'loadedOne', payloadActions: ['pA', 'orderCompletedDelivery'] }],
       fromReducers: {},
       allActions: [
         { name: 'focusAction', nested: false },
@@ -23,8 +21,8 @@ describe('dot generator styling', () => {
         { name: 'pA', nested: false },
         { name: 'orderCompletedDelivery', nested: false },
         { name: 'nonLoaded', nested: false },
-        { name: 'nonLoaded2', nested: false }
-      ]
+        { name: 'nonLoaded2', nested: false },
+      ],
     } as unknown as GraphPayload;
 
     const dotPath = await generateDotForActionPayload(payload, 'focusAction', tmp);

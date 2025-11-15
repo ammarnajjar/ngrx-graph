@@ -32,7 +32,7 @@ export async function generatePayloadIfNeeded(options: {
         }
       }
     } catch {
-      // ignore
+      void 0;
     }
   }
 
@@ -83,12 +83,12 @@ export async function generatePayloadIfNeeded(options: {
             aliasToOriginal[p.name] = aliasedFrom;
           }
         }
-        } catch {
-          // ignore
-        }
+      } catch {
+        // ignore
+      }
     }
   } catch {
-    // ignore
+    void 0;
   }
   const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
   const fromComponents = componentsResult.mapping ?? {};

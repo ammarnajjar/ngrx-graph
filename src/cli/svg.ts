@@ -32,7 +32,7 @@ export async function tryDotOrViz(dotPath: string, svgPath: string, preferViz = 
         return { ok: true, via: 'viz' };
       }
     } catch {
-      // fallback to dot
+      void 0;
     }
     const ok = await tryDotToSvg(dotPath, svgPath);
     return { ok, via: ok ? 'dot' : 'none' };
@@ -47,7 +47,7 @@ export async function tryDotOrViz(dotPath: string, svgPath: string, preferViz = 
       return { ok: true, via: 'viz' };
     }
   } catch {
-    // ignore
+    void 0;
   }
   return { ok: false, via: 'none' };
 }

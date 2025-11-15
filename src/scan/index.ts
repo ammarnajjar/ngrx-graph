@@ -6,14 +6,14 @@ import { parseEffectsFromFile, parseEffectsFromText } from './effects';
 import { parseReducersFromFile, parseReducersFromText } from './reducers';
 
 export {
-    parseActionsFromFile,
-    parseActionsFromText,
-    parseComponentsFromFile,
-    parseComponentsFromText,
-    parseEffectsFromFile,
-    parseEffectsFromText,
-    parseReducersFromFile,
-    parseReducersFromText
+  parseActionsFromFile,
+  parseActionsFromText,
+  parseComponentsFromFile,
+  parseComponentsFromText,
+  parseEffectsFromFile,
+  parseEffectsFromText,
+  parseReducersFromFile,
+  parseReducersFromText
 };
 
 export async function scanActions(options?: { dir?: string; pattern?: string; concurrency?: number }) {
@@ -26,7 +26,7 @@ export async function scanActions(options?: { dir?: string; pattern?: string; co
   const nested = await Promise.all(tasks);
   const flat = nested.flat() as ActionInfo[];
 
-  // post-process nested detection
+
   const names = new Set(flat.map(a => a.name).filter(Boolean) as string[]);
   for (const a of flat) {
     if (a.propsTypeText) {
@@ -60,7 +60,7 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // skip files that fail to parse
+      void 0;
     }
   }
   return { mapping: res, loaded };
@@ -78,15 +78,17 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // skip files that fail to parse
+      void 0;
     }
   }
   return { mapping: res, loaded };
 }
 
 // filter loaded payloadActions by global action names
-export function filterLoadedByAllActions(loaded: Array<{ name: string; payloadActions: string[] }>,
-  allActionNames: Set<string>) {
+export function filterLoadedByAllActions(
+  loaded: Array<{ name: string; payloadActions: string[] }>,
+  allActionNames: Set<string>,
+) {
   return loaded
     .map(l => ({ name: l.name, payloadActions: l.payloadActions.filter(p => allActionNames.has(p)) }))
     .filter(l => l.payloadActions && l.payloadActions.length);
@@ -105,7 +107,7 @@ export async function scanReducers(options?: { dir?: string; pattern?: string; c
         const r = await parseReducersFromFile(p);
         Object.assign(res, r.mapping);
       } catch {
-        // best-effort: skip reducers that fail to parse
+        void 0;
       }
     }),
   );

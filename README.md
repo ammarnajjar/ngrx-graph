@@ -55,12 +55,13 @@ ngrx-graph -a -d ./src --out ./out --dot --svg
 ngrx-graph -d ./src --out ./out --json
 ```
 
-
 ```bash
 ngrx-graph -d ./src --out ./out
 ```
+
 Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass `-f` or `--force`.
-```
+
+````
 
 Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `-f/--force`
 </details>
@@ -95,7 +96,7 @@ Input files (see the canonical example sources under `docs/examples/case1/src`):
 
 ```bash
 npx ngrx-graph -j
-```
+````
 
 - [ngrx-graph.json](./docs/examples/case1/out/ngrx-graph.json)
 
@@ -237,6 +238,7 @@ npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/o
   <summary>Usage</summary>
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
@@ -248,6 +250,7 @@ USAGE
   $ ngrx-graph COMMAND
 ...
 ```
+
 <!-- usagestop -->
 </details>
 
@@ -255,8 +258,9 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-* [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
-* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
+
+- [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+- [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -347,7 +351,8 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](<https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts>)_
+
 <!-- commandsstop -->
 </details>
 

@@ -50,7 +50,7 @@ Examples:
   # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
   $ ngrx-graph -d ./src --out ./out --json
 
-  # Reuse an existing JSON payload instead of re-scanning (enabled by default)
+  # Reuse an existing JSON payload instead of re-scanning
   $ ngrx-graph -d ./src --out ./out
 
   # Generate DOT files only (per-action and aggregated)
@@ -63,7 +63,8 @@ Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone. Caching of an existing JSON payload is enabled by default; use '-f/--force' to force a re-scan.`;
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone.
+  - Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass -f or --force.`;
 /* SYNCHRONIZED_HELP_END */
 
 Graph.usage = '[ACTION]';
@@ -82,7 +83,10 @@ Graph.flags = {
     description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)',
     default: false,
   }),
-  viz: Flags.boolean({ description: 'prefer viz.js for SVG generation (useful when dot is unavailable)', default: false }),
+  viz: Flags.boolean({
+    description: 'prefer viz.js for SVG generation (useful when dot is unavailable)',
+    default: false,
+  }),
   all: Flags.boolean({
     char: 'a',
     description: 'only generate the aggregated all.dot (no per-action files)',
@@ -90,5 +94,4 @@ Graph.flags = {
   }),
   json: Flags.boolean({ char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false }),
 };
-export { };
-
+export {};

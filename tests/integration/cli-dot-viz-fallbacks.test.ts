@@ -29,7 +29,11 @@ test('--all --svg uses viz fallback when dot fails', async () => {
   const outDir = await createTempDir('cli-dot-viz-1');
   const src = path.join(outDir, 'src');
   await fs.mkdir(src, { recursive: true });
-  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+  await fs.writeFile(
+    path.join(src, 'sample.actions.ts'),
+    `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`,
+    'utf8',
+  );
 
   const preload = path.join(outDir, 'preload1.js');
   const preloadContent = `
@@ -42,7 +46,13 @@ Module._cache[cliViz] = {exports: {renderDotWithViz: async (txt)=>'<svg>'+txt+'<
   await fs.writeFile(preload, preloadContent, 'utf8');
 
   const env = { ...process.env, PATH: '' };
-  const res = await runCliWithPreload(['-d', outDir, '--out', outDir, '--all', '--svg', '--viz'], preload, process.cwd(), env, 20000);
+  const res = await runCliWithPreload(
+    ['-d', outDir, '--out', outDir, '--all', '--svg', '--viz'],
+    preload,
+    process.cwd(),
+    env,
+    20000,
+  );
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
   expect(files.some(f => f === 'all.svg')).toBe(true);
@@ -52,7 +62,11 @@ test('--all --svg reports when both dot and viz fail', async () => {
   const outDir = await createTempDir('cli-dot-viz-2');
   const src = path.join(outDir, 'src');
   await fs.mkdir(src, { recursive: true });
-  await fs.writeFile(path.join(src, 'sample.actions.ts'), `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`, 'utf8');
+  await fs.writeFile(
+    path.join(src, 'sample.actions.ts'),
+    `import { createAction } from '@ngrx/store';\nexport const S = createAction('[T] S');\n`,
+    'utf8',
+  );
 
   const preload = path.join(outDir, 'preload2.js');
   const preloadContent = `
@@ -66,7 +80,13 @@ Module._cache[cliViz] = {exports: {renderDotWithViz: async (txt)=> null}};
   await fs.writeFile(preload, preloadContent, 'utf8');
 
   const env = { ...process.env, PATH: '' };
-  const res = await runCliWithPreload(['-d', outDir, '--out', outDir, '--all', '--svg'], preload, process.cwd(), env, 20000);
+  const res = await runCliWithPreload(
+    ['-d', outDir, '--out', outDir, '--all', '--svg'],
+    preload,
+    process.cwd(),
+    env,
+    20000,
+  );
   expect(res.code).toBeGreaterThanOrEqual(0);
   // either an svg exists or CLI printed a fallback/failure message
   const outText = res.stdout + res.stderr;

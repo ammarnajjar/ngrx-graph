@@ -21,9 +21,9 @@ describe('parseEffectsFromText - extra cases', () => {
 
     const { mapping, loaded } = await parseEffectsFromText(src);
     // debug output
-     
+
     console.log('DBG1 mapping:', JSON.stringify(mapping));
-     
+
     console.log('DBG1 loaded:', JSON.stringify(loaded));
     expect(mapping).toHaveProperty('a$');
     expect(mapping.a$.input).toContain('someAction');
@@ -41,9 +41,9 @@ describe('parseEffectsFromText - extra cases', () => {
     `;
 
     const { mapping, loaded } = await parseEffectsFromText(src);
-     
+
     console.log('DBG2 mapping:', JSON.stringify(mapping));
-     
+
     console.log('DBG2 loaded:', JSON.stringify(loaded));
     // b$ should exist and list a1 and a2 as outputs
     const key = Object.keys(mapping)[0];

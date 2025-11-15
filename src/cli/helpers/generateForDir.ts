@@ -6,7 +6,13 @@ import { promisify } from 'util';
 import { renderDotWithViz, tryDotToSvg } from '../svg';
 import type { CliOptions } from './types';
 
-export async function generateForDir(opts: CliOptions, outFile: string, dotOut: string, dotExplicit: boolean, verbose?: boolean) {
+export async function generateForDir(
+  opts: CliOptions,
+  outFile: string,
+  dotOut: string,
+  dotExplicit: boolean,
+  verbose?: boolean,
+) {
   const gen = await import('../../dot-generator');
   await gen.generateDotFilesFromJson(outFile, dotOut);
   console.log(chalk.green(`Wrote DOT files to ${dotOut}`));
@@ -57,13 +63,12 @@ export async function generateForDir(opts: CliOptions, outFile: string, dotOut: 
               console.log(chalk.green(`Wrote SVG file ${svgPathFallback} (via viz.js)`));
               if (!dotExplicit) {
                 await fs.rm(dotPath).catch(() => {});
-                if (verbose) console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
+                if (verbose)
+                  console.log(chalk.gray(`Removed DOT file ${dotPath} after SVG generation (viz.js fallback)`));
               }
             } else {
               console.log(
-                chalk.yellow(
-                  `Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`,
-                ),
+                chalk.yellow(`Could not generate SVG for ${dotPath} via viz.js (install viz.js to enable fallback)`),
               );
             }
           } catch (readErr) {

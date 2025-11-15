@@ -10,24 +10,16 @@
     }
   ],
   "fromComponents": {
-    "Case4Component": [
-      "actionA"
-    ]
+    "Case4Component": ["actionA"]
   },
   "fromEffects": {
     "effect$": {
-      "input": [
-        "actionA"
-      ],
-      "output": [
-        "actionB"
-      ]
+      "input": ["actionA"],
+      "output": ["actionB"]
     }
   },
   "fromReducers": {
-    "case4Reducer": [
-      "actionB"
-    ]
+    "case4Reducer": ["actionB"]
   },
   "loadedActions": []
 }

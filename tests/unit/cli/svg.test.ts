@@ -15,7 +15,9 @@ test('tryDotOrViz prefers viz when flag set and viz returns svg', async () => {
   // place a fake viz helper in module cache
   const Module = await import('module');
   const cliViz = path.resolve(process.cwd(), 'src', 'cli', 'viz-fallback.cjs');
-  (Module as unknown as { _cache: Record<string, unknown> })._cache[cliViz] = { exports: { renderDotWithViz: async () => '<svg></svg>' } };
+  (Module as unknown as { _cache: Record<string, unknown> })._cache[cliViz] = {
+    exports: { renderDotWithViz: async () => '<svg></svg>' },
+  };
   // create temp dot file
   const tmp = await fs.mkdtemp('/tmp/ngrx-svg-');
   const dot = `${tmp}/t.dot`;

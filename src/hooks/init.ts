@@ -28,7 +28,7 @@ export default async function init() {
       try {
         tsNodeRegister = require.resolve('ts-node/register', { paths: [projectRoot] });
       } catch {
-        // fallback
+        void 0;
       }
 
       const res = spawnSync(node, ['-r', tsNodeRegister, cliPath, '--help'], { stdio: 'inherit', cwd: projectRoot });

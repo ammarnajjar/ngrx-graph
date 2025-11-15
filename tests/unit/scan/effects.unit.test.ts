@@ -26,7 +26,12 @@ test('extracts payload actions from object literal in map handler', async () => 
   const loaded = res.loaded as Array<{ name: string; payloadActions: string[] }>;
   expect(mapping.a$).toBeDefined();
   expect(mapping.a$.output).toContain('someAction');
-  expect(loaded.some((l: { name: string; payloadActions: string[] }) => l.name === 'someAction' && l.payloadActions.includes('nestedAction'))).toBeTruthy();
+  expect(
+    loaded.some(
+      (l: { name: string; payloadActions: string[] }) =>
+        l.name === 'someAction' && l.payloadActions.includes('nestedAction'),
+    ),
+  ).toBeTruthy();
 });
 
 test('handles store.dispatch with object-literal payloads and identifier dispatch', async () => {
@@ -40,7 +45,12 @@ test('handles store.dispatch with object-literal payloads and identifier dispatc
   const loaded = res.loaded as Array<{ name: string; payloadActions: string[] }>;
   expect(mapping.z$).toBeDefined();
   expect(mapping.z$.output).toContain('otherAction');
-  expect(loaded.some((l: { name: string; payloadActions: string[] }) => l.name === 'otherAction' && l.payloadActions.includes('nested'))).toBeTruthy();
+  expect(
+    loaded.some(
+      (l: { name: string; payloadActions: string[] }) =>
+        l.name === 'otherAction' && l.payloadActions.includes('nested'),
+    ),
+  ).toBeTruthy();
 });
 
 test('array literal of actions is parsed and payloads extracted', async () => {
@@ -54,6 +64,12 @@ test('array literal of actions is parsed and payloads extracted', async () => {
   const loaded = res.loaded as Array<{ name: string; payloadActions: string[] }>;
   expect(mapping.a$).toBeDefined();
   expect(mapping.a$.output).toEqual(expect.arrayContaining(['one', 'two', 'three']));
-  expect(loaded.some((l: { name: string; payloadActions: string[] }) => l.name === 'one' && l.payloadActions.includes('p1'))).toBeTruthy();
-  expect(loaded.some((l: { name: string; payloadActions: string[] }) => l.name === 'three' && l.payloadActions.includes('q1'))).toBeTruthy();
+  expect(
+    loaded.some((l: { name: string; payloadActions: string[] }) => l.name === 'one' && l.payloadActions.includes('p1')),
+  ).toBeTruthy();
+  expect(
+    loaded.some(
+      (l: { name: string; payloadActions: string[] }) => l.name === 'three' && l.payloadActions.includes('q1'),
+    ),
+  ).toBeTruthy();
 });

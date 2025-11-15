@@ -7,8 +7,8 @@ jest.setTimeout(20000);
 
 function runCliWithPreload(args: string[], preload: string, cwd = process.cwd(), env = process.env, timeout = 10000) {
   return new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
-      const bin = path.resolve('src/cli.ts');
-      const proc = spawn(process.execPath, ['-r', preload, '-r', 'ts-node/register', bin, ...args], { cwd, env });
+    const bin = path.resolve('src/cli.ts');
+    const proc = spawn(process.execPath, ['-r', preload, '-r', 'ts-node/register', bin, ...args], { cwd, env });
     proc.on('error', err => reject(err));
     let out = '';
     let err = '';
@@ -60,7 +60,13 @@ test('when dot fails, CLI uses viz.js fallback (mocked)', async () => {
 
   // ensure PATH doesn't include a real dot to avoid race with system dot
   const env = { ...process.env, PATH: '' };
-  const res = await runCliWithPreload(['-d', outDir, '--out', outDir, '--svg', '--viz'], preloadPath, process.cwd(), env, 15000);
+  const res = await runCliWithPreload(
+    ['-d', outDir, '--out', outDir, '--svg', '--viz'],
+    preloadPath,
+    process.cwd(),
+    env,
+    15000,
+  );
   expect(res.code).toBeGreaterThanOrEqual(0);
   const files = await fs.readdir(outDir);
   const hasSvg = files.some(f => f.endsWith('.svg'));
