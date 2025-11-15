@@ -3,7 +3,7 @@ import path from 'path';
 
 const root = path.resolve(__dirname, '..');
 const cliPath = path.join(root, 'src', 'cli.ts');
-const cmdPath = path.join(root, 'src', 'commands', 'Symbol(SINGLE_COMMAND_CLI).ts');
+const cmdPath = path.join(root, 'src', 'commands', 'graph.ts');
 
 const cli = fs.readFileSync(cliPath, 'utf8');
 let cmd = fs.readFileSync(cmdPath, 'utf8');
@@ -68,4 +68,4 @@ if (cmd.includes('Graph.description')) {
 }
 
 fs.writeFileSync(cmdPath, cmd, 'utf8');
-console.log('synced examples from src/cli.ts -> src/commands/Symbol(SINGLE_COMMAND_CLI).ts');
+console.log('synced examples from src/cli.ts -> src/commands/graph.ts');

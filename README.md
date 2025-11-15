@@ -238,7 +238,6 @@ npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/o
   <summary>Usage</summary>
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
@@ -250,7 +249,6 @@ USAGE
   $ ngrx-graph COMMAND
 ...
 ```
-
 <!-- usagestop -->
 </details>
 
@@ -258,29 +256,8 @@ USAGE
   <summary>Commands</summary>
 
 <!-- commands -->
-
-- [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
-- [`ngrx-graph [ACTION]`](#ngrx-graph-action)
-
-## `ngrx-graph help [COMMAND]`
-
-Display help for ngrx-graph.
-
-```
-USAGE
-  $ ngrx-graph help [COMMAND...] [-n]
-
-ARGUMENTS
-  [COMMAND...]  Command to show help for.
-
-FLAGS
-  -n, --nested-commands  Include all nested commands in the output.
-
-DESCRIPTION
-  Display help for ngrx-graph.
-```
-
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
+* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
+* [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
 
 ## `ngrx-graph [ACTION]`
 
@@ -288,16 +265,18 @@ Generate NgRx actions graph
 
 ```
 USAGE
-  $ ngrx-graph Symbol(SINGLE_COMMAND_CLI) [ACTION]
+  $ ngrx-graph graph [ACTION]
 
 FLAGS
   -a, --all                  only generate the aggregated all.dot (no per-action files)
   -c, --concurrency=<value>  [default: 8] concurrency for file parsing
   -d, --dir=<value>          [default: /Users/anajjar/code/ngrx-graph] Directory to scan
+  -f, --force                regenerate JSON payload and ignore any cached ngrx-graph.json (forces a re-scan)
   -j, --json                 scan and write ngrx-graph.json only (no DOT/SVG)
   -o, --out=<value>          [default: ngrx-graph.json] output JSON file name (placed in --dir)
   -s, --svg                  also generate SVG files from DOT (requires Graphviz `dot` on PATH)
   -v, --verbose              enable verbose logging
+      --dot                  also generate DOT files (per-action and aggregated)
       --viz                  prefer viz.js for SVG generation (useful when dot is unavailable)
 
 DESCRIPTION
@@ -333,7 +312,8 @@ DESCRIPTION
   (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write
   them under '--out'.
-  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone. Caching of an existing JSON payload is enabled by default; pass `-f` or `--force` to force a re-scan.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone.
+  - Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass -f or --force.
 
 EXAMPLES
   $ ngrx-graph -d ./src --out ./out
@@ -351,9 +331,29 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](<https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/Symbol(SINGLE_COMMAND_CLI).ts>)_
+_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v0.0.14/src/commands/graph.ts)_
 
+## `ngrx-graph help [COMMAND]`
+
+Display help for ngrx-graph.
+
+```
+USAGE
+  $ ngrx-graph help [COMMAND...] [-n]
+
+ARGUMENTS
+  [COMMAND...]  Command to show help for.
+
+FLAGS
+  -n, --nested-commands  Include all nested commands in the output.
+
+DESCRIPTION
+  Display help for ngrx-graph.
+```
+
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
 <!-- commandsstop -->
+
 </details>
 
 <details>

@@ -4,6 +4,7 @@ import os from 'os';
 import path from 'path';
 
 export default class Graph extends Command {
+  static id = 'ngrx-graph';
   async run(): Promise<void> {
     let rawArgv = process.argv.slice(2);
     if (rawArgv.length && rawArgv[0] === 'graph') rawArgv = rawArgv.slice(1);
@@ -21,6 +22,7 @@ export default class Graph extends Command {
   }
 }
 
+// Give the command a stable id so oclif does not emit the synthetic Symbol id
 Graph.description = 'Generate NgRx actions graph';
 /* SYNCHRONIZED_HELP_START */
 Graph.examples = [
@@ -71,7 +73,7 @@ Graph.usage = '[ACTION]';
 
 Graph.flags = {
   dir: Flags.string({ char: 'd', description: 'Directory to scan', default: process.cwd() }),
-  out: Flags.string({ char: 'o', description: 'output JSON file name (placed in --dir)', default: 'ngrx-graph.json' }),
+  out: Flags.string({ char: 'o', description: "output JSON file name (placed in --dir)", default: 'ngrx-graph.json' }),
   verbose: Flags.boolean({ char: 'v', description: 'enable verbose logging', default: false }),
   concurrency: Flags.integer({
     char: 'c',
@@ -81,6 +83,10 @@ Graph.flags = {
   svg: Flags.boolean({
     char: 's',
     description: 'also generate SVG files from DOT (requires Graphviz `dot` on PATH)',
+    default: false,
+  }),
+  dot: Flags.boolean({
+    description: 'also generate DOT files (per-action and aggregated)',
     default: false,
   }),
   viz: Flags.boolean({
@@ -93,5 +99,7 @@ Graph.flags = {
     default: false,
   }),
   json: Flags.boolean({ char: 'j', description: 'scan and write ngrx-graph.json only (no DOT/SVG)', default: false }),
+  force: Flags.boolean({ char: 'f', description: 'regenerate JSON payload and ignore any cached ngrx-graph.json (forces a re-scan)', default: false }),
 };
-export {};
+export { };
+
