@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fg from 'fast-glob';
 import fs from 'fs/promises';
 import os from 'os';
-import scanActions, { scanComponents, scanEffects, scanReducers } from '../../scan-actions';
+import scanActions, { parseActionsFromText, scanComponents, scanEffects, scanReducers } from '../../scan-actions';
 import { filterLoadedByAllActions } from '../../scan/index';
 
 export async function generatePayloadIfNeeded(options: {
@@ -62,6 +62,34 @@ export async function generatePayloadIfNeeded(options: {
   }
 
   const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
+  // build alias map: if an action is aliased (aliasedFrom), map alias -> original
+  type AliasedInfo = { aliasedFrom?: string; name?: string };
+  const aliasToOriginal: Record<string, string> = {};
+  for (const a of list) {
+    const aliased = (a as unknown as AliasedInfo).aliasedFrom;
+    if (aliased && a.name) aliasToOriginal[a.name] = aliased;
+  }
+
+  // Also scan index files for re-export aliases (they may re-export actions from actions files)
+  try {
+    const indexFiles = await fg('**/index.ts', { cwd: dir, absolute: true, onlyFiles: true });
+    for (const idx of indexFiles) {
+      try {
+        const txt = await fs.readFile(idx, 'utf8');
+        const parsed = await parseActionsFromText(txt, idx).catch(() => [] as Array<AliasedInfo>);
+        for (const p of parsed) {
+          const aliasedFrom = (p as AliasedInfo).aliasedFrom;
+          if (aliasedFrom && p.name) {
+            aliasToOriginal[p.name] = aliasedFrom;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    // ignore
+  }
   const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
   const fromComponents = componentsResult.mapping ?? {};
   const effectsResult = await scanEffects({ dir, pattern: '**/*.effects.ts', concurrency });
@@ -77,8 +105,18 @@ export async function generatePayloadIfNeeded(options: {
     ...filterLoadedByAllActions(loadedFromEffects, allActionNames),
   ];
 
+  // Normalize loadedActions: if a loaded action is an alias, map to original name
+  const normalizedLoaded = loadedActions.map(l => ({
+    name: aliasToOriginal[l.name] ?? l.name,
+    payloadActions: l.payloadActions.map(p => aliasToOriginal[p] ?? p),
+  }));
+
+  // update loadedActions with normalized values
+  const finalLoadedActions = normalizedLoaded;
+
   for (const [comp, acts] of Object.entries(fromComponents)) {
-    const kept = (acts || []).filter(a => allActionNames.has(a));
+    const mapped = (acts || []).map(a => aliasToOriginal[a] ?? a);
+    const kept = mapped.filter(a => allActionNames.has(a));
     if (kept.length) fromComponents[comp] = kept;
     else delete fromComponents[comp];
   }
@@ -90,13 +128,15 @@ export async function generatePayloadIfNeeded(options: {
   }
 
   for (const [k, v] of Object.entries(fromEffects)) {
-    const inp = (v.input || []).filter(x => allActionNames.has(x));
-    const out = (v.output || []).filter(x => allActionNames.has(x));
+    const mappedIn = (v.input || []).map(x => aliasToOriginal[x] ?? x);
+    const mappedOut = (v.output || []).map(x => aliasToOriginal[x] ?? x);
+    const inp = mappedIn.filter(x => allActionNames.has(x));
+    const out = mappedOut.filter(x => allActionNames.has(x));
     if (inp.length || out.length) fromEffects[k] = { input: inp, output: out };
     else delete fromEffects[k];
   }
 
-  payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions };
+  payload = { allActions, fromComponents, fromEffects, fromReducers, loadedActions: finalLoadedActions };
 
   await fs.mkdir(outDir, { recursive: true });
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');

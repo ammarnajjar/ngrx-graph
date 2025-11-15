@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import path from 'path';
 import ts from 'typescript';
 import { createSource, getStringLiteralText, isIdentifierNamed } from './utils';
 
@@ -12,6 +13,7 @@ export interface ActionInfo {
   hasProps?: boolean;
   nested?: boolean;
   propsTypeText?: string;
+  aliasedFrom?: string;
 }
 
 function visitCreateAction(declName: string | undefined, call: ts.CallExpression, file: string): ActionInfo | null {
@@ -78,9 +80,16 @@ function visitCreateActionGroup(call: ts.CallExpression, file: string): ActionIn
   return res;
 }
 
-export async function parseActionsFromText(text: string, file = 'file.ts'): Promise<ActionInfo[]> {
+export async function parseActionsFromText(
+  text: string,
+  file = 'file.ts',
+  visited = new Set<string>(),
+): Promise<ActionInfo[]> {
   const sf = createSource(text, file);
   const results: ActionInfo[] = [];
+  const resolvedFile = path.resolve(file);
+  if (visited.has(resolvedFile)) return results;
+  visited.add(resolvedFile);
 
   function visit(node: ts.Node) {
     if (ts.isVariableStatement(node)) {
@@ -153,10 +162,50 @@ export async function parseActionsFromText(text: string, file = 'file.ts'): Prom
   }
 
   visit(sf);
+
+  // Handle named re-exports from local modules, e.g. `export { a as aliasA } from './module'`
+  for (const stmt of sf.statements) {
+    if (!ts.isExportDeclaration(stmt) || !stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
+    const spec = stmt.moduleSpecifier.text;
+    if (!spec.startsWith('.')) continue; // only local modules
+    const exportClause = stmt.exportClause;
+    if (!exportClause || !ts.isNamedExports(exportClause)) continue;
+
+    const baseDir = path.dirname(file);
+    const candidates = [
+      path.resolve(baseDir, spec + '.ts'),
+      path.resolve(baseDir, spec + '.tsx'),
+      path.resolve(baseDir, spec, 'index.ts'),
+      path.resolve(baseDir, spec, 'index.tsx'),
+    ];
+    let target: string | undefined;
+    for (const c of candidates) {
+      const st = await fs.stat(c).catch(() => null);
+      if (st && st.isFile()) {
+        target = c;
+        break;
+      }
+    }
+    if (!target) continue;
+
+    // parse actions from target file (avoid infinite recursion using visited)
+    const importedActions = await parseActionsFromFile(target, visited).catch(() => [] as ActionInfo[]);
+    for (const specEl of exportClause.elements) {
+      const exportedName = specEl.name.text;
+      const origName = specEl.propertyName ? specEl.propertyName.text : exportedName;
+      for (const ia of importedActions) {
+        if (ia.name === origName) {
+          const aliased: ActionInfo = { ...ia, name: exportedName, file, aliasedFrom: origName };
+          results.push(aliased);
+        }
+      }
+    }
+  }
+
   return results;
 }
 
-export async function parseActionsFromFile(file: string) {
+export async function parseActionsFromFile(file: string, visited?: Set<string>) {
   const text = await fs.readFile(file, 'utf8');
-  return parseActionsFromText(text, file);
+  return parseActionsFromText(text, file, visited);
 }
