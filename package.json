@@ -9,7 +9,7 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "version": "0.0.14",
+  "version": "1.0.0",
   "name": "ngrx-graph",
   "author": "Ammar Najjar",
   "repository": "ammarnajjar/ngrx-graph",
