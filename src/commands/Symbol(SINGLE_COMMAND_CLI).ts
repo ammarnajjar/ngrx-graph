@@ -5,18 +5,8 @@ import path from 'path';
 
 export default class Graph extends Command {
   async run(): Promise<void> {
-    // process.argv here is the original CLI args. Oclif normally expects a
-    // subcommand token (e.g. `graph`), but we want to accept the single-command
-    // invocation style used by the TypeScript CLI. To make oclif route here
-    // whether the user invoked `./bin/dev graph ...` or `./bin/dev ...`, we
-    // normalize argv so the shim always receives the CLI-style args when
-    // delegating to `src/cli.ts`.
     let rawArgv = process.argv.slice(2);
-    // If the first token is 'graph', strip it (user called `bin/dev graph ...`).
     if (rawArgv.length && rawArgv[0] === 'graph') rawArgv = rawArgv.slice(1);
-    // If oclif parsed flags and treated them as command tokens, ensure we
-    // still forward the full original intended args to the TypeScript CLI.
-    // We'll reconstruct `argv` from the raw argv after normalization.
     const argv = rawArgv;
     const hasHelp = argv.includes('--help') || argv.includes('-h');
     const hasCommand = argv.some(a => !a.startsWith('-'));
@@ -38,7 +28,7 @@ Graph.examples = [
   '$ ngrx-graph -d ./src --out ./out --all --svg',
   '$ ngrx-graph "MyAction" -d ./src --out ./out --svg',
   '$ ngrx-graph -d ./src --out ./out --json',
-  '$ ngrx-graph -d ./src --out ./out --cache',
+  '$ ngrx-graph -d ./src --out ./out',
   '$ ngrx-graph -d ./src --out ./out --dot',
   '$ ngrx-graph -d ./src --out ./out --svg'
 ];
@@ -60,8 +50,8 @@ Examples:
   # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
   $ ngrx-graph -d ./src --out ./out --json
 
-  # Reuse an existing JSON payload instead of re-scanning
-  $ ngrx-graph -d ./src --out ./out --cache
+  # Reuse an existing JSON payload instead of re-scanning (enabled by default)
+  $ ngrx-graph -d ./src --out ./out
 
   # Generate DOT files only (per-action and aggregated)
   $ ngrx-graph -d ./src --out ./out --dot
@@ -73,7 +63,7 @@ Notes:
 
   - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out' (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write them under '--out'.
-  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON payload and skip scanning when present.`;
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone. Caching of an existing JSON payload is enabled by default; use '-f/--force' to force a re-scan.`;
 /* SYNCHRONIZED_HELP_END */
 
 Graph.usage = '[ACTION]';

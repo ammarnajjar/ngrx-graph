@@ -32,7 +32,7 @@ export async function generatePayloadIfNeeded(options: {
         }
       }
     } catch {
-      // ignore and continue
+      // ignore
     }
   }
 
@@ -62,7 +62,7 @@ export async function generatePayloadIfNeeded(options: {
   }
 
   const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
-  // build alias map: if an action is aliased (aliasedFrom), map alias -> original
+  // build alias map: alias -> original when available
   type AliasedInfo = { aliasedFrom?: string; name?: string };
   const aliasToOriginal: Record<string, string> = {};
   for (const a of list) {
@@ -70,7 +70,7 @@ export async function generatePayloadIfNeeded(options: {
     if (aliased && a.name) aliasToOriginal[a.name] = aliased;
   }
 
-  // Also scan index files for re-export aliases (they may re-export actions from actions files)
+  // Scan index files for re-export aliases
   try {
     const indexFiles = await fg('**/index.ts', { cwd: dir, absolute: true, onlyFiles: true });
     for (const idx of indexFiles) {
@@ -83,9 +83,9 @@ export async function generatePayloadIfNeeded(options: {
             aliasToOriginal[p.name] = aliasedFrom;
           }
         }
-      } catch {
-        // ignore
-      }
+        } catch {
+          // ignore
+        }
     }
   } catch {
     // ignore
@@ -105,7 +105,7 @@ export async function generatePayloadIfNeeded(options: {
     ...filterLoadedByAllActions(loadedFromEffects, allActionNames),
   ];
 
-  // Normalize loadedActions: if a loaded action is an alias, map to original name
+  // Normalize loadedActions: map aliases to original names
   const normalizedLoaded = loadedActions.map(l => ({
     name: aliasToOriginal[l.name] ?? l.name,
     payloadActions: l.payloadActions.map(p => aliasToOriginal[p] ?? p),

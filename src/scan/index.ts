@@ -60,7 +60,7 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // best-effort: skip files that fail to parse
+      // skip files that fail to parse
     }
   }
   return { mapping: res, loaded };
@@ -78,13 +78,13 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
     } catch {
-      // best-effort: skip files that fail to parse
+      // skip files that fail to parse
     }
   }
   return { mapping: res, loaded };
 }
 
-// helper to filter loaded payloadActions by global action names
+// filter loaded payloadActions by global action names
 export function filterLoadedByAllActions(loaded: Array<{ name: string; payloadActions: string[] }>,
   allActionNames: Set<string>) {
   return loaded

@@ -156,7 +156,6 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
           }
 
           // General case: catch action creator calls passed as arguments to other calls
-          // e.g. orderItemHandle(..., vouchersAdded({ amount: ... }))
           if (ts.isCallExpression(n)) {
             for (const arg of n.arguments) {
               if (ts.isCallExpression(arg)) {

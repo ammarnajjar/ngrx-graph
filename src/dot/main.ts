@@ -13,7 +13,6 @@ export async function generateDotFilesFromPayload(payload: GraphPayload, out: st
   await fs.writeFile(path.join(out, 'all.dot'), dedupeLines(allLines).join('\n'), 'utf8');
 
   for (const a of payload.allActions) {
-    // Use the focused generator to produce per-action DOT (only reachable nodes)
     await generateDotForActionPayload(payload, a.name, out);
   }
   return out;

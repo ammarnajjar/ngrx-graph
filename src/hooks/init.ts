@@ -10,7 +10,6 @@ export default async function init() {
     if (hasHelp && !hasCommand) {
       const node = process.execPath || 'node';
 
-      // find project root by walking up from this file until we find package.json or tsconfig.json
       let cur = __dirname;
       const root = path.parse(cur).root;
       let projectRoot = cur;
@@ -25,13 +24,11 @@ export default async function init() {
 
       const cliPath = path.join(projectRoot, 'src', 'cli.ts');
 
-      // Prefer project-local ts-node/register to ensure the preload resolves
-      // from the project node_modules directory when running from elsewhere.
       let tsNodeRegister = 'ts-node/register';
       try {
         tsNodeRegister = require.resolve('ts-node/register', { paths: [projectRoot] });
       } catch {
-        // fall back to bare name
+        // fallback
       }
 
       const res = spawnSync(node, ['-r', tsNodeRegister, cliPath, '--help'], { stdio: 'inherit', cwd: projectRoot });

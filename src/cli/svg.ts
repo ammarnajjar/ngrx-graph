@@ -14,7 +14,6 @@ export async function tryDotToSvg(dotPath: string, svgPath: string): Promise<boo
 
 export async function renderDotWithViz(dotText: string): Promise<string | null> {
   try {
-    // prefer the CJS helper which uses require and is simpler to type
     // @ts-expect-error dynamic CJS helper
     const helper = await import('./viz-fallback.cjs');
     return await helper.renderDotWithViz(dotText);
@@ -33,7 +32,7 @@ export async function tryDotOrViz(dotPath: string, svgPath: string, preferViz = 
         return { ok: true, via: 'viz' };
       }
     } catch {
-      // ignore and fallback to dot
+      // fallback to dot
     }
     const ok = await tryDotToSvg(dotPath, svgPath);
     return { ok, via: ok ? 'dot' : 'none' };

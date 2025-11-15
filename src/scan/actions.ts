@@ -80,11 +80,7 @@ function visitCreateActionGroup(call: ts.CallExpression, file: string): ActionIn
   return res;
 }
 
-export async function parseActionsFromText(
-  text: string,
-  file = 'file.ts',
-  visited = new Set<string>(),
-): Promise<ActionInfo[]> {
+export async function parseActionsFromText(text: string, file = 'file.ts', visited = new Set<string>()): Promise<ActionInfo[]> {
   const sf = createSource(text, file);
   const results: ActionInfo[] = [];
   const resolvedFile = path.resolve(file);
@@ -163,7 +159,7 @@ export async function parseActionsFromText(
 
   visit(sf);
 
-  // Handle named re-exports from local modules, e.g. `export { a as aliasA } from './module'`
+  // Handle named re-exports from local modules
   for (const stmt of sf.statements) {
     if (!ts.isExportDeclaration(stmt) || !stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
     const spec = stmt.moduleSpecifier.text;
@@ -188,7 +184,6 @@ export async function parseActionsFromText(
     }
     if (!target) continue;
 
-    // parse actions from target file (avoid infinite recursion using visited)
     const importedActions = await parseActionsFromFile(target, visited).catch(() => [] as ActionInfo[]);
     for (const specEl of exportClause.elements) {
       const exportedName = specEl.name.text;

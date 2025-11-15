@@ -55,13 +55,14 @@ ngrx-graph -a -d ./src --out ./out --dot --svg
 ngrx-graph -d ./src --out ./out --json
 ```
 
-- Reuse existing JSON instead of re-scanning:
 
 ```bash
-ngrx-graph -d ./src --out ./out --cache
+ngrx-graph -d ./src --out ./out
+```
+Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass `-f` or `--force`.
 ```
 
-Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `--cache`
+Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `-f/--force`
 </details>
 <details>
   <summary>Graph Keys</summary>
@@ -314,7 +315,7 @@ DESCRIPTION
   $ ngrx-graph -d ./src --out ./out --json
 
   # Reuse an existing JSON payload instead of re-scanning
-  $ ngrx-graph -d ./src --out ./out --cache
+  $ ngrx-graph -d ./src --out ./out
 
   # Generate DOT files only (per-action and aggregated)
   $ ngrx-graph -d ./src --out ./out --dot
@@ -328,8 +329,7 @@ DESCRIPTION
   (defaults to the scan directory).
   - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write
   them under '--out'.
-  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone; use '--cache' to reuse an existing JSON
-  payload and skip scanning when present.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone. Caching of an existing JSON payload is enabled by default; pass `-f` or `--force` to force a re-scan.
 
 EXAMPLES
   $ ngrx-graph -d ./src --out ./out
@@ -340,7 +340,7 @@ EXAMPLES
 
   $ ngrx-graph -d ./src --out ./out --json
 
-  $ ngrx-graph -d ./src --out ./out --cache
+  $ ngrx-graph -d ./src --out ./out
 
   $ ngrx-graph -d ./src --out ./out --dot
 

@@ -36,7 +36,7 @@ test('--json alone writes JSON and stops', async () => {
   expect(hasDot).toBe(false);
 });
 
-test('reuses existing JSON when --cache provided', async () => {
+test('reuses existing JSON when a preexisting payload is present', async () => {
   const outDir = await createTempDir('cache-case1');
   const outFile = path.join(outDir, 'ngrx-graph.json');
   // create a simple actions source so scanning will find a predictable action
@@ -53,16 +53,16 @@ test('reuses existing JSON when --cache provided', async () => {
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
   const before = await fs.readFile(outFile, 'utf8');
 
-  const args = ['-d', outDir, '--out', outDir, '--cache'];
+  const args = ['-d', outDir, '--out', outDir];
   const res = await runCli(args);
   expect(res.code).toBeGreaterThanOrEqual(0);
 
   const after = await fs.readFile(outFile, 'utf8');
-  // with --cache we should reuse the preexisting JSON (content unchanged)
+  // with default behavior we should reuse the preexisting JSON (content unchanged)
   expect(after).toBe(before);
 });
 
-test('rewrites JSON when --cache not provided (default)', async () => {
+test('does not rewrite JSON when --cache not provided (default)', async () => {
   const outDir = await createTempDir('cache-case2');
   const outFile = path.join(outDir, 'ngrx-graph.json');
   // create a simple actions source so scanning will find a predictable action
@@ -79,6 +79,32 @@ test('rewrites JSON when --cache not provided (default)', async () => {
   await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
 
   const args = ['-d', outDir, '--out', outDir];
+  const res = await runCli(args, process.cwd(), 20000);
+  expect(res.code).toBeGreaterThanOrEqual(0);
+
+  const after = await fs.readFile(outFile, 'utf8');
+  // by default caching is enabled; the payload should be unchanged
+  const before = await fs.readFile(outFile, 'utf8');
+  expect(after).toBe(before);
+});
+
+test('rewrites JSON when --force provided', async () => {
+  const outDir = await createTempDir('cache-case2-force');
+  const outFile = path.join(outDir, 'ngrx-graph.json');
+  // create a simple actions source so scanning will find a predictable action
+  const srcDir = path.join(outDir, 'src');
+  await fs.mkdir(srcDir, { recursive: true });
+  const actionFile = path.join(srcDir, 'sample.actions.ts');
+  await fs.writeFile(
+    actionFile,
+    `import { createAction } from '@ngrx/store';\nexport const ActionScanned = createAction('[Test] Scanned');\n`,
+    'utf8',
+  );
+
+  const payload = { allActions: [{ name: 'preexisting', nested: false }] };
+  await fs.writeFile(outFile, JSON.stringify(payload, null, 2), 'utf8');
+
+  const args = ['-d', outDir, '--out', outDir, '--force'];
   const res = await runCli(args, process.cwd(), 20000);
   expect(res.code).toBeGreaterThanOrEqual(0);
 
