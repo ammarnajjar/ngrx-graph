@@ -361,6 +361,7 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.3
 
 - change version in [`package.json`](package.json)
 - run `npm run version`
+- run `./scripts/test-npm-pack.sh` to check that package would work if published.
 - commit and push/merge to main
 - draft and release a release on [github](https://github.com/ammarnajjar/ngrx-graph/releases/new)
 </details>
