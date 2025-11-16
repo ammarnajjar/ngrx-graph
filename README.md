@@ -61,8 +61,6 @@ ngrx-graph -d ./src --out ./out
 
 Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass `-f` or `--force`.
 
-````
-
 Common flags: `-d/--dir`, `-o/--out`, `-a/--all`, `-s/--svg`, `-j/--json`, `-v/--verbose`, `-c/--concurrency`, `-f/--force`
 </details>
 <details>
@@ -217,7 +215,7 @@ npx ngrx-graph -j
 Generate a combined graph for the whole example:
 
 ```bash
-npx ngrx-graph graph -a -d docs/examples/case4/src -o docs/examples/case4/out
+npx ngrx-graph -a -d docs/examples/case4/src -o docs/examples/case4/out
 ```
 
 - [combined DOT](./docs/examples/case4/out/all.dot)
@@ -227,10 +225,12 @@ npx ngrx-graph graph -a -d docs/examples/case4/src -o docs/examples/case4/out
 Generate a graph for a specific action (produces per-action DOT only when an action is supplied):
 
 ```bash
-npx ngrx-graph graph actionA -d docs/examples/case4/src -o docs/examples/case4/out
+npx ngrx-graph actionA -d docs/examples/case4/src -o docs/examples/case4/out
 ```
 
 - [dotFile](./docs/examples/case4/out/actionA.dot)
+- graph:  
+  ![graph](./docs/examples/case4/out/actionA.svg)
 
 </details>
 
