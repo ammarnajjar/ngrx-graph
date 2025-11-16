@@ -20,20 +20,20 @@
   "main": "dist/index.js",
   "homepage": "https://github.com/ammarnajjar/ngrx-graph",
   "dependencies": {
-    "chalk": "^5.3.0",
+    "chalk": "^5.6.2",
     "fast-glob": "^3.3.3",
     "typescript": "^5.9.3",
-    "p-limit": "^4.0.0",
+    "p-limit": "^7.2.0",
     "@oclif/core": "^4.8.0",
-    "@oclif/plugin-help": "^6.2.35",
+    "@oclif/plugin-help": "^6.2.36",
     "lodash": "^4.17.21",
     "ts-morph": "^27.0.2",
     "commander": "^14.0.2",
     "viz.js": "^2.1.2"
   },
   "devDependencies": {
-    "@oclif/test": "^4.1.14",
-    "eslint-config-oclif": "^6.0.116",
+    "@oclif/test": "^4.1.15",
+    "eslint-config-oclif": "^6.0.118",
     "husky": "^9.1.7",
     "shx": "^0.4.0",
     "tslib": "^2.8.1",
@@ -45,7 +45,7 @@
     "eslint": "^9.39.1",
     "eslint-config-oclif-typescript": "^3.1.14",
     "jest": "^30.2.0",
-    "oclif": "^4.22.44",
+    "oclif": "^4.22.46",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.46.4",
@@ -85,6 +85,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.1.1"
   },
   "types": "dist/index.d.ts",
   "bugs": "https://github.com/ammarnajjar/ngrx-graph/issues"

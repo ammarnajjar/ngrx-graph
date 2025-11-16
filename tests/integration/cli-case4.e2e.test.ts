@@ -21,8 +21,7 @@ function runCli(args: string[], cwd = process.cwd()): Promise<{ stdout: string; 
 test('CLI end-to-end for case4 produces expected JSON and DOT', async () => {
   const base = path.join(process.cwd(), 'docs', 'examples', 'case4');
   const src = path.join(base, 'src');
-  const out = path.join(base, 'out');
-  const testOut = path.join(out, 'test-run');
+  const testOut = path.join(process.cwd(), 'tmp', 'case4');
 
   // clean per-test out dir
   await fs.rm(testOut, { recursive: true, force: true }).catch(() => {});
