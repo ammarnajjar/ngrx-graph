@@ -243,7 +243,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/1.0.0 darwin-arm64 node-v24.11.0
+ngrx-graph/1.0.1 darwin-arm64 node-v24.12.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -258,6 +258,7 @@ USAGE
 <!-- commands -->
 * [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 * [`ngrx-graph help [COMMAND]`](#ngrx-graph-help-command)
+* [`ngrx-graph [ACTION]`](#ngrx-graph-action)
 
 ## `ngrx-graph [ACTION]`
 
@@ -331,7 +332,7 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.0/src/commands/graph.ts)_
+_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.1/src/commands/graph.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -351,7 +352,81 @@ DESCRIPTION
   Display help for ngrx-graph.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.35/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
+
+## `ngrx-graph [ACTION]`
+
+Generate NgRx actions graph
+
+```
+USAGE
+  $ ngrx-graph Symbol(SINGLE_COMMAND_CLI) [ACTION]
+
+FLAGS
+  -a, --all                  only generate the aggregated all.dot (no per-action files)
+  -c, --concurrency=<value>  [default: 8] concurrency for file parsing
+  -d, --dir=<value>          [default: /Users/anajjar/code/ngrx-graph] Directory to scan
+  -f, --force                regenerate JSON payload and ignore any cached ngrx-graph.json (forces a re-scan)
+  -j, --json                 scan and write ngrx-graph.json only (no DOT/SVG)
+  -o, --out=<value>          [default: ngrx-graph.json] output JSON file name (placed in --dir)
+  -s, --svg                  also generate SVG files from DOT (requires Graphviz `dot` on PATH)
+  -v, --verbose              enable verbose logging
+      --dot                  also generate DOT files (per-action and aggregated)
+      --viz                  prefer viz.js for SVG generation (useful when dot is unavailable)
+
+DESCRIPTION
+  Generate NgRx actions graph
+
+  Examples:
+
+
+  # Scan a project and write JSON into the output directory (file: ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out
+
+  # Generate aggregated DOT and SVG (all.dot / all.svg) under the output directory
+  $ ngrx-graph -d ./src --out ./out --all --svg
+
+  # Generate focused DOT/SVG for a specific action (positional argument)
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
+
+  # Re-generate JSON and stop (writes ./out/ngrx-graph.json)
+  $ ngrx-graph -d ./src --out ./out --json
+
+  # Reuse an existing JSON payload instead of re-scanning
+  $ ngrx-graph -d ./src --out ./out
+
+  # Generate DOT files only (per-action and aggregated)
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  # Generate SVGs (implies DOT generation)
+  $ ngrx-graph -d ./src --out ./out --svg
+
+  Notes:
+
+  - The CLI always writes the JSON payload to a file named 'ngrx-graph.json' inside the directory specified by '--out'
+  (defaults to the scan directory).
+  - DOT and SVG files are written under the directory specified by '--dir' (scan directory) unless you prefer to write
+  them under '--out'.
+  - Use '--json' to re-generate the JSON and stop (no DOT/SVG) when used alone.
+  - Note: caching is enabled by default. To force a re-scan and regenerate the JSON payload, pass -f or --force.
+
+EXAMPLES
+  $ ngrx-graph -d ./src --out ./out
+
+  $ ngrx-graph -d ./src --out ./out --all --svg
+
+  $ ngrx-graph "MyAction" -d ./src --out ./out --svg
+
+  $ ngrx-graph -d ./src --out ./out --json
+
+  $ ngrx-graph -d ./src --out ./out
+
+  $ ngrx-graph -d ./src --out ./out --dot
+
+  $ ngrx-graph -d ./src --out ./out --svg
+```
+
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.1/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
 <!-- commandsstop -->
 
 </details>
