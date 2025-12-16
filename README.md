@@ -243,7 +243,7 @@ $ npm install -g ngrx-graph
 $ ngrx-graph COMMAND
 running command...
 $ ngrx-graph (--version)
-ngrx-graph/1.0.1 darwin-arm64 node-v24.12.0
+ngrx-graph/1.0.2 darwin-arm64 node-v24.12.0
 $ ngrx-graph --help [COMMAND]
 USAGE
   $ ngrx-graph COMMAND
@@ -332,7 +332,7 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.1/src/commands/graph.ts)_
+_See code: [src/commands/graph.ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.2/src/commands/graph.ts)_
 
 ## `ngrx-graph help [COMMAND]`
 
@@ -426,7 +426,7 @@ EXAMPLES
   $ ngrx-graph -d ./src --out ./out --svg
 ```
 
-_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.1/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
+_See code: [src/commands/Symbol(SINGLE_COMMAND_CLI).ts](https://github.com/ammarnajjar/ngrx-graph/blob/v1.0.2/src/commands/Symbol(SINGLE_COMMAND_CLI).ts)_
 <!-- commandsstop -->
 
 </details>
