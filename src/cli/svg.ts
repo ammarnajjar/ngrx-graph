@@ -14,11 +14,20 @@ export async function tryDotToSvg(dotPath: string, svgPath: string): Promise<boo
 
 export async function renderDotWithViz(dotText: string): Promise<string | null> {
   try {
-    // @ts-expect-error dynamic CJS helper
-    const helper = await import('./viz-fallback.cjs');
+    // Prefer require() so tests can inject the helper into Module._cache.
+    // If require fails (ESM-only contexts), fall back to dynamic import().
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const helper = require('./viz-fallback.cjs');
     return await helper.renderDotWithViz(dotText);
   } catch {
-    return null;
+    try {
+      // dynamic import for ESM environments
+      // @ts-expect-error dynamic import
+      const helper = await import('./viz-fallback.cjs');
+      return await helper.renderDotWithViz(dotText);
+    } catch {
+      return null;
+    }
   }
 }
 

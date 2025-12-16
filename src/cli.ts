@@ -1,5 +1,31 @@
 #!/usr/bin/env node
-import chalk from 'chalk';
+// Load chalk in a way that works whether chalk is published as CJS or ESM-only.
+// We prefer a synchronous require (works in CommonJS outputs). If that fails
+// (ERR_REQUIRE_ESM), provide a small ANSI-color fallback implementing `.hex()`
+// and `.red()` used by the CLI.
+let chalk: { hex?: (color: string) => (msg: string) => string; red?: (m: string) => string; default?: { hex?: (color: string) => (msg: string) => string; red?: (m: string) => string } };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  chalk = require('chalk');
+  // support cases where require returns a module object with `.default`
+  if (chalk && typeof chalk.red !== 'function' && chalk.default) {
+    chalk = chalk.default;
+  }
+} catch {
+  const parseHex = (h: string) => {
+    if (!h) return '255;255;255';
+    if (h.startsWith('#')) h = h.slice(1);
+    const r = parseInt(h.slice(0, 2), 16) || 255;
+    const g = parseInt(h.slice(2, 4), 16) || 255;
+    const b = parseInt(h.slice(4, 6), 16) || 255;
+    return `${r};${g};${b}`;
+  };
+  chalk = {
+    hex: (color: string) => (msg: string) => `\u001b[38;2;${parseHex(color)}m${msg}\u001b[0m`,
+    red: (m: string) => `\u001b[31m${m}\u001b[0m`,
+    default: { hex: (color: string) => (msg: string) => `\u001b[38;2;${parseHex(color)}m${msg}\u001b[0m` },
+  };
+}
 import { Command } from 'commander';
 import os from 'os';
 import path from 'path';
@@ -7,6 +33,14 @@ import cleanDotFilesIfNotRequested from './cli/cleanup';
 import { generatePayloadIfNeeded, processDotSvgGeneration } from './cli/helpers';
 
 const program = new Command();
+
+function chalkHex(color: string) {
+  return (msg: string) => (chalk && typeof chalk.hex === 'function' ? chalk.hex(color)(msg) : msg);
+}
+
+function chalkRed(msg: string) {
+  return chalk && typeof chalk.red === 'function' ? chalk.red(msg) : msg;
+}
 
 function getDefaultConcurrency(): number {
   try {
@@ -114,14 +148,14 @@ async function run() {
   const dotRequested = dotExplicit || svgRequested;
   if (opts.json && !hasGenerationFlags) {
     const totalDuration = (Date.now() - startTime) / 1000;
-    console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
+    console.log(chalkHex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
     return;
   }
 
   const dotOut = outDir || dir;
   if (opts.verbose) {
-    console.log(chalk.hex('#4DA6FF')(`Resolved scan dir: ${dir}`));
-    console.log(chalk.hex('#4DA6FF')(`Resolved output dir: ${dotOut}`));
+    console.log(chalkHex('#4DA6FF')(`Resolved scan dir: ${dir}`));
+    console.log(chalkHex('#4DA6FF')(`Resolved output dir: ${dotOut}`));
   }
   await cleanDotFilesIfNotRequested(dotOut, dotExplicit, opts.verbose);
   if (dotOut !== dir) {
@@ -131,11 +165,11 @@ async function run() {
     await processDotSvgGeneration({ opts, outFile, dotOut, dotExplicit, verbose: opts.verbose });
   }
   const totalDuration = (Date.now() - startTime) / 1000;
-  console.log(chalk.hex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
+  console.log(chalkHex('#4DA6FF')(`Total elapsed time: ${totalDuration.toFixed(2)}s`));
   return;
 }
 
 run().catch(err => {
-  console.error(chalk.red('Error while scanning:'), err);
+  console.error(chalkRed('Error while scanning:'), err);
   process.exit(2);
 });
