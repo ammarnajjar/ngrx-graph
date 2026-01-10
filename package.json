@@ -45,7 +45,7 @@
     "eslint": "^9.39.2",
     "eslint-config-oclif-typescript": "^3.1.14",
     "jest": "^30.2.0",
-    "oclif": "^4.22.61",
+    "oclif": "^4.22.63",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.51.0",
