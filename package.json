@@ -33,25 +33,24 @@
   },
   "devDependencies": {
     "@oclif/test": "^4.1.15",
-    "eslint-config-oclif": "^6.0.128",
     "husky": "^9.1.7",
     "shx": "^0.4.0",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
     "@eslint/js": "^9.39.2",
     "@jest/globals": "^30.2.0",
-    "@types/node": "^25.0.5",
-    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@types/node": "^25.0.6",
+    "@typescript-eslint/parser": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
     "eslint": "^9.39.2",
-    "eslint-config-oclif-typescript": "^3.1.14",
     "jest": "^30.2.0",
-    "oclif": "^4.22.61",
+    "oclif": "^4.22.63",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.51.0",
+    "typescript-eslint": "^8.52.0",
     "@types/jest": "^30.0.0",
-    "@types/lodash": "^4.17.21",
-    "globals": "^16.5.0"
+    "@types/lodash": "^4.17.23",
+    "globals": "^17.0.0"
   },
   "oclif": {
     "plugins": [
