@@ -50,7 +50,7 @@
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.51.0",
     "@types/jest": "^30.0.0",
-    "@types/lodash": "^4.17.21",
+    "@types/lodash": "^4.17.23",
     "globals": "^16.5.0"
   },
   "oclif": {
