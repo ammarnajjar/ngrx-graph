@@ -41,7 +41,7 @@
     "@jest/globals": "^30.2.0",
     "@types/node": "^25.0.6",
     "@typescript-eslint/parser": "^8.52.0",
-    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
     "eslint": "^9.39.2",
     "jest": "^30.2.0",
     "oclif": "^4.22.63",
