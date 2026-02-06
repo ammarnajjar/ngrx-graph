@@ -26,8 +26,6 @@
     "p-limit": "^7.3.0",
     "@oclif/core": "^4.8.0",
     "@oclif/plugin-help": "^6.2.37",
-    "lodash": "^4.17.23",
-    "ts-morph": "^27.0.2",
     "commander": "^14.0.3",
     "viz.js": "^2.1.2"
   },
@@ -49,7 +47,6 @@
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.54.0",
     "@types/jest": "^30.0.0",
-    "@types/lodash": "^4.17.23",
     "globals": "^17.3.0"
   },
   "oclif": {
