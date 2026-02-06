@@ -16,14 +16,18 @@ export async function cleanDotFilesIfNotRequested(outDir: string, dotRequested: 
             await fs.rm(p).catch(() => {});
             if (verbose) console.log(`Removed DOT file ${p} because --dot not requested`);
           }
-        } catch {
-          void 0;
+        } catch (err) {
+          if (verbose) {
+            console.log(`Failed to process ${e.name}:`, err instanceof Error ? err.message : String(err));
+          }
         }
       }
     }
     await removeDotsRecursively(outDir);
-  } catch {
-    void 0;
+  } catch (err) {
+    if (verbose) {
+      console.log('Failed to clean DOT files:', err instanceof Error ? err.message : String(err));
+    }
   }
 }
 

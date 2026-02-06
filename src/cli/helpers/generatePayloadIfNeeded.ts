@@ -28,11 +28,13 @@ export async function generatePayloadIfNeeded(options: {
           console.log(chalk.green(`Using existing JSON payload at ${outFile}`));
           return payload;
         } catch (readErr) {
-          console.log(chalk.yellow('Found existing JSON but failed to read/parse it; will re-scan:'), String(readErr));
+          console.log(chalk.yellow('Found existing JSON but failed to read/parse it; will re-scan:'), readErr instanceof Error ? readErr.message : String(readErr));
         }
       }
-    } catch {
-      void 0;
+    } catch (err) {
+      if (verbose) {
+        console.log(chalk.yellow('Failed to check cache file:'), err instanceof Error ? err.message : String(err));
+      }
     }
   }
 
@@ -64,10 +66,16 @@ export async function generatePayloadIfNeeded(options: {
   const allActions = list.map(a => ({ name: a.name ?? '', nested: !!a.nested }));
   // build alias map: alias -> original when available
   type AliasedInfo = { aliasedFrom?: string; name?: string };
+
+  function hasAliasedFrom(obj: unknown): obj is AliasedInfo {
+    return typeof obj === 'object' && obj !== null && 'aliasedFrom' in obj;
+  }
+
   const aliasToOriginal: Record<string, string> = {};
   for (const a of list) {
-    const aliased = (a as unknown as AliasedInfo).aliasedFrom;
-    if (aliased && a.name) aliasToOriginal[a.name] = aliased;
+    if (hasAliasedFrom(a) && a.aliasedFrom && a.name) {
+      aliasToOriginal[a.name] = a.aliasedFrom;
+    }
   }
 
   // Scan index files for re-export aliases
@@ -76,19 +84,22 @@ export async function generatePayloadIfNeeded(options: {
     for (const idx of indexFiles) {
       try {
         const txt = await fs.readFile(idx, 'utf8');
-        const parsed = await parseActionsFromText(txt, idx).catch(() => [] as Array<AliasedInfo>);
+        const parsed = await parseActionsFromText(txt, idx).catch(() => []);
         for (const p of parsed) {
-          const aliasedFrom = (p as AliasedInfo).aliasedFrom;
-          if (aliasedFrom && p.name) {
-            aliasToOriginal[p.name] = aliasedFrom;
+          if (hasAliasedFrom(p) && p.aliasedFrom && p.name) {
+            aliasToOriginal[p.name] = p.aliasedFrom;
           }
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        if (verbose) {
+          console.log(chalk.yellow(`Failed to parse index file ${idx}:`), err instanceof Error ? err.message : String(err));
+        }
       }
     }
-  } catch {
-    void 0;
+  } catch (err) {
+    if (verbose) {
+      console.log(chalk.yellow('Failed to scan index files:'), err instanceof Error ? err.message : String(err));
+    }
   }
   const componentsResult = await scanComponents({ dir, pattern: '**/*.component.ts', concurrency });
   const fromComponents = componentsResult.mapping ?? {};

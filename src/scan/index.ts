@@ -48,7 +48,7 @@ export async function scanActions(options?: { dir?: string; pattern?: string; co
   return flat;
 }
 
-export async function scanComponents(options?: { dir?: string; pattern?: string; concurrency?: number }) {
+export async function scanComponents(options?: { dir?: string; pattern?: string; concurrency?: number; verbose?: boolean }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*.component.ts';
   const entries = await fg(pattern, { cwd: dir, absolute: true, onlyFiles: true });
@@ -59,14 +59,16 @@ export async function scanComponents(options?: { dir?: string; pattern?: string;
       const r = await parseComponentsFromFile(file);
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
-    } catch {
-      void 0;
+    } catch (err) {
+      if (options?.verbose) {
+        console.log(`Failed to parse component file ${file}:`, err instanceof Error ? err.message : String(err));
+      }
     }
   }
   return { mapping: res, loaded };
 }
 
-export async function scanEffects(options?: { dir?: string; pattern?: string; concurrency?: number }) {
+export async function scanEffects(options?: { dir?: string; pattern?: string; concurrency?: number; verbose?: boolean }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*.effects.ts';
   const entries = await fg(pattern, { cwd: dir, absolute: true, onlyFiles: true });
@@ -77,8 +79,10 @@ export async function scanEffects(options?: { dir?: string; pattern?: string; co
       const r = await parseEffectsFromFile(file);
       Object.assign(res, r.mapping);
       loaded.push(...r.loaded);
-    } catch {
-      void 0;
+    } catch (err) {
+      if (options?.verbose) {
+        console.log(`Failed to parse effects file ${file}:`, err instanceof Error ? err.message : String(err));
+      }
     }
   }
   return { mapping: res, loaded };
@@ -94,7 +98,7 @@ export function filterLoadedByAllActions(
     .filter(l => l.payloadActions && l.payloadActions.length);
 }
 
-export async function scanReducers(options?: { dir?: string; pattern?: string; concurrency?: number }) {
+export async function scanReducers(options?: { dir?: string; pattern?: string; concurrency?: number; verbose?: boolean }) {
   const dir = options?.dir ?? process.cwd();
   const pattern = options?.pattern ?? '**/*reducer*.ts';
   const concurrency = options?.concurrency ?? 8;
@@ -106,8 +110,10 @@ export async function scanReducers(options?: { dir?: string; pattern?: string; c
       try {
         const r = await parseReducersFromFile(p);
         Object.assign(res, r.mapping);
-      } catch {
-        void 0;
+      } catch (err) {
+        if (options?.verbose) {
+          console.log(`Failed to parse reducer file ${p}:`, err instanceof Error ? err.message : String(err));
+        }
       }
     }),
   );
