@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import ts from 'typescript';
-import { createSource } from './utils';
+import { createSource, getUnquotedText } from './utils';
 
 export async function parseComponentsFromText(text: string, file = 'file.ts') {
   const sf = createSource(text, file);
@@ -33,7 +33,7 @@ export async function parseComponentsFromText(text: string, file = 'file.ts') {
             actionName = first.text;
           } else if (ts.isObjectLiteralExpression(first)) {
             for (const prop of first.properties) {
-              if (ts.isPropertyAssignment(prop) && prop.name && prop.name.getText().replace(/['"]/g, '') === 'type') {
+              if (ts.isPropertyAssignment(prop) && prop.name && getUnquotedText(prop.name) === 'type') {
                 const init = prop.initializer;
                 if (ts.isStringLiteral(init) || ts.isNoSubstitutionTemplateLiteral(init)) actionName = init.text;
               }

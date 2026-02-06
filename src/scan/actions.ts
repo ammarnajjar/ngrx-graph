@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import ts from 'typescript';
-import { createSource, getStringLiteralText, isIdentifierNamed } from './utils';
+import { createSource, getStringLiteralText, getUnquotedText, isIdentifierNamed } from './utils';
 
 export type ActionKind = 'createAction' | 'createActionGroup' | 'class';
 
@@ -55,7 +55,7 @@ function visitCreateActionGroup(call: ts.CallExpression, file: string): ActionIn
   if (!ts.isObjectLiteralExpression(events.initializer)) return res;
   for (const prop of events.initializer.properties) {
     if (ts.isPropertyAssignment(prop)) {
-      const name = prop.name.getText().replace(/['"]/g, '');
+      const name = getUnquotedText(prop.name);
       const initializer = prop.initializer;
       let hasProps = false;
       let propsTypeText: string | undefined;
@@ -109,7 +109,7 @@ function visitPropertyAssignment(node: ts.PropertyAssignment, file: string): Act
   if (init && ts.isCallExpression(init)) {
     const expr = init.expression;
     if (isIdentifierNamed(expr, 'createAction')) {
-      const name = node.name.getText().replace(/['"]/g, '');
+      const name = getUnquotedText(node.name);
       const info = visitCreateAction(name, init, file);
       if (info) {
         info.nested = true;

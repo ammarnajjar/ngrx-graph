@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import ts from 'typescript';
-import { createSource } from './utils';
+import { createSource, getUnquotedText } from './utils';
 
 function extractPayloadActions(objLiteral: ts.ObjectLiteralExpression): string[] {
   const payloads: string[] = [];
@@ -114,7 +114,7 @@ function processDispatchCall(
         if (
           ts.isPropertyAssignment(prop) &&
           prop.name &&
-          prop.name.getText().replace(/['"]/g, '') === 'type'
+          getUnquotedText(prop.name) === 'type'
         ) {
           const init = prop.initializer;
           if (ts.isStringLiteral(init) || ts.isNoSubstitutionTemplateLiteral(init)) outputs.add(init.text);
@@ -152,7 +152,7 @@ export async function parseEffectsFromText(text: string, file = 'file.ts') {
 
   function visit(node: ts.Node): void {
     if (ts.isPropertyDeclaration(node) || ts.isPropertyAssignment(node)) {
-      const propName = node.name ? node.name.getText().replace(/['"]/g, '') : undefined;
+      const propName = node.name ? getUnquotedText(node.name) : undefined;
       if (!propName) return ts.forEachChild(node, visit);
 
       const initializer = (node as ts.PropertyDeclaration | ts.PropertyAssignment).initializer;

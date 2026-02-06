@@ -14,4 +14,8 @@ export function createSource(text: string, fileName = 'file.ts') {
   return ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
 }
 
-export default { getStringLiteralText, isIdentifierNamed, createSource };
+export function getUnquotedText(node: ts.Node): string {
+  return node.getText().replace(/['"]/g, '');
+}
+
+export default { getStringLiteralText, isIdentifierNamed, createSource, getUnquotedText };
