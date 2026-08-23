@@ -6,7 +6,11 @@ const config: Config.InitialOptions = {
   testMatch: ['**/tests/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        types: ['node', 'jest'],
+      },
+    }],
   },
 };
 
