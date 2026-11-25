@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag || github.event.release.tag_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
