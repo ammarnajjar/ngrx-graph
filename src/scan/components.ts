@@ -28,7 +28,7 @@ export async function parseComponentsFromText(text: string, file = 'file.ts') {
           if (ts.isCallExpression(first)) {
             const e = first.expression;
             if (ts.isIdentifier(e)) actionName = e.text;
-            else if (ts.isPropertyAccessExpression(e)) actionName = e.name.text;
+            else if (ts.isPropertyAccessExpression(e) && !ts.isThisKeyword(e.object)) actionName = e.name.text;
           } else if (ts.isIdentifier(first)) {
             actionName = first.text;
           } else if (ts.isObjectLiteralExpression(first)) {
