@@ -9,6 +9,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "typeRoots": ["./typings", "./node_modules/@types"],
     "resolveJsonModule": true,
     "sourceMap": true,
     "lib": ["ES2020"]
