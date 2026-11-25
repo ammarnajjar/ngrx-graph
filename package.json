@@ -20,8 +20,8 @@
   "main": "dist/index.js",
   "homepage": "https://github.com/ammarnajjar/ngrx-graph",
   "dependencies": {
-    "@oclif/core": "^4.14.0",
-    "@oclif/plugin-help": "^6.3.0",
+    "@oclif/core": "^5.1.12",
+    "@oclif/plugin-help": "^7.0.10",
     "chalk": "^5.6.2",
     "commander": "^15.1.0",
     "fast-glob": "^3.3.3",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.5.2",
-    "@oclif/test": "^4.2.0",
+    "@oclif/test": "^5.0.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.9.12",
     "@typescript-eslint/eslint-plugin": "^8.74.0",
@@ -41,7 +41,7 @@
     "globals": "^17.14.0",
     "husky": "^9.1.7",
     "jest": "^30.5.2",
-    "oclif": "^4.24.0",
+    "oclif": "^6.0.15",
     "shx": "^0.4.0",
     "ts-jest": "^29.4.15",
     "ts-node": "^10.9.2",
