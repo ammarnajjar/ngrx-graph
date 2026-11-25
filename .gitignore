@@ -41,8 +41,9 @@ build/Release
 node_modules
 jspm_packages
 
-# TypeScript v1 declaration files
-typings/
+# TypeScript v1 declaration files (keep typings/chalk/ for chalk 6 type stub)
+typings/*
+!typings/chalk/
 
 # TypeScript cache
 *.tsbuildinfo
