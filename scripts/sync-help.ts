@@ -33,16 +33,9 @@ const helpBlock = cli.slice(backtickStart + 1, backtickEnd).trim();
 
 // extract Examples section lines that start with $ (shell examples)
 const examplesSectionMatch = helpBlock.match(/Examples:\n\n([\s\S]*?)\n\nNotes:/);
-let examples: string[] = [];
-if (examplesSectionMatch) {
-  const examplesText = examplesSectionMatch[1];
-  examples = examplesText
-    .split('\n')
-    .map(l => l.trim())
-    .filter(l => l.startsWith('$'));
-} else {
-  examples = [helpBlock.split('\n').slice(0, 3).join(' ')];
-}
+const examples: string[] = examplesSectionMatch
+  ? examplesSectionMatch[1].split('\n').map(l => l.trim()).filter(l => l.startsWith('$'))
+  : [helpBlock.split('\n').slice(0, 3).join(' ')];
 
 // prepare replacement strings
 const examplesTs = `Graph.examples = [\n${examples.map(e => `  '${e.replace(/'/g, "\\'")}'`).join(',\n')}\n];\n\n`;
